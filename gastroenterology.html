@@ -1,0 +1,2231 @@
+<!-- gastroenterology.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gastroenterology Quiz</title>
+  <!-- Embedded CSS -->
+  <style>
+    :root {
+      --primary-color: #2a9d8f;
+      --primary-hover: #21867a;
+      --bg-color: #f4f4f4;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --sidebar-bg: #264653;
+      --sidebar-text: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
+    .top-nav {
+      position: relative;
+      z-index: 1001;
+      display: flex; justify-content: space-between; align-items: center;
+      background-color: var(--primary-color); color: #ffffff; padding: 0.75rem 1rem;
+    }
+    .top-nav .nav-actions button { background: none; border: none; color: #ffffff; margin-left: 0.5rem; cursor: pointer; }
+    
+    /* highlight‐mode button “on” state */
+    .top-nav .nav-actions #highlight-btn.active {
+      background-color: var(--primary-hover);
+    }
+
+    /* the yellow highlight style */
+    .highlighted-text {
+      background-color: yellow;
+    }
+
+    .menu-icon { cursor: pointer; font-size: 1.5rem; }
+    /* Sidebar styles */
+    .sidebar {
+      position: fixed;
+      left: -200px;
+      width: 200px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar li { margin-bottom: 0.5rem; }
+    .sidebar a { color: var(--sidebar-text); text-decoration: none; display: block; padding: 0.5rem; border-radius: 0.25rem; }
+    .sidebar a:hover { background: rgba(255,255,255,0.1); }
+    /* Lab Values sidebar */
+    .lab-sidebar {
+      position: fixed;
+      right: -600px;
+      width: 600px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .lab-sidebar.open { right: 0; }
+    /* Quiz container */
+    .question-container {
+      background-color: var(--card-bg);
+      border: 2px solid var(--primary-color);
+      border-radius: 0.5rem;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+    }
+    .options-list { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    .option-label { padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px; border: 1px solid transparent; display: flex; align-items: center; }
+    .options-list input { margin-right: 0.5rem; accent-color: var(--primary-color); }
+    .correct-answer { background-color: #d4edda; border-color: #28a745; }
+    .wrong-answer { background-color: #f8d7da; border-color: #dc3545; }
+    .submit-btn, #prev-btn, #next-btn, #end-btn {
+      margin-top: 0.5rem;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    .submit-btn:disabled, #prev-btn:disabled, #next-btn:disabled { opacity: 0.6; cursor: default; }
+    .submit-btn:hover:not(:disabled), #prev-btn:hover:not(:disabled), #next-btn:hover:not(:disabled), #end-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+    .explanation {
+      margin-top: 1rem;
+      background-color: #e8f5e9;
+      border-left: 4px solid var(--primary-color);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      white-space: pre-wrap;
+    }
+    .results-summary {
+      margin-top: 1rem;
+      background-color: #fff3cd;
+      border-left: 4px solid #ffeeba;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <div class="menu-icon">&#9776;</div>
+    <div id="question-counter">Question 1 of 6</div>
+    <div class="nav-actions">
+      <button id="prev-btn" disabled>&lt; Previous</button>
+      <button id="next-btn" disabled>Next &gt;</button>
+      <button id="fullscreen-btn">Full Screen</button>
+      <button id="labvals-btn">Lab Values</button>
+      <button id="highlight-btn">Highlight</button>
+      <button id="end-btn">End Exam</button>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <ul id="sidebar-list"></ul>
+  </div>
+  <!-- Lab Values Sidebar -->
+  <div id="lab-sidebar" class="lab-sidebar">
+    <img src="images/Blood.jpg" alt="Blood Values" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Blood 2.jpg" alt="Blood Plasma Serum" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Hematological.jpg" alt="Hematologic Values" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Sweat, Urine, BMI.jpg" alt="Sweat, Urine, BMI" style="width:100%; margin-bottom:1rem;">
+    <img src="images/CSF.jpg" alt="Cerebrospinal Fluid" style="width:100%;">
+  </div>
+
+  <main>
+    <section class="question-container">
+      <div id="question-text"></div>
+      <form id="options-list" class="options-list"></form>
+      <button id="submit-btn" class="submit-btn">Submit Answer</button>
+      <div id="explanation" class="explanation"></div>
+      <div id="results-summary" class="results-summary" style="display:none;"></div>
+    </section>
+  </main>
+
+  <!-- Embedded JS -->
+  <script>
+    // Sidebar toggle & positioning
+    const menuIcon   = document.querySelector('.menu-icon');
+    const sidebar    = document.getElementById('sidebar');
+    const labSidebar = document.getElementById('lab-sidebar');
+    const nav        = document.querySelector('.top-nav');
+    const navHeight  = nav.offsetHeight;
+    [sidebar, labSidebar].forEach(sb => {
+      sb.style.top    = navHeight + 'px';
+      sb.style.height = `calc(100% - ${navHeight}px)`;
+    });
+    menuIcon.addEventListener('click', () => sidebar.classList.toggle('open'));
+    document.getElementById('labvals-btn')
+      .addEventListener('click', () => labSidebar.classList.toggle('open'));
+
+    // Highlight mode toggle + handler
+const highlightBtn = document.getElementById('highlight-btn');
+let highlightMode = false;
+
+// turn highlight‐mode on/off
+highlightBtn.addEventListener('click', () => {
+  highlightMode = !highlightMode;
+  highlightBtn.classList.toggle('active', highlightMode);
+});
+
+// whenever you select text and release the mouse…
+document.addEventListener('mouseup', () => {
+  if (!highlightMode) return;                // only when mode is on
+  const selection = window.getSelection();
+  if (selection.rangeCount === 0 || selection.isCollapsed) return;
+
+  const range = selection.getRangeAt(0);
+  try {
+    // wrap the chosen text in our yellow‐bg span
+    const span = document.createElement('span');
+    span.className = 'highlighted-text';
+    range.surroundContents(span);
+  } catch (e) {
+    // fallback for older browsers
+    document.execCommand('hiliteColor', false, 'yellow');
+  }
+  selection.removeAllRanges();
+});  
+
+    // Quiz data and logic
+    const questions = [
+      {
+        text: `A 34-year-old man with long-standing symptoms of gastro-oesophageal reflux disease has an endoscopy which confirms Barrett’s oesophagus. What kind of histological change is seen in the mucosal cells lining the lower portion of the oesophagus?`,
+        options: [
+          {label:'A',text:'Columnar hyperplasia'},
+          {label:'B',text:'Squamous dysplasia'},
+          {label:'C',text:'Columnar metaplasia'},
+          {label:'D',text:'Squamous metaplasia'},
+          {label:'E',text:'Carcinomatous changes'}
+        ],
+        correct: 'C',
+        explanation: `Barrett's oesophagus is a condition in which there is an abnormal (metaplastic) change where columnar epithelium replaces the normal stratified squamous epithelium in the lower portion of the oesophagus. This occurs in the presence of prolonged acid injury seen in patients suffering from gastro-oesophageal reflux disease (GORD). There is an increased risk of oesophageal adenocarcinoma in patients with Barrett's oesophagus.
+
+Squamous metaplasia is incorrect. Squamous metaplasia is where the lining of the cells undergo benign non-cancerous changes to a squamous morphology. It is quite the opposite in Barrett's oesophagus as stratified squamous epithelium is replaced by columnar epithelium, which is called “columnar metaplasia.”`},
+      {
+        text: `A 54-year-old man presents to the GP surgery with a one-week history of jaundice. He reports pruritus but denies abdominal pain. He recently completed a seven-day course of co-amoxiclav three weeks ago. He drinks approximately 12 units of alcohol per week. On examination, he appears icteric. Blood tests show:
+Alanine aminotransferase (ALT) 110 U/L (10–50)
+Alkaline phosphatase (ALP) 430 U/L (40–120)
+Total bilirubin 140 µmol/L (3–17)
+Albumin 39 g/L (35–50)
+International normalised ratio (INR) 1.1 (0.9–1.2)
+What is the most likely diagnosis?`,
+        options: [
+          {label:'A',text:'Choledocholithiasis'},
+          {label:'B',text:'Alcoholic hepatitis'},
+          {label:'C',text:'Biliary artery stenosis'},
+          {label:'D',text:'Viral hepatitis'},
+          {label:'E',text:'Cholestatic hepatitis'}
+        ],
+        correct:'E',
+        explanation: `The most likely diagnosis is cholestatic hepatitis, given the temporal relationship between the recent use of co-amoxiclav and the onset of jaundice. Co-amoxiclav is a well-recognised cause of drug-induced liver injury, typically presenting with a cholestatic pattern characterised by elevated ALP and bilirubin, with relatively less marked transaminase elevation. The onset of symptoms often occurs a few weeks after drug exposure, consistent with this case.
+
+The patient's low alcohol intake (12 units per week) makes alcoholic hepatitis unlikely, as alcoholic hepatitis is more commonly associated with heavy and sustained alcohol use and presents with a hepatocellular pattern of injury.`},
+      {
+        text: `An 83-year-old woman who is a resident in a nursing home is admitted to hospital with a 4-day history of diarrhea. She has had no weight loss or change in appetite. She has been on analgesics for 3 weeks to manage her back pain. She is in obvious discomfort. Rectal examination reveals faecal impaction with hard stools. What is the SINGLE most appropriate immediate management?`,
+        options: [
+          {label:'A',text:'Codeine phosphate'},
+          {label:'B',text:'High fibre diet'},
+          {label:'C',text:'Oral laxative'},
+          {label:'D',text:'Phosphate enemas'},
+          {label:'E',text:'Urinary catheterisation'}
+        ],
+        correct:'D',
+        explanation: `This is an example of overflow diarrhoea. Medications such as opioid pain relievers reduce intestinal movement and may cause faecal matter to become too large, hard and dry making it difficult to expel. Subsequently, faeces becomes so hard that they cannot be expelled and faecal fluid will flow around the block.
+
+Phosphate enemas contain sodium acid phosphate and sodium phosphate. The osmotic activity of the former increases the water content of the stool so that rectal distension follows and it is thought that this induces defecation by stimulating rectal motility. It has a very quick onset of action which makes enemas useful for when a rapid evacuation of a stony dull faecal impaction is required.`},
+      {
+        text: `A 50-year-old man presents with a 2-day severe pain and swelling in the perianal region following straining during defecation. He reports feeling a lump near his anus. On examination, a tender, well-defined, reddish blue swelling is seen near the anal verge. The swelling is about 3 cm in diameter and is not fluctuant. There is no erythema of the skin or discharge. What is the SINGLE most likely diagnosis?`,
+        options: [
+          {label:'A',text:'Perianal abscess'},
+          {label:'B',text:'Perianal haematoma'},
+          {label:'C',text:'Pilonidal cyst'},
+          {label:'D',text:'Haemorrhoids'},
+          {label:'E',text:'Anal fistula'}
+        ],
+        correct:'B',
+        explanation: `A perianal haematoma is a localized collection from ruptured vessels, presenting as a tender blue lump. It differs from hemorrhoids which typically bleed or itch.`},
+      {
+        text: `A 23-year-old man complains of difficulty swallowing solid food over the past 2 years. It is intermittent and he has an episode once every few days. There is chest pain associated with dysphagia. Occasionally, he would regurgitate food. He has recurrent chest infections. He has no history of weight loss. What is the SINGLE most appropriate initial investigation?`,
+        options: [
+          {label:'A',text:'Endoscopy'},
+          {label:'B',text:'Echocardiogram'},
+          {label:'C',text:'Helicobacter pylori antigen test'},
+          {label:'D',text:'Manometry'},
+          {label:'E',text:'Barium swallow'}
+        ],
+        correct:'A',
+        explanation: `We know this is a very controversial question. The top two choices would be endoscopy and barium swallow. It is a complicated question and we had to seek advice from our gastroenterology colleagues to address this question.
+
+The differentials that need to be considered here are diffuse oesophageal spasms, achalasia, scleroderma, oesophageal ring, oesophageal web and oesophageal cancer.
+
+The description in the stem best fits diffuse oesophageal spasm except that there is usually dysphagia to both solids and liquids. The stem only includes dysphagia to solids without mentioning liquids.
+
+As he is young and cancer is unlikely, so understandably many candidates would pick a barium swallow rather than an endoscopy. A barium swallow is less invasive and can be used to diagnose conditions like diffuse oesophageal spasms or achalasia. However, that is an incorrect option. Patients with dysphagia, despite their age, should undergo endoscopy with oesophageal biopsies to rule out and treat mucosal and structural disorders first. Barium swallow is considered where endoscopy is not possible or if endoscopy is normal but a structural abnormality is still suspected.
+
+Throughout medical school, you have been taught that achalasia and diffuse oesophageal spasms can be seen in barium swallow and the gold standard is manometry. That teaching is now outdated. Endoscopy is a must do first for any patients with dysphagia prior to proceeding to a barium swallow or manometry.
+
+We are aware that there are reliable sources that would state that a barium swallow would be reasonable to perform first, however, we have done intense research on this and together with our gastroenterology colleagues, have decided that an endoscopy would be the most initial. This goes in line with the NICE CKS guidelines as well where patients with dysphagia irrelevant of age should have an endoscopy. This guidance is also taken from the “British Society of Gastroenterology for oesophageal manometry and oesophageal reflux monitoring” published in 2019 and the “European guidelines on achalasia: United European Gastroenterology and European Society of Neurogastroenterology and Motility recommendations” published in 2020.
+
+In summary, this is what we believe you should pick in the exam:
+• Dysphagia + Initial investigation → Endoscopy (with exceptions of suspicion of pharyngeal pouch)
+• Dysphagia + Diffuse oesophageal spasm/achalasia stem + Most appropriate investigation → Barium swallow or manometry
+
+Further reading:
+https://cks.nice.org.uk/topics/gastrointestinal-tract-upper-cancers-recognition-referral/diagnosis/
+https://www.achkalia-action.org/ewExternalFiles/Achalasia%20EU%20guidelines.pdf`},
+      {
+        text: `A 43-year-old lady had endoscopic retrograde cholangiopancreatography to remove a stone from her common bile duct. 48 hours after the procedure she returns to the emergency department with severe right upper quadrant pain. On examination, she appears generally unwell with a pyrexia of 38.9°C. She has icteric sclera, and her abdomen is extremely tender in the right upper quadrant. What is the SINGLE most likely diagnosis?`,
+        options: [
+          {label:'A',text:'Acute pancreatitis'},
+          {label:'B',text:'Ascending cholangitis'},
+          {label:'C',text:'Acute cholecystitis'},
+          {label:'D',text:'Cancer of the head of the pancreas'},
+          {label:'E',text:'Upper GI perforation'}
+        ],
+        correct:'B',
+        explanation: `The correct answer is option B. Ascending cholangitis. This is a classical presentation with Charcot's triad of fever, RUQ pain and jaundice. Abdominal sepsis is one of three most common types of sepsis, particularly as this lady recently had a procedure; the time of presentation is most suspicious of an infective pathology.
+
+Ascending cholangitis following ERCP is relatively rare, but when it does occur, it typically develops within the first few days following the procedure. The exact timeframe can vary, but most cases of post-ERCP cholangitis manifest within 1–7 days after the procedure. In some cases, cholangitis can develop within hours, especially if there is significant contamination of the bile ducts during the procedure.`}
+    ,
+    // added questions from image bank:
+    {
+      text: `A 67 year old man presents to his GP with a six-week history of intermittent rectal bleeding. He describes the blood as bright red and reports it occurs predominantly with defaecation. He has also noticed a change in his bowel habits, alternating between constipation and diarrhoea. He also describes occasional lower left abdominal pain. A digital rectal examination reveals no abnormalities. Investigations: Haemoglobin 121 g/L (130–180), Platelets 250 × 10^9/L (150–400), Serum ferritin 25 µg/L (30–400). What is the most appropriate investigation?`,
+      options: [
+        {label:'A',text:'Faecal calprotectin'},
+        {label:'B',text:'Sigmoidoscopy'},
+        {label:'C',text:'Stool culture'},
+        {label:'D',text:'Computed tomography (CT scan of the abdomen and pelvis)'},
+        {label:'E',text:'X-ray abdomen'}
+      ],
+      correct: 'B',
+      explanation: ``
+    },
+    {
+      text: `A 64 year old man presents to the clinic with lethargy and a dull pain in the right hypochondrium that has been worsening over the past few months. He has significant weight loss. On examination, he is icteric and abdominal palpation reveals a tender right upper quadrant with a firm, enlarged liver. Histology of a liver biopsy shows adenocarcinoma with immunostaining positive for TTF-1, indicating a primary pulmonary tumour. What is the SINGLE most likely route of metastasis in this patient?`,
+      options: [
+        {label:'A',text:'Haematogenous'},
+        {label:'B',text:'Lymphatic'},
+        {label:'C',text:'Direct infiltration'},
+        {label:'D',text:'Transcoelomic'},
+        {label:'E',text:'Diaphragmatic'}
+      ],
+      correct: 'A',
+      explanation: ``
+    },
+    {
+      text: `A 60 year old man presents with difficulty swallowing solids. He denies pain and weight loss, and he notes occasional heartburn and an acidic taste in his mouth. He maintains an active lifestyle. What is the most appropriate investigation that will lead to a diagnosis?`,
+      options: [
+        {label:'A',text:'Barium swallow'},
+        {label:'B',text:'Upper GI endoscopy'},
+        {label:'C',text:'Manometry'},
+        {label:'D',text:'CT scan'},
+        {label:'E',text:'24-hour oesophageal pH monitoring'}
+      ],
+      correct: 'B',
+      explanation: ``
+    },
+    {
+      text: `A 28 year old man has intermittent diarrhoea, fatigue, and weight loss over the last 6 months. He has excluded gluten from his diet for 2 months and his symptoms have resolved. He wants confirmation of coeliac disease. What is the SINGLE most appropriate next step in action?`,
+      options: [
+        {label:'A',text:'Jejunal biopsy'},
+        {label:'B',text:'Reintroduce gluten prior to testing'},
+        {label:'C',text:'Sweat test'},
+        {label:'D',text:'Tissue transglutaminase antibodies'},
+        {label:'E',text:'Stool sample'}
+      ],
+      correct: 'B',
+      explanation: ``
+    },
+    {
+      text: `A 65 year old female was admitted with community-acquired pneumonia and treated with IV co-amoxiclav. On day four she develops jaundice with Bilirubin 65 µmol/L, AST 250 IU/L, ALT 190 IU/L, ALP 610 IU/L, PT 15 seconds. She drinks 20 units alcohol/week. What is the SINGLE most likely cause of her deranged liver function tests?`,
+      options: [
+        {label:'A',text:'Choledocholithiasis'},
+        {label:'B',text:'Alcoholic hepatitis'},
+        {label:'C',text:'Biliary artery stenosis'},
+        {label:'D',text:'Viral hepatitis'},
+        {label:'E',text:'Cholestatic hepatitis'}
+      ],
+      correct: 'E',
+      explanation: ``
+    },
+    {
+      text: `A 33 year old man was treated for a duodenal ulcer with H. pylori eradication 6 weeks ago. To confirm eradication, what is the SINGLE most appropriate test?`,
+      options: [
+        {label:'A',text:'Carbon-13 urea breath test'},
+        {label:'B',text:'Stool antigen test'},
+        {label:'C',text:'Helicobacter pylori antibodies'},
+        {label:'D',text:'Sputum culture'},
+        {label:'E',text:'Endoscopy and biopsy'}
+      ],
+      correct: 'A',
+      explanation: ``
+    },
+    {
+      text: `A 56 year old man is found to have skin hyperpigmentation, spider angiomas, and restrictive cardiomyopathy. His liver span is 10 cm. What is the SINGLE condition he is most likely at risk of?`,
+      options: [
+        {label:'A',text:'Cerebellar degeneration'},
+        {label:'B',text:'Gallstones'},
+        {label:'C',text:'Renal failure'},
+        {label:'D',text:'Hepatoma'},
+        {label:'E',text:'Hepatic vein thrombosis'}
+      ],
+      correct: 'D',
+      explanation: ``
+    },
+    {
+      text: `A 44 year old man with recurrent epigastric pain and mildly elevated amylase despite normal endoscopy and ultrasound. What is the SINGLE most likely cause of his pain?`,
+      options: [
+        {label:'A',text:'Excessive alcohol intake'},
+        {label:'B',text:'Viral infection'},
+        {label:'C',text:'Bacterial infection'},
+        {label:'D',text:'Opiate abuse'},
+        {label:'E',text:'Cystic fibrosis'}
+      ],
+      correct: 'A',
+      explanation: ``
+    },
+    {
+      text: `An 81 year old man has sudden onset dysphagia and drooling without weight loss. What is the next most appropriate investigation?`,
+      options: [
+        {label:'A',text:'CT abdomen'},
+        {label:'B',text:'MRI abdomen'},
+        {label:'C',text:'Oesophagogastroduodenoscopy'},
+        {label:'D',text:'Barium swallow'},
+        {label:'E',text:'Manometry'}
+      ],
+      correct: 'C',
+      explanation: ``
+    }
+,
+    {
+      text: `A 44 year old woman has been experiencing chest pain, nausea and vomiting over the past few days. She has a burning sensation in her chest. A chest X‑ray shows the presence of an air‑fluid level in a mass behind a normal‑size heart. What is the SINGLE most likely diagnosis?`,
+      options: [
+        {label:'A',text:'Hiatus hernia'},
+        {label:'B',text:'Achalasia'},
+        {label:'C',text:'Scleroderma'},
+        {label:'D',text:'Bulbar palsy'},
+        {label:'E',text:'Pharyngeal pouch'}
+      ],
+      correct: 'A',
+      explanation: ``
+    },
+    {
+      text: `A 55 year old woman complains of retrosternal chest pain and difficulty swallowing which is intermittent and unpredictable. She says that food gets stuck in the middle of the chest and she has to clear it with a drink of water. A barium meal shows a ‘corkscrew patterned oesophagus’. What is the SINGLE most likely cause of the dysphagia?`,
+      options: [
+        {label:'A',text:'Oesophageal candidiasis'},
+        {label:'B',text:'Oesophageal carcinoma'},
+        {label:'C',text:'Oesophageal spasm'},
+        {label:'D',text:'Pharyngeal pouch'},
+        {label:'E',text:'Plummer‑Vinson syndrome'}
+      ],
+      correct: 'C',
+      explanation: ``
+    },
+    {
+      text: `A 20 year old woman with a history of type 1 diabetes presents to her GP complaining of a six week history of intermittent abdominal pain with mild diarrhoea. She also reports fatigue and 8 kg of weight loss over 6 months. She denies any blood in her stool. Examination reveals conjunctival pallor and aphthous ulcers. Which investigation should be considered first?`,
+      options: [
+        {label:'A',text:'Fecal calprotectin'},
+        {label:'B',text:'Serum tissue transglutaminase IgA (tTg‑IgA)'},
+        {label:'C',text:'HLA typing'},
+        {label:'D',text:'Intestinal biopsy'},
+        {label:'E',text:'Stool culture'}
+      ],
+      correct: 'B',
+      explanation: ``
+    },
+    {
+      text: `A 65 year old man presents with significant haematemesis. Following resuscitation, he is found to have ascites, hepatomegaly and jaundice, with spider naevi and gynaecomastia on exam. He has a history of heavy alcohol consumption. Bloods: Hb 120 g/L, MCV 110 fL, GGT 202 U/L, ALT 70 U/L, AST 150 U/L, ALP 160 U/L. Which is the most likely diagnosis?`,
+      options: [
+        {label:'A',text:'Viral hepatitis'},
+        {label:'B',text:'Hepatocellular carcinoma'},
+        {label:'C',text:'Autoimmune hepatitis'},
+        {label:'D',text:'Alcoholic liver disease'},
+        {label:'E',text:'Mallory‑Weiss tear'}
+      ],
+      correct: 'D',
+      explanation: ``
+    },
+    {
+      text: `A 35 year old man presents with burning retrosternal pain for the past few days. He recently completed treatment for H. pylori infection. Endoscopy shows multiple ulcers in the lower oesophagus, stomach and duodenum. What is the SINGLE next most appropriate investigation?`,
+      options: [
+        {label:'A',text:'Computed tomography of the abdomen'},
+        {label:'B',text:'Colonoscopy'},
+        {label:'C',text:'Gastrin levels'},
+        {label:'D',text:'Urease test'},
+        {label:'E',text:'Barium swallow'}
+      ],
+      correct: 'C',
+      explanation: ``
+    },
+    {
+      text: `A 36 year old lady has diarrhoea for the last 2 months with an 8 kg weight loss. Colonoscopy shows intestinal fistulas, and perianal fistulas are also noted. What is the SINGLE most likely diagnosis?`,
+      options: [
+        {label:'A',text:"Crohn's disease"},
+        {label:'B',text:'Irritable bowel syndrome'},
+        {label:'C',text:'Coeliac disease'},
+        {label:'D',text:'Diverticulitis'},
+        {label:'E',text:'Ulcerative colitis'}
+      ],
+      correct: 'A',
+      explanation: ``
+    },
+    {
+      text: `A 35 year old man presents to his GP with a 3‑month history of dyspepsia. Serum antibodies for H. pylori were negative 1 month ago. There is no NSAID use. He has no alarm features but his symptoms persist on PPI. What is the SINGLE most appropriate next step?`,
+      options: [
+        {label:'A',text:'Urea breath test'},
+        {label:'B',text:'Repeat serum antibodies'},
+        {label:'C',text:'Change PPI type'},
+        {label:'D',text:'Continue PPI and review in a month'},
+        {label:'E',text:'Request an endoscopy'}
+      ],
+      correct: 'E',
+      explanation: ``
+    },
+    {
+      text: `An 80 year old man presents with intermittent chest pain and dysphagia to both solids and liquids over the past six months. A trial of PPI has not alleviated symptoms. What is the most appropriate investigation?`,
+      options: [
+        {label:'A',text:'Barium swallow'},
+        {label:'B',text:'Chest X‑ray'},
+        {label:'C',text:'Endoscopy'},
+        {label:'D',text:'Manometry'},
+        {label:'E',text:'Oesophageal pH monitoring'}
+      ],
+      correct: 'D',
+      explanation: ``
+    },
+    {
+      text: `A 55 year old man has intermittent episodes of sudden chest pain associated with dysphagia lasting a few hours, starting 3 weeks ago. ECGs are normal. Which is the best investigation to diagnose the condition?`,
+      options: [
+        {label:'A',text:'Video fluoroscopy'},
+        {label:'B',text:'Manometry'},
+        {label:'C',text:'Endoscopy'},
+        {label:'D',text:'X‑ray'},
+        {label:'E',text:'CT scan'}
+      ],
+      correct: 'B',
+      explanation: ``
+    },
+    {
+      text: `A 45 year old man presents with a three‑day history of watery diarrhoea following clarithromycin for a chest infection. Which organism is most likely responsible for his diarrhoea?`,
+      options: [
+        {label:'A',text:'Escherichia coli'},
+        {label:'B',text:'Clostridioides difficile'},
+        {label:'C',text:'Campylobacter jejuni'},
+        {label:'D',text:'Salmonella enterica'},
+        {label:'E',text:'Rotavirus'}
+      ],
+      correct: 'B',
+      explanation: ``
+    },
+    {
+    text: `A 23 year old female presents with an 8 week history of bloody diarrhoea. She says her bowels have not been right for the past few months and she frequently has to run to the toilet. A diagnosis of ulcerative colitis is made. What is the SINGLE most likely sign to be seen on a barium enema?`,
+    options: [
+      { label: 'A', text: 'Loss of haustral markings' },
+      { label: 'B', text: `Kantor's string sign` },
+      { label: 'C', text: 'Cobblestone appearance' },
+      { label: 'D', text: 'Rose thorn ulcers' },
+      { label: 'E', text: 'Fistula' }
+    ],
+    correct: 'A',
+    explanation: ``
+  },
+
+  // 2
+  {
+    text: `A 25 year old woman has diarrhoea and abdominal bloating over the last 4 months. On examination, she has a blistering rash over her elbows. Her blood test shows: Haemoglobin 105 g/L (115–160), Mean cell volume (MCV) 79 fL (80–100). On duodenal biopsy there is shortening of the villi and lymphocytosis. What is the SINGLE most likely diagnosis?`,
+    options: [
+      { label: 'A', text: 'Coeliac disease' },
+      { label: 'B', text: `Whipple's disease` },
+      { label: 'C', text: `Crohn's disease` },
+      { label: 'D', text: 'Tropical sprue' },
+      { label: 'E', text: 'Giardiasis' }
+    ],
+    correct: 'A',
+    explanation: ``
+  },
+
+  // 3
+  {
+    text: `A 43 year old man presents to the Accident & Emergency department with a history of vomiting large amounts of blood. He reports a long‑standing history of alcohol misuse. On examination he appears pale and has several spider naevi on his chest. His blood pressure is 100/76 mmHg, pulse 110 bpm. His abdomen is distended with shifting dullness but no jaundice. What is the most likely diagnosis?`,
+    options: [
+      { label: 'A', text: 'Peptic ulcer' },
+      { label: 'B', text: 'Mallory‑Weiss tear' },
+      { label: 'C', text: 'Oesophageal cancer' },
+      { label: 'D', text: 'Oesophageal varices' },
+      { label: 'E', text: 'Oesophagitis' }
+    ],
+    correct: 'D',
+    explanation: ``
+  },
+
+  // 4
+  {
+    text: `A 68 year old man with known oesophageal cancer and distant metastases under palliative care presents with progressive dysphagia predominantly to solids. His weight has decreased significantly over the past month. What intervention is most appropriate to alleviate his dysphagia?`,
+    options: [
+      { label: 'A', text: 'Prophylactic antibiotics' },
+      { label: 'B', text: 'Percutaneous endoscopic gastrostomy (PEG) tube placement' },
+      { label: 'C', text: 'Oesophageal stenting' },
+      { label: 'D', text: 'Chemoradiotherapy' },
+      { label: 'E', text: 'Total parenteral nutrition (TPN)' }
+    ],
+    correct: 'C',
+    explanation: ``
+  },
+
+  // 5
+  {
+    text: `A 35 year old woman presents with recurrent abdominal pain and bloating over 6 months. She reports pale, foul‑smelling stools that are difficult to flush. Investigations: Haemoglobin 92 g/L (115–160), Ferritin 5 ng/mL (20–300). Given these findings, which of the following is the key pathophysiological change underlying her symptoms?`,
+    options: [
+      { label: 'A', text: 'Hypochlorhydria leading to malabsorption' },
+      { label: 'B', text: 'Decreased surface area for absorption' },
+      { label: 'C', text: 'Hyperactive peristalsis of the colon' },
+      { label: 'D', text: 'Excessive bile acid synthesis' },
+      { label: 'E', text: 'Increased activity of brush border enzymes' }
+    ],
+    correct: 'B',
+    explanation: ``
+  },
+
+  // 6
+  {
+    text: `A 78 year old woman with chronic constipation and codeine use for back pain presents to the ED with persistent abdominal pain and diarrhoea for one week. She passes watery stools but feels she cannot completely empty her bowels. Exam: distended but soft abdomen, empty rectum on DRE, bowel sounds normal. Abdominal X‑ray shows a large faecal mass in the sigmoid colon with no air‑fluid levels. What is the most appropriate initial treatment?`,
+    options: [
+      { label: 'A', text: 'High fibre diet' },
+      { label: 'B', text: 'Oral laxative' },
+      { label: 'C', text: 'Manual evacuation of the rectum' },
+      { label: 'D', text: 'Phosphate enema' },
+      { label: 'E', text: 'Increase opioid dosage' }
+    ],
+    correct: 'D',
+    explanation: ``
+  },
+
+  // 7
+  {
+    text: `A 55 year old man presents with a 2‑month history of right upper quadrant pain and jaundice. He is well‑nourished with no weight loss. Vitals WNL. RUQ tenderness. Investigations: Hb 132 g/L, WCC 10×10^9/L, Bilirubin 54 µmol/L, ALT 159 U/L, ALP 1509 U/L, AST 155 U/L. Which is the most appropriate next investigation?`,
+    options: [
+      { label: 'A', text: 'Fibroscan' },
+      { label: 'B', text: 'MRCP (Magnetic resonance cholangiopancreatography)' },
+      { label: 'C', text: 'ERCP (Endoscopic retrograde cholangiopancreatography)' },
+      { label: 'D', text: 'Ultrasound' },
+      { label: 'E', text: 'Liver biopsy' }
+    ],
+    correct: 'D',
+    explanation: ``
+  },
+
+  // 8
+  {
+    text: `A 63 year old man presents to the ED with a 2‑day history of black tarry stools and weakness. PMH chronic gastritis on omeprazole. Exam: pale, sweating, BP 85/50, pulse 122, RR 22, temp 37.2°C. Labs: Hb 72 g/L, Hct 21%. He has received 4 units PRBCs and is haemodynamically unstable. What is the next step?`,
+    options: [
+      { label: 'A', text: 'Intravenous terlipressin' },
+      { label: 'B', text: 'Urgent laparotomy' },
+      { label: 'C', text: 'Urgent endoscopy' },
+      { label: 'D', text: 'Angiography' },
+      { label: 'E', text: 'Intravenous proton pump inhibitor' }
+    ],
+    correct: 'C',
+    explanation: ``
+  },
+
+  // 9
+  {
+    text: `A 45 year old man with epigastric pain and loose stools for 3 months developed iron deficiency anaemia. Endoscopy reveals multiple ulcers in lower oesophagus, stomach, duodenum and jejunum. Which is the SINGLE best initial investigation to determine cause?`,
+    options: [
+      { label: 'A', text: 'Serum gastrin' },
+      { label: 'B', text: 'Full blood count' },
+      { label: 'C', text: 'C-13 urea breath test' },
+      { label: 'D', text: 'Oesophageal manometry' },
+      { label: 'E', text: 'Office-based serology for H.pylori' }
+    ],
+    correct: 'A',
+    explanation: ``
+  },
+
+  // 10
+  {
+    text: `A 33 year old woman presents to ED with 7 days RUQ pain radiating to back, worse after meals. Nausea, vomiting twice. No liver disease. Exam: RUQ tenderness, T 37.6, HR 90. Labs: Hb 120, WCC 13×10^9/L, Plat 350×10^9/L, CRP 30, Amylase 30, Bilirubin 59, ALT 189, ALP 409, Albumin 39. What is the SINGLE most likely diagnosis?`,
+    options: [
+      { label: 'A', text: 'Acute cholecystitis' },
+      { label: 'B', text: 'Chronic cholecystitis' },
+      { label: 'C', text: 'Acute pancreatitis' },
+      { label: 'D', text: 'Gastritis' },
+      { label: 'E', text: 'Hepatic jaundice' }
+    ],
+    correct: 'A',
+    explanation: ``
+  },
+  {
+  text: `A 75 year old man living in a nursing home is taken to the hospital by his nurse. He has been suffering from long-standing constipation and has been having difficulty in passing stools for the past 7 days. He appears mildly confused and agitated. He has a heart rate of 110 beats/minute and a respiratory rate of 30 breaths/minute. On rectal examination, faecal impaction is noted. What is the SINGLE most appropriate management?`,
+  options: [
+    { label: 'A', text: 'Sodium picosulphate' },
+    { label: 'B', text: 'Danthron' },
+    { label: 'C', text: 'Phosphate enema' },
+    { label: 'D', text: 'Methylcellulose' },
+    { label: 'E', text: 'Bran' },
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 48 year old man presents to the GP surgery with a two-week history of progressive jaundice. He reports significant alcohol consumption, averaging about 40 units per week for the past 20 years. He denies any recent travel or use of new medications. On examination, his skin and sclerae are visibly jaundiced. He has mild tenderness in the right upper quadrant of his abdomen. His blood results show the following:\nTotal bilirubin 51 µmol/L (3–17)\nConjugated bilirubin 20 µmol/L (0–5)\nSerum alanine transferase (ALT) 70 U/L (5–35)\nSerum alkaline phosphatase (ALP) 170 U/L (30–150)\nAspartate transaminase (AST) 190 U/L (5–35)\nGamma glutamyl transferase (γGT) 390 U/L (8–60)\nAlbumin 35 g/L (35–50)\nWhat is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Choledocholithiasis' },
+    { label: 'B', text: 'Primary biliary cirrhosis' },
+    { label: 'C', text: 'Chronic pancreatitis' },
+    { label: 'D', text: 'Alcoholic hepatitis' },
+    { label: 'E', text: 'Pancreatic cancer' },
+  ],
+  correct: 'D',
+  explanation: ``
+},
+{
+  text: `A 33 year old pregnant woman develops severe epigastric pain, nausea and vomiting at 35 weeks gestation. She was diagnosed with pre-eclampsia 2 weeks ago. On examination, she has yellow sclerae. Laboratory investigations show a deranged liver function, low platelets, low serum glucose, and raised serum ammonia. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Acute fatty liver of pregnancy' },
+    { label: 'B', text: 'Hyperemesis gravidarum' },
+    { label: 'C', text: 'Biliary colic' },
+    { label: 'D', text: 'HELLP syndrome' },
+    { label: 'E', text: 'Autoimmune hepatitis' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 61 year old man is brought to the Emergency Department with a 2 day history of epigastric pain and constant vomiting. He has been vomiting bright red blood. He has a medical history of rheumatoid arthritis and has been taking naproxen and prednisolone. On examination, he has a very tender epigastrium. His blood pressure is 100/60 mmHg and his heart rate is 101 beats/minute. He was given intravenous fluids. What is the primary diagnostic investigation for this patient?`,
+  options: [
+    { label: 'A', text: 'Erythrocyte sedimentation rate (ESR)' },
+    { label: 'B', text: 'Barium meal' },
+    { label: 'C', text: 'Abdominal X-ray' },
+    { label: 'D', text: 'Erect chest X-ray' },
+    { label: 'E', text: 'Gastrointestinal endoscopy' },
+  ],
+  correct: 'E',
+  explanation: ``
+},
+{
+  text: `A 72 year old woman with a history of hypothyroidism and chronic opioid use for knee osteoarthritis presents to the Emergency Department with abdominal bloating, nausea, and an inability to pass stools or gas for several days. She reports occasional loose stools over the past two weeks. On examination, her abdomen is distended with minimal tenderness, and a digital rectal examination reveals an empty rectum. An abdominal X-ray shows dilated loops of colon with multiple areas of radiopaque material throughout the colon. Which of the following is the most appropriate initial treatment?`,
+  options: [
+    { label: 'A', text: 'High fibre diet' },
+    { label: 'B', text: 'Oral laxative' },
+    { label: 'C', text: 'Manual evacuation of the rectum' },
+    { label: 'D', text: 'Phosphate enema' },
+    { label: 'E', text: 'Increase opioid dosage' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 24 year old female presents with a 4 month history of bloody diarrhoea, lethargy and weight loss. She complains of abdominal discomfort and passing stools more than 8 times a day. An endoscopy was performed which shows deep ulcers and skip lesions. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Diverticulitis' },
+    { label: 'B', text: 'Colon cancer' },
+    { label: 'C', text: 'Infective diarrhoea' },
+    { label: 'D', text: `Crohn's disease` },
+    { label: 'E', text: 'Ulcerative colitis' },
+  ],
+  correct: 'D',
+  explanation: ``
+},
+{
+  text: `A 75 year old man, residing in a care home, presents with a history of diarrhoea that started 8 days ago, characterised by loose, watery stools without blood or mucus. He also reports a low-grade fever, mild abdominal pain, and significant fatigue. His medical history is notable for recurrent urinary tract infections, for which he was prescribed cefalexin 7 days ago. Prior to the onset of diarrhoea, he was in his usual state of health. Which of the following is the most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Drug-induced diarrhoea' },
+    { label: 'B', text: 'Clostridium difficile infection' },
+    { label: 'C', text: 'Norovirus infection' },
+    { label: 'D', text: 'Irritable bowel syndrome' },
+    { label: 'E', text: 'Campylobacter infection' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 51 year old man has become increasingly fatigued over the past 10 months. His medical history includes having a gastrectomy a year ago. His physical examination is unremarkable. His blood tests show:\nHaemoglobin 85 g/L\nWhite cell count 7 × 10^9/L\nPlatelets 240 × 10^9/L\nMean cell volume 129 fL\nWhat is the SINGLE most likely finding on a blood smear?`,
+  options: [
+    { label: 'A', text: 'Hypersegmented neutrophils' },
+    { label: 'B', text: 'Nucleated RBC' },
+    { label: 'C', text: 'Blasts' },
+    { label: 'D', text: 'Hypochromic, microcytic RBC' },
+    { label: 'E', text: 'Schistocytes' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 12 year old child complains of right iliac fossa pain and diarrhoea that has worsened over a period of weeks. He was referred to the gastroenterology team for further management. On colonoscopy, a transmural, cobblestone appearance mucosa is seen near the ileocaecal junction. He does not wish for corticosteroids due to the side effects. Which of the following can be used as monotherapy to induce remission?`,
+  options: [
+    { label: 'A', text: 'Mesalazine' },
+    { label: 'B', text: 'Paracetamol' },
+    { label: 'C', text: 'Ibuprofen' },
+    { label: 'D', text: 'Metronidazole' },
+    { label: 'E', text: 'Mercaptopurine' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 31 year old man has a history of passing loose stools for the past 6 months. He says his stools contain a small amount of blood and mucus and are associated with abdominal pain. He has around 3 bowel movements a day. There is no evidence of weight loss. His last blood results show:\nHaemoglobin 92 g/L (130–180)\nA colonoscopy was organised which features are suggestive of ulcerative colitis. What is the SINGLE most appropriate treatment for his condition?`,
+  options: [
+    { label: 'A', text: 'Mesalazine' },
+    { label: 'B', text: 'Loperamide hydrochloride' },
+    { label: 'C', text: 'Co-amoxiclav' },
+    { label: 'D', text: 'Ferrous sulphate' },
+    { label: 'E', text: 'Cyclosporin' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 35 year old woman has sudden onset epigastric pain, chills and nausea. She gave birth to a healthy baby 2 days ago. Her BP was normal throughout pregnancy. On exam she is febrile (37.8°C), BP 139/90 mmHg, HR 115. Urinalysis shows no proteins. On exam there is RUQ tenderness. Her blood tests show:\nAlkaline phosphatase (ALP) 222 U/L (30–150)\nAlanine transferase (ALT) 55 U/L (5–35)\nBilirubin 25 µmol/L (3–17)\nINR 1.0\nHaemoglobin 101 g/L\nPlatelets 350 × 10⁹/L\nWhite cell count (WCC) 15.5 × 10⁹/L (4–11)\nWhat is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Acute cholecystitis' },
+    { label: 'B', text: 'Pre-eclampsia' },
+    { label: 'C', text: 'Obstetric cholestasis' },
+    { label: 'D', text: 'Acute fatty liver of pregnancy' },
+    { label: 'E', text: 'HELLP syndrome' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 41 year old man with type 2 diabetes mellitus presents with joint pain and an unusual increase in breast size. He feels increasingly fatigued over the past few months. On exam, there is a deep tan colour to his skin and his liver is enlarged on palpation. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Haemochromatosis' },
+    { label: 'B', text: 'Prolactinoma' },
+    { label: 'C', text: 'Hemosiderosis' },
+    { label: 'D', text: 'Wilson’s disease' },
+    { label: 'E', text: 'Liver cancer' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 42 year old man presents with a 5-day history of diarrhoea. He reports the stools have been frequent, watery, and accompanied by cramping abdominal pain. There is no blood or mucus. He denies recent travel or contacts. On exam his temperature is 37.2°C and his abdomen is soft with mild tenderness in the lower quadrants. Which stool investigation is most appropriate to help with the diagnosis?`,
+  options: [
+    { label: 'A', text: 'Faecal Immunochemical Test (FIT)' },
+    { label: 'B', text: 'Culture and microscopy' },
+    { label: 'C', text: 'Faecal calprotectin test' },
+    { label: 'D', text: 'Helicobacter pylori antigen test' },
+    { label: 'E', text: 'Rotavirus antigen stool test' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 36 year old man has been complaining of fatigue and intermittent pruritus for the past week. He has no jaundice, abdominal pain, or weight loss. His family history is unremarkable, and he does not consume alcohol. On exam he appears well with no stigmata of chronic liver disease.\nInvestigations:\nHaemoglobin 131 g/L (130-180)\nBilirubin 53 µmol/L (3-17)\nAlkaline phosphatase (ALP) 199 U/L (30-150)\nAlanine transferase (ALT) 34 U/L (5-35)\nGamma glutamyl transferase (γGT) 90 U/L (8-60)\nAlbumin 38 g/L (35-50)\nThere is no history of recent travel or IV drug use. He mentions taking a course of flucloxacillin for a skin infection two weeks prior to onset of pruritus. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Crigler–Najjar syndrome' },
+    { label: 'B', text: 'Gilbert’s syndrome' },
+    { label: 'C', text: 'Choledocholithiasis' },
+    { label: 'D', text: 'Alpha-1 antitrypsin deficiency' },
+    { label: 'E', text: 'Drug-induced cholestasis' },
+  ],
+  correct: 'E',
+  explanation: ``
+},
+{
+  text: `A 32 year old woman presents with complaints of increasing fatigue and intermittent abdominal pain for the past six months. She mentions occasional bouts of diarrhoea mixed with blood. She was diagnosed with mild ulcerative colitis two years ago but has never taken any medication for the condition. Exam shows mild pallor. Blood tests reveal haemoglobin 94 g/L (115-160). Which of the following is the most appropriate next step in management?`,
+  options: [
+    { label: 'A', text: 'Ferrous sulphate' },
+    { label: 'B', text: 'Mesalazine' },
+    { label: 'C', text: 'Methotrexate' },
+    { label: 'D', text: 'Recommend dietary modifications only' },
+    { label: 'E', text: 'Azathioprine' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 34 year old woman presents with episodic yellowing of the eyes noticed over the past six months. She reports no pain, itching, or change in stool or urine colour. PMH and med list are unremarkable. On exam, vitals and abdomen are normal with no hepatosplenomegaly.\nInvestigations:\nTotal bilirubin 35 µmol/L (3-17)\nDirect bilirubin 5 µmol/L (0-5)\nALT 22 U/L (7-56)\nAST 24 U/L (10-40)\nALP 68 U/L (30-130)\nWhich of the following is the most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Primary biliary cholangitis' },
+    { label: 'B', text: 'Hepatitis C' },
+    { label: 'C', text: 'Wilson’s disease' },
+    { label: 'D', text: 'Gilbert’s syndrome' },
+    { label: 'E', text: 'Haemochromatosis' },
+  ],
+  correct: 'D',
+  explanation: ``
+},
+{
+  text: `A 51 year old man presents with new-onset jaundice which started three days ago. He has no abdominal pain. He lost 5 kg over the past month. He drinks an average of 30 units of alcohol a week. On exam there are no masses. His blood results:\nHaemoglobin 141 g/L\nWCC 4.1 × 10⁹/L\nPlatelets 250 × 10⁹/L\nBilirubin 99 µmol/L (3-17)\nALT 202 U/L (5-35)\nALP 539 U/L (30-150)\nγGT 290 U/L (8-60)\nAlbumin 36 g/L (35-50)\n>50% of his bilirubin is conjugated and his observations are normal. What is the SINGLE most appropriate action?`,
+  options: [
+    { label: 'A', text: 'Request serum amylase' },
+    { label: 'B', text: 'Request an abdominal ultrasound routinely' },
+    { label: 'C', text: 'Repeat liver function test in a week' },
+    { label: 'D', text: 'Refer to the hospital for same-day admission' },
+    { label: 'E', text: 'Refer for suspected pancreatic cancer' },
+  ],
+  correct: 'E',
+  explanation: ``
+},
+{
+  text: `An 82 year old man with motor neuron disease presents with increasing difficulty swallowing, recurrent aspiration pneumonia, and malnutrition. On exam he demonstrates weakened bulbar muscles and coughs after swallowing liquids. Which of the following is the most appropriate form of nutrition?`,
+  options: [
+    { label: 'A', text: 'Oral nutritional supplements with diet modification' },
+    { label: 'B', text: 'Nasogastric tube feeding' },
+    { label: 'C', text: 'Total parenteral nutrition' },
+    { label: 'D', text: 'Percutaneous endoscopic gastrostomy (PEG)' },
+    { label: 'E', text: 'Intravenous hydration and vitamin supplementation' },
+  ],
+  correct: 'D',
+  explanation: ``
+},
+{
+  text: `A 15 year old child complains of right iliac fossa pain worsening over weeks. He also has bouts of diarrhoea for more than a year and has lost 7 kg in the last 5 months. On exam perianal skin tags are seen. A colonoscopy shows deep ulcers and skip lesions on colonic mucosa. What is the SINGLE most appropriate management?`,
+  options: [
+    { label: 'A', text: 'Prednisolone' },
+    { label: 'B', text: 'Mebeverine' },
+    { label: 'C', text: 'Peppermint oil' },
+    { label: 'D', text: 'Metronidazole' },
+    { label: 'E', text: 'Vancomycin' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 56 year old man has a history of intermittent epigastric pain at night for three months, with 5 kg unintentional weight loss. He does not take regular medications. He drinks around 20 units of alcohol per week. On exam the abdomen is soft and non-tender. What is the SINGLE most appropriate action?`,
+  options: [
+    { label: 'A', text: 'Urgent oesophago-gastro-duodenoscopy' },
+    { label: 'B', text: 'Urgent CT scan of chest, abdomen and pelvis' },
+    { label: 'C', text: 'Urgent colonoscopy' },
+    { label: 'D', text: 'Helicobacter pylori stool antigen testing' },
+    { label: 'E', text: 'Faecal elastase' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 71 year old woman residing in a nursing home presents with a history of diarrhoea that started 8 days ago. The stools are watery, occurring 5–6 times per day, with no blood or mucus. She reports abdominal cramping but no vomiting. She started a 7-day course of cefuroxime 7 days ago for a urinary tract infection. The nursing home recently reported several residents with similar symptoms. What is the most likely cause of her diarrhoea?`,
+  options: [
+    { label: 'A', text: 'Campylobacter infection' },
+    { label: 'B', text: 'Clostridioides difficile infection' },
+    { label: 'C', text: 'Norovirus' },
+    { label: 'D', text: 'Salmonella infection' },
+    { label: 'E', text: 'Shigella infection' },
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 45 year old man had an endoscopy earlier in the day for investigations of chronic abdominal pain. The next evening he returns with chest pain and shortness of breath. The pain is worse at the epigastrium and radiates to the interscapular area. His abdomen is soft and non-tender. His respiratory rate is 29 breaths/minute, pulse rate 110 bpm, temperature 37.8 °C and blood pressure is 120/70 mmHg. A chest X-ray reveals mediastinal widening. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Aspiration pneumonia' },
+    { label: 'B', text: 'Mediastinitis' },
+    { label: 'C', text: 'Pneumothorax' },
+    { label: 'D', text: 'Posterior mediastinal mass' },
+    { label: 'E', text: 'Traumatic aortic injury' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 27 year old woman presents with a two-day history of worsening abdominal pain and bloody diarrhoea. She has several bowel motions a day. She has a known history of ulcerative colitis diagnosed two years ago; previous flares were managed with oral mesalazine and a short course of oral steroids. On examination: T 38.9 °C, HR 110 bpm, diffuse abdominal tenderness without guarding. Laboratory investigations reveal:\nHaemoglobin 86 g/L (115–160)\nWhite cell count 18 × 10⁹/L (4–11)\nCRP 160 mg/L (<10)\nWhich of the following is the most appropriate initial management for this patient?`,
+  options: [
+    { label: 'A', text: 'Oral mesalazine' },
+    { label: 'B', text: 'Intravenous hydrocortisone' },
+    { label: 'C', text: 'Intravenous cyclosporine' },
+    { label: 'D', text: 'Iron transfusion' },
+    { label: 'E', text: 'Broad-spectrum antibiotics' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 28 year old female presents with 1 week history of jaundice, fever and malaise. She was diagnosed with hypothyroidism for which she is receiving levothyroxine. Her blood tests show:
+Serum bilirubin 40 µmol/L
+Alanine transferase (ALT) 120 IU/L
+Aspartate transaminase (AST) 90 IU/L
+Alkaline phosphatase (ALP) 200 IU/L
+Prothrombin time (PT) 25 sec
+What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Acute on chronic liver failure' },
+    { label: 'B', text: 'Hyperacute liver failure' },
+    { label: 'C', text: 'Autoimmune hepatitis' },
+    { label: 'D', text: 'Acute liver failure' },
+    { label: 'E', text: 'Drug induced hepatitis' },
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 58 year old man attends a follow-up visit to discuss his liver function tests. He initially presented a week ago, complaining of passing bulky, foul-smelling stools which were difficult to flush for the past four months. He also reports an intermittent, dull epigastric pain radiating to his back and unintentional weight loss of 3 kg. He has had four admissions for acute pancreatitis in the last five years and consumes a bottle of vodka every other day. On exam he is mildly icteric with no palpable mass.
+Investigations:
+Alkaline phosphatase 100 U/L (30–150)
+Alanine transferase 30 U/L (5–35)
+Gamma-glutamyl transferase 80 U/L (8–60)
+Tissue transglutaminase IgA negative
+Which of the following is the most appropriate investigation?`,
+  options: [
+    { label: 'A', text: 'Faecal elastase' },
+    { label: 'B', text: 'Serum amylase' },
+    { label: 'C', text: 'Faecal calprotectin' },
+    { label: 'D', text: 'Serum chymotrypsin' },
+    { label: 'E', text: 'Stool microscopy, culture and sensitivity' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 40 year old woman complains of dysphagia when eating solids and drinking liquids which has been worsening over the past year. She sometimes suffers from severe retrosternal chest pain. Barium swallow reveals a dilated oesophagus which tapers to a fine distal end. What is the SINGLE most appropriate management?`,
+  options: [
+    { label: 'A', text: 'Reassurance' },
+    { label: 'B', text: 'Antispasmodics' },
+    { label: 'C', text: 'Dilatation of the lower oesophageal sphincter' },
+    { label: 'D', text: 'Endoscopic diverticulectomy' },
+    { label: 'E', text: 'Calcium channel blocker' },
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 33 year old woman has severe upper abdominal pain radiating to the back within 24 hours of ERCP for gallstone removal. The pain eases when she leans forward. She reports nausea but no diarrhoea. Jaundice is noted, and the epigastrium is tender. BP 120/80 mmHg, temp 37.3 °C. What is the SINGLE most likely reason for her signs and symptoms?`,
+  options: [
+    { label: 'A', text: 'Ascending cholangitis' },
+    { label: 'B', text: 'Acute pancreatitis' },
+    { label: 'C', text: 'Perforated duodenal ulcer' },
+    { label: 'D', text: 'Chronic pancreatitis' },
+    { label: 'E', text: 'Bleeding' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 71 year old man presents with 6 months of fatigue, weight loss and episodes of watery diarrhoea. Exam reveals mild LLQ tenderness, no masses or hepatosplenomegaly. Colonoscopy shows a large villous adenoma in the sigmoid colon. What is the most likely electrolyte disturbance?`,
+  options: [
+    { label: 'A', text: 'Hyponatraemia' },
+    { label: 'B', text: 'Hypokalaemia' },
+    { label: 'C', text: 'Hyperkalaemia' },
+    { label: 'D', text: 'Hypomagnesaemia' },
+    { label: 'E', text: 'Hypocalcaemia' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 69 year old smoker has worsening dysphagia to solids for 3 months and an 8 kg weight loss. He now finds fluids difficult. What SINGLE investigation is most likely to lead to a diagnosis?`,
+  options: [
+    { label: 'A', text: 'Barium swallow' },
+    { label: 'B', text: 'Chest X-ray' },
+    { label: 'C', text: 'Computed tomography chest' },
+    { label: 'D', text: 'Endoscopy and biopsy' },
+    { label: 'E', text: 'Videofluoroscopy' },
+  ],
+  correct: 'D',
+  explanation: ``
+},
+{
+  text: `A 40 year old woman admitted for pulmonary embolism management starts having epigastric pain and bouts of diarrhoea. No blood in stools and no vomiting. What is the SINGLE most likely reason for her symptoms?`,
+  options: [
+    { label: 'A', text: 'Dysentery' },
+    { label: 'B', text: 'Gastroenteritis' },
+    { label: 'C', text: 'Irritable bowel syndrome' },
+    { label: 'D', text: 'Appendicitis' },
+    { label: 'E', text: 'Constipation with overflow' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 21 year old female presents with severe diarrhoea (>8 motions/day) and noticed blood yesterday. She is anxious about colon cancer (family history). Known ulcerative colitis on sulfasalazine. On exam: T 38 °C, HR 100 bpm, pale, tender abdomen, no masses. What is the SINGLE next step in management?`,
+  options: [
+    { label: 'A', text: 'Intravenous hydrocortisone' },
+    { label: 'B', text: 'Increase dose of sulfasalazine' },
+    { label: 'C', text: 'Oral prednisolone' },
+    { label: 'D', text: 'Topical mesalazine' },
+    { label: 'E', text: 'Intravenous antibiotics' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 44 year old man developed severe retching and vomiting followed by chest/back pain and subcutaneous emphysema hours after an upper GI endoscopy. Next day he has fever, RR 25, HR 110 bpm. What is the SINGLE most likely cause?`,
+  options: [
+    { label: 'A', text: 'Pneumothorax' },
+    { label: 'B', text: 'Aortic dissection' },
+    { label: 'C', text: 'Aspiration pneumonitis' },
+    { label: 'D', text: 'Mediastinitis' },
+    { label: 'E', text: 'Pericarditis' },
+  ],
+  correct: 'D',
+  explanation: ``
+},
+{
+  text: `A 28 year old man has had diarrhea and recurrent abdominal pain several days/month for 12 months. Pain improves with defecation, mucous in stools, no weight loss. FBC and coeliac serology normal. Abdomen soft with general tenderness. What is the SINGLE most appropriate investigation?`,
+  options: [
+    { label: 'A', text: 'Faecal immunochemical test' },
+    { label: 'B', text: 'CT abdomen' },
+    { label: 'C', text: 'Faecal calprotectin' },
+    { label: 'D', text: 'Colonoscopy' },
+    { label: 'E', text: 'Ultrasound of the liver' },
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 45 year old man presents to the GP with a 5-day history of diarrhoea. He describes the stool as loose, with no blood or mucus. He reports some mild cramping abdominal pain, but no fever, nausea, or vomiting. On examination, his vital signs are normal, and abdominal examination reveals mild tenderness in the lower abdomen but no signs of peritonism. What would be the most appropriate stool investigation in this case?`,
+  options: [
+    { label: 'A', text: 'Clostridium difficile toxin assay' },
+    { label: 'B', text: 'Faecal elastase' },
+    { label: 'C', text: 'Stool culture and microscopy' },
+    { label: 'D', text: 'Faecal calprotectin' },
+    { label: 'E', text: 'Stool PCR for viral pathogens' },
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 33 year old lady returning from several months in Europe presents with lethargy, abdominal pain, loose watery diarrhoea and bloating. She has lost a few kilograms since coming back. Exam is unremarkable except for mild generalized tenderness. What is the SINGLE most likely organism causing her symptoms?`,
+  options: [
+    { label: 'A', text: 'Campylobacter jejuni' },
+    { label: 'B', text: 'Salmonella enterica' },
+    { label: 'C', text: 'Shigella dysenteriae' },
+    { label: 'D', text: 'Staphylococcus aureus' },
+    { label: 'E', text: 'Giardia lamblia' },
+  ],
+  correct: 'E',
+  explanation: ``
+},
+{
+  text: `A 52 year old man presents to the Emergency Department with worsening epigastric and back pain. The pain is episodic and he has had three similar episodes in the past 6 months associated with generalized abdominal pain. He also complains of loose, pale, offensive stools and has lost weight which he attributes to fear of eating. He drinks 25 units of alcohol a week. On examination, he has epigastric tenderness. An abdominal X-ray shows diffuse calcifications. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Acute pancreatitis' },
+    { label: 'B', text: 'Chronic pancreatitis' },
+    { label: 'C', text: 'Gastro-oesophageal reflux disease' },
+    { label: 'D', text: 'Oesophagitis' },
+    { label: 'E', text: 'Carcinoma of the head of pancreas' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 45 year old woman is brought to the Emergency Department after three episodes of vomiting large amounts of blood at home and one en route in the ambulance. Her husband reports the vomitus was bright red. She has rheumatoid arthritis and takes celecoxib. On assessment: HR 130 bpm, BP 70/50 mmHg. Which of the following is the most appropriate next step in managing this patient?`,
+  options: [
+    { label: 'A', text: 'Terlipressin' },
+    { label: 'B', text: 'Intravenous fluids' },
+    { label: 'C', text: 'Endoscopic band ligation' },
+    { label: 'D', text: 'Intravenous proton pump inhibitors' },
+    { label: 'E', text: 'Sengstaken-Blakemore tube insertion' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 60 year old man presents with weight loss and complaints of mild abdominal pain, bloating and diarrhoea for 6 months. A recent blood test shows haemoglobin 7 g/dL. What is the SINGLE most appropriate investigation?`,
+  options: [
+    { label: 'A', text: 'Barium enema' },
+    { label: 'B', text: 'Colonoscopy' },
+    { label: 'C', text: 'Sigmoidoscopy' },
+    { label: 'D', text: 'Computed tomographic (CT) colonography' },
+    { label: 'E', text: 'Carcinoembryonic Antigen (CEA)' },
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 58 year old man has moderate to severe recurrent epigastric pain at night for 3 months with 5 kg weight loss. No history of peptic ulcers. He takes ibuprofen. On exam the upper abdomen is tender. HR 85 bpm, BP 95/65 mmHg. What is the SINGLE most appropriate investigation that would lead to a diagnosis?`,
+  options: [
+    { label: 'A', text: 'Endoscopy' },
+    { label: 'B', text: 'Urea breath test' },
+    { label: 'C', text: 'Helicobacter pylori serology test' },
+    { label: 'D', text: 'Stool antigen test' },
+    { label: 'E', text: 'Barium swallow' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 52 year old man who underwent partial gastrectomy 10 years ago presents with fatigue, cognitive deterioration, peripheral paraesthesia and vibration disturbance. He has macrocytic anaemia on FBC. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'B12 deficiency' },
+    { label: 'B', text: 'Cancer of the colon' },
+    { label: 'C', text: 'Alcoholism' },
+    { label: 'D', text: 'Coeliac disease' },
+    { label: 'E', text: 'Folate deficiency' },
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 75 year old man with oesophageal cancer metastatic to liver and lungs presents with worsening dysphagia. Surgery isn’t feasible. He wishes to live comfortably. Which of the following is the most appropriate management?`,
+  options: [
+    { label: 'A', text: 'Radiotherapy' },
+    { label: 'B', text: 'Chemotherapy' },
+    { label: 'C', text: 'Endoluminal stenting' },
+    { label: 'D', text: 'Nasogastric tube feeding' },
+    { label: 'E', text: 'Percutaneous endoscopic gastrostomy tube' },
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 48 year old female presents with tiredness and painless dysphagia. She complains of a feeling of something stuck in her throat. A full blood count shows microcytic, hypochromic anaemia. On examination, glossitis is noted. An oesophageal web is found at the post-cricoid region. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Coeliac disease' },
+    { label: 'B', text: 'Plummer-Vinson syndrome' },
+    { label: 'C', text: 'Pharyngeal carcinoma' },
+    { label: 'D', text: 'Barrett\'s oesophagus' },
+    { label: 'E', text: 'Oesophageal carcinoma' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 21 year old woman has had episodes of diarrhoea for the past 6 months. She complains of abdominal pain and bloating. On occasion, she can have up to 10 episodes of loose stool in a day. She also has a history of recurrent anal fissures. On examination, she has mild generalised abdominal tenderness, and pain and swelling around the anus. What is the SINGLE most appropriate investigation?`,
+  options: [
+    { label: 'A', text: 'CT abdomen' },
+    { label: 'B', text: 'Ultrasound abdomen' },
+    { label: 'C', text: 'Stool culture and microscopy' },
+    { label: 'D', text: 'Barium follow-through' },
+    { label: 'E', text: 'Colonoscopy' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+{
+  text: `A 25 year old man presents to his GP with a 7-day history of diarrhoea, opening his bowels 6 times/day. He describes his stool as watery with fresh bright red blood and cramping pain and urgency but no guarding or rigidity. BP 120/80, HR 70. What SINGLE most appropriate investigation will you perform to aid management?`,
+  options: [
+    { label: 'A', text: 'Faecal fat test' },
+    { label: 'B', text: 'Stool microscopy, culture and sensitivity' },
+    { label: 'C', text: 'Faecal antigen test' },
+    { label: 'D', text: 'Faecal blood occult test' },
+    { label: 'E', text: 'Colonoscopy' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 39 year old patient with coeliac disease on a gluten-free diet for 2 years now has abdominal pain, diarrhoea and weight loss. Small intestine biopsy shows lymphomatous infiltrates. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Lymphoma' },
+    { label: 'B', text: 'Diverticular disease' },
+    { label: 'C', text: 'Lynch syndrome' },
+    { label: 'D', text: 'Gastric tuberculosis' },
+    { label: 'E', text: 'Peritoneal tumour' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 41 year old man had a liver biopsy for abnormal LFTs. Pathology shows abundant iron pigment in hepatocytes on special stain. What SINGLE condition is identified?`,
+  options: [
+    { label: 'A', text: 'Alpha-1-antitrypsin deficiency' },
+    { label: 'B', text: 'Haemangioma' },
+    { label: 'C', text: 'Haemochromatosis' },
+    { label: 'D', text: 'Haemosiderosis' },
+    { label: 'E', text: 'Wilson\'s disease' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 55 year old man with no PMH presents with difficulty swallowing solids and liquids for 1 year. Barium meal shows oesophageal dilatation with smooth distal narrowing. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Achalasia' },
+    { label: 'B', text: 'Oesophageal stricture' },
+    { label: 'C', text: 'Oesophageal carcinoma' },
+    { label: 'D', text: 'Oesophageal web' },
+    { label: 'E', text: 'Oesophageal spasm' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 65 year old man with motor neurone disease presents with dysphagia and weight loss. He cannot eat solids for 2 weeks and has lost 10 pounds. He is on oral meds but struggles to swallow them. Which is the most important action?`,
+  options: [
+    { label: 'A', text: 'Start total parenteral nutrition (TPN)' },
+    { label: 'B', text: 'Perform a percutaneous endoscopic gastrostomy (PEG)' },
+    { label: 'C', text: 'Increase dose of his oral medication' },
+    { label: 'D', text: 'Start nasogastric tube feeding' },
+    { label: 'E', text: 'Do nothing and monitor condition' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 32 year old man presents for routine health check. He drinks 5 units alcohol/week. LFTs show unconjugated hyperbilirubinaemia with normal other parameters. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Crigler-Najjar syndrome' },
+    { label: 'B', text: 'Gilbert’s syndrome' },
+    { label: 'C', text: 'Choledocholithiasis' },
+    { label: 'D', text: 'Alpha-1 Antitrypsin Deficiency' },
+    { label: 'E', text: 'Alcohol-related liver damage' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 28 year old man has 5-month history of retrosternal discomfort, partly relieved by intermittent omeprazole. He does not smoke, drinks coffee. What is the most appropriate action?`,
+  options: [
+    { label: 'A', text: 'Arrange barium meal study' },
+    { label: 'B', text: 'Arrange oesophageal manometry' },
+    { label: 'C', text: 'Arrange 24-hour pH monitoring' },
+    { label: 'D', text: 'Arrange upper GI endoscopy' },
+    { label: 'E', text: 'Refer to gastroenterology' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+{
+  text: `A 75 year old man presents with 4-week history of epigastric pain, worse after eating and at night. He has partial relief with antacids but worsening. Former smoker. Abdomen soft, mild tenderness. Which is the most appropriate next investigation?`,
+  options: [
+    { label: 'A', text: 'Abdominal ultrasound' },
+    { label: 'B', text: 'Stool culture' },
+    { label: 'C', text: 'Oesophagogastroduodenoscopy (OGD)' },
+    { label: 'D', text: 'Faecal occult blood test' },
+    { label: 'E', text: 'Stool test for Helicobacter pylori' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 45 year old man presents with a 5-day history of diarrhoea. He describes it as loose, no blood or mucus, mild cramping abdominal pain, no systemic features. Exam: normal vitals, mild lower abdominal tenderness. What is the most appropriate stool investigation?`,
+  options: [
+    { label: 'A', text: 'Clostridium difficile toxin assay' },
+    { label: 'B', text: 'Faecal elastase' },
+    { label: 'C', text: 'Stool culture and microscopy' },
+    { label: 'D', text: 'Faecal calprotectin' },
+    { label: 'E', text: 'Stool PCR for viral pathogens' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 33 year old lady returns from Europe with lethargy, abdominal pain, loose watery diarrhoea and bloating, with weight loss. Exam unremarkable. What is the SINGLE most likely organism?`,
+  options: [
+    { label: 'A', text: 'Campylobacter jejuni' },
+    { label: 'B', text: 'Salmonella enterica' },
+    { label: 'C', text: 'Shigella dysenteriae' },
+    { label: 'D', text: 'Staphylococcus aureus' },
+    { label: 'E', text: 'Giardia lamblia' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+{
+  text: `A 52 year old man presents with episodic epigastric pain radiating to back, loose pale offensive stools, weight loss, alcohol history, diffuse pancreatic calcifications. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Acute pancreatitis' },
+    { label: 'B', text: 'Chronic pancreatitis' },
+    { label: 'C', text: 'GORD' },
+    { label: 'D', text: 'Oesophagitis' },
+    { label: 'E', text: 'Pancreatic carcinoma' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 45 year old woman with massive hematemesis and hypotension secondary to NSAID use. Which next step?`,
+  options: [
+    { label: 'A', text: 'Terlipressin' },
+    { label: 'B', text: 'IV fluids' },
+    { label: 'C', text: 'Endoscopic band ligation' },
+    { label: 'D', text: 'IV PPIs' },
+    { label: 'E', text: 'Sengstaken-Blakemore tube' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 60 year old man with weight loss, mild abdo pain, diarrhoea, Hb 7 g/dL. What is the most appropriate investigation?`,
+  options: [
+    { label: 'A', text: 'Barium enema' },
+    { label: 'B', text: 'Colonoscopy' },
+    { label: 'C', text: 'Sigmoidoscopy' },
+    { label: 'D', text: 'CT colonography' },
+    { label: 'E', text: 'CEA' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 58 year old man with nocturnal epigastric pain, weight loss, on ibuprofen. Tender epigastrium. Best diagnostic test?`,
+  options: [
+    { label: 'A', text: 'Endoscopy' },
+    { label: 'B', text: 'Urea breath test' },
+    { label: 'C', text: 'H. pylori serology' },
+    { label: 'D', text: 'Stool antigen' },
+    { label: 'E', text: 'Barium swallow' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 52 year old post-gastrectomy man with macrocytic anaemia and neuro signs. SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'B12 deficiency' },
+    { label: 'B', text: 'Colon cancer' },
+    { label: 'C', text: 'Alcoholism' },
+    { label: 'D', text: 'Coeliac disease' },
+    { label: 'E', text: 'Folate deficiency' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 75 year old man with metastatic oesophageal cancer wishes palliation of dysphagia. Best management?`,
+  options: [
+    { label: 'A', text: 'Radiotherapy' },
+    { label: 'B', text: 'Chemotherapy' },
+    { label: 'C', text: 'Endoluminal stenting' },
+    { label: 'D', text: 'Nasogastric feeding' },
+    { label: 'E', text: 'PEG tube' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+{
+  text: `A 57 year old man has had dyspepsia for the past 6 months. He has been prescribed H2 blockers and proton pump inhibitors which he takes regularly over the past few months but it provides minimal relief. Over the past 2 weeks, he has started to have difficulty swallowing. What is the SINGLE most appropriate investigation?`,
+  options: [
+    { label: 'A', text: 'Barium swallow' },
+    { label: 'B', text: 'Oesophageal manometry' },
+    { label: 'C', text: 'Oesophagogastroduodenoscopy (OGD)' },
+    { label: 'D', text: 'Urgent CT scan of chest, abdomen and pelvis' },
+    { label: 'E', text: 'Helicobacter pylori stool test' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── HT 1002 ───
+{
+  text: `A 43 year old lady presents with jaundice. Skin excoriations were seen on physical examination. Blood tests reveal a raised alkaline phosphatase with mildly raised alanine transaminase. Antimitochondrial antibodies are found to be positive. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Hepatitis B' },
+    { label: 'B', text: 'Hepatitis C' },
+    { label: 'C', text: 'Primary biliary cirrhosis' },
+    { label: 'D', text: 'Primary sclerosing cholangitis' },
+    { label: 'E', text: 'Obstetric cholestasis' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── CS 1262 ───
+{
+  text: `A 31 year old woman presents to the GP clinic with a one-year history of intermittent loose stools, abdominal cramping, and bloating. There is no associated fever, rectal bleeding or unintentional weight loss. Her mother was diagnosed with colorectal cancer at age 55. What is the most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Coeliac disease' },
+    { label: 'B', text: 'Inflammatory bowel disease' },
+    { label: 'C', text: 'Irritable bowel syndrome' },
+    { label: 'D', text: 'Colorectal cancer' },
+    { label: 'E', text: 'Gastric cancer' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GI 1511 ───
+{
+  text: `A 68 year old man presents with persistent abdominal pain and changes in bowel habits over the past six months. He describes his stools as being voluminous and foul-smelling. A colonoscopy is performed, showing a large villous adenoma in the sigmoid colon. What is the most likely electrolyte disturbance?`,
+  options: [
+    { label: 'A', text: 'Hyponatraemia' },
+    { label: 'B', text: 'Hypernatraemia' },
+    { label: 'C', text: 'Hypocalcaemia' },
+    { label: 'D', text: 'Hypomagnesaemia' },
+    { label: 'E', text: 'Hypokalaemia' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+
+// ─── GI 1923 ───
+{
+  text: `A 52 year old smoker complains of trouble swallowing and a burning pain under the sternum which is worse after a large meal. He has a 12-year history of hiatus hernia and takes lansoprazole, resorting to antacids when symptoms worsen. Endoscopy reveals inflammatory changes in the lower oesophagus. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Barrett’s oesophagus' },
+    { label: 'B', text: 'Achalasia' },
+    { label: 'C', text: 'Benign oesophageal stricture' },
+    { label: 'D', text: 'Oesophageal motility disorders' },
+    { label: 'E', text: 'Gastritis' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── GI 1470 ───
+{
+  text: `A 25 year old man has had persistent diarrhoea over the past 8 weeks. He has cramping abdominal pain, especially after meals, and has started passing blood and mucus in his stools. On examination, his abdomen is tender in the right lower quadrant. His blood results show: Haemoglobin 109 g/L, WCC 15×10⁹/L, Platelets 521×10⁹/L, CRP 42 mg/L. What is the SINGLE most appropriate investigation that would lead to a diagnosis?`,
+  options: [
+    { label: 'A', text: 'Proctoscopy' },
+    { label: 'B', text: 'Flexible sigmoidoscopy' },
+    { label: 'C', text: 'Coeliac serology' },
+    { label: 'D', text: 'Colonoscopy' },
+    { label: 'E', text: 'Barium enemas' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+
+// ─── GI 0201 ───
+{
+  text: `A 38 year old man complains of “crushing” chest discomfort for 1 hour that started when he drank a cold drink. He has no significant medical history. ECG shows sinus rhythm. He is given sublingual nitroglycerin which improves his chest pain almost immediately. Vitals and cardiac enzymes are normal. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Myocardial infarction' },
+    { label: 'B', text: 'Pericarditis' },
+    { label: 'C', text: 'Oesophageal spasm' },
+    { label: 'D', text: 'Pulmonary embolism' },
+    { label: 'E', text: 'Pneumothorax' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GI 1006 ───
+{
+  text: `A 22 year old man presents with a 2-month history of diarrhoea and abdominal discomfort. He frequently runs to the toilet. Two weeks ago he noticed blood in his stools and also has aphthous oral ulcers. There is no weight loss. On exam he has mild tenderness in the left lower quadrant. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Ulcerative colitis' },
+    { label: 'B', text: 'Crohn’s disease' },
+    { label: 'C', text: 'Infective diarrhoea' },
+    { label: 'D', text: 'Colorectal cancer' },
+    { label: 'E', text: 'Anal fissure' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── CS 4193 ───
+{
+  text: `A 63 year old woman presents with RUQ pain, fever and jaundice. She underwent ERCP two days ago. On exam she is febrile, icteric and tender in the RUQ. Labs: Hb 125 g/L, WCC 17×10⁹/L, Amylase 280 U/L, Bilirubin 55 µmol/L, CRP 180 mg/L. Which is the most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Acute cholecystitis' },
+    { label: 'B', text: 'Acute pancreatitis' },
+    { label: 'C', text: 'Ascending cholangitis' },
+    { label: 'D', text: 'Hepatic abscess' },
+    { label: 'E', text: 'Pancreatic cancer' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── CF 3257 ───
+{
+  text: `A 35 year old man presents with chronic diarrhoea for 10 months and an itchy rash on his buttocks and thighs. He has dimorphic red cells on peripheral film and undergoes endoscopy with biopsies. What is the SINGLE most likely pathology on histology?`,
+  options: [
+    { label: 'A', text: 'Caseating granulomas' },
+    { label: 'B', text: 'Lymphocytic infiltration of the submucosa' },
+    { label: 'C', text: 'Focal infiltration of basophils' },
+    { label: 'D', text: 'Cyst formation' },
+    { label: 'E', text: 'Villous atrophy' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+{
+  text: `A 55 year old man presents to the clinic complaining of persistent fatigue and palpitations. His medical history reveals a gastrectomy performed 2 years ago.
+
+Haemoglobin 98 g/L (130–180)  
+Mean cell volume (MCV) 110 fL (76–96)  
+
+Neurological examination reveals a loss of proprioception and vibration sense. Examination of a peripheral blood smear demonstrates hypersegmented neutrophils. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Iron deficiency' },
+    { label: 'B', text: 'Folate deficiency' },
+    { label: 'C', text: 'Vitamin B12 deficiency' },
+    { label: 'D', text: 'Haemolytic anaemia' },
+    { label: 'E', text: 'Sickle cell disease' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── CS 0353 ───
+{
+  text: `A 61 year old man presents with fatigue and palpitations. His past surgical history includes an ileal resection performed one year ago. His FBC shows:
+
+Haemoglobin 93 g/L  
+Mean cell volume (MCV) 111 fL  
+
+What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Anaemia of chronic disease' },
+    { label: 'B', text: 'Iron deficiency' },
+    { label: 'C', text: 'Folate deficiency' },
+    { label: 'D', text: 'Haemolytic anaemia' },
+    { label: 'E', text: 'Vitamin B12 deficiency' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+
+// ─── GI 1005 ───
+{
+  text: `A 38 year old man has just returned from Kenya a few days ago. Since his return, he has developed watery diarrhoea with crampy abdominal pain. What is the SINGLE most likely causative organism?`,
+  options: [
+    { label: 'A', text: 'Giardia' },
+    { label: 'B', text: 'Entamoeba' },
+    { label: 'C', text: 'Shigella' },
+    { label: 'D', text: 'Salmonella' },
+    { label: 'E', text: 'Escherichia coli' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+
+// ─── GI 1024 ───
+{
+  text: `A 34 year old man presents with a 9-month history of gradually worsening difficulty swallowing. He initially had trouble with solids, but more recently also with liquids. He describes a sensation of food getting ‘stuck’ in the lower part of his chest. He has been taking over-the-counter H2 blockers for persistent heartburn and retrosternal discomfort, which has provided only partial relief. He denies weight loss, odynophagia, or changes in appetite. A full blood count one month ago showed haemoglobin 133 g/L (130-180). What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Foreign body' },
+    { label: 'B', text: 'Plummer-Vinson syndrome' },
+    { label: 'C', text: 'Pharyngeal pouch' },
+    { label: 'D', text: 'Peptic stricture' },
+    { label: 'E', text: 'Oesophageal cancer' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+
+// ─── ME 0100 ───
+{
+  text: `A 59 year old man has multiple liver metastases from a large-bowel primary. He is cachectic with ascites and peripheral oedema. He is on haloperidol 1.5 mg TID and lactulose 10 ml BID. His urine output is low and he is fluid-resuscitated. Blood tests show:
+
+Serum urea 6.2 mmol/L  
+Creatinine 85 µmol/L  
+Sodium 129 mmol/L  
+Calcium 2.42 mmol/L  
+Potassium 3.6 mmol/L  
+Albumin 18 g/L  
+Bilirubin 105 µmol/L  
+ALP 411 U/L  
+
+What is the SINGLE most appropriate management?`,
+  options: [
+    { label: 'A', text: 'Albumin infusion' },
+    { label: 'B', text: 'Crystalloids intravenously' },
+    { label: 'C', text: 'Furosemide intravenous' },
+    { label: 'D', text: 'Fluids via nasogastric tube' },
+    { label: 'E', text: 'Cease haloperidol' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── CT 3027 ───
+{
+  text: `A 79 year old man presents with a two-week history of reduced mobility, decreased appetite, and difficulty passing stool, which he describes as hard. His abdomen is distended but non-tender and bowel sounds are normal. Which of the following is the most appropriate initial treatment?`,
+  options: [
+    { label: 'A', text: 'Macrogol' },
+    { label: 'B', text: 'Bran flakes' },
+    { label: 'C', text: 'Senna' },
+    { label: 'D', text: 'Bisacodyl' },
+    { label: 'E', text: 'Docusate sodium' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── GI 4130 ───
+{
+  text: `A 34 year old woman presents with 6 months of progressive, unexplained weight loss and recurrent episodes of bloody diarrhoea. She is tender in the right iliac fossa with a palpable mass. Labs show leukocytosis. Biopsy of the mass reveals granulomas. Which of the following is the most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Caecal cancer' },
+    { label: 'B', text: 'Crohn’s disease' },
+    { label: 'C', text: 'Appendicitis' },
+    { label: 'D', text: 'Ulcerative colitis' },
+    { label: 'E', text: 'Intestinal tuberculosis' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+
+// ─── CS 4000 ───
+{
+  text: `A 70 year old man presents with persistent dysphagia to both solids and liquids for a few months. There is no associated weight loss or regurgitation. He has dyspepsia and occasional burning chest pain lasting a few hours before fading. His history includes osteoporosis treated with weekly alendronate for 2 years. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Achalasia' },
+    { label: 'B', text: 'Oesophageal carcinoma' },
+    { label: 'C', text: 'Benign oesophageal stricture' },
+    { label: 'D', text: 'Barrett’s oesophagus' },
+    { label: 'E', text: 'Pharyngeal pouch' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GI 2060 ───
+{
+  text: `A 72 year old man attends with 5 weeks of loose stools (few times/day) and recent blood. He has crampy, generalized pain. He returned from India 6 weeks ago. Exam and DRE are unremarkable. What is the SINGLE most appropriate initial investigation?`,
+  options: [
+    { label: 'A', text: 'Stool microscopy, culture and sensitivity' },
+    { label: 'B', text: 'Colonoscopy' },
+    { label: 'C', text: 'Flexible sigmoidoscopy' },
+    { label: 'D', text: 'Videofluoroscopy' },
+    { label: 'E', text: 'Abdominal ultrasound' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── CT 0252 ───
+{
+  text: `A 54 year old woman with known pernicious anaemia refuses intramuscular hydroxocobalamin. She asks for oral B12 instead. What is the SINGLE best reason why oral therapy will not be effective?`,
+  options: [
+    { label: 'A', text: 'Intrinsic factor deficiency' },
+    { label: 'B', text: 'Increased gastric acidity' },
+    { label: 'C', text: 'Lack of gastric acidity' },
+    { label: 'D', text: 'Irritated gastric mucosa' },
+    { label: 'E', text: 'Abundance of ileal binding sites' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+{
+  text: `A 45-year-old smoker has suspected oesophageal carcinoma with a mass in the mid-third of the oesophagus and liver metastases. He has severe dysphagia which has worsened over the past few months since his diagnosis. What is the SINGLE most appropriate management to treat his symptoms?`,
+  options: [
+    { label: 'A', text: 'Nasogastric tube' },
+    { label: 'B', text: 'Radiotherapy' },
+    { label: 'C', text: 'Percutaneous gastrostomy' },
+    { label: 'D', text: 'Resection' },
+    { label: 'E', text: 'Stenting' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+
+// ─── GI 1381 ───
+{
+  text: `A 54-year-old man is scheduled for an elective upper GI endoscopy at 9 am. On pre-procedure questioning he admits to eating sweets four hours earlier. What is the SINGLE most appropriate next step in management?`,
+  options: [
+    { label: 'A', text: 'Allow the endoscopy to proceed as planned' },
+    { label: 'B', text: 'Cancel the procedure and rebook for an outpatient appointment' },
+    { label: 'C', text: 'Pre-treat with proton pump inhibitors before proceeding' },
+    { label: 'D', text: 'Reorganise the theatre list to place him later that day' },
+    { label: 'E', text: 'Insert an NG tube' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+
+// ─── GI 2300 ───
+{
+  text: `A 44-year-old man with ulcerative colitis presents with fatigue, pruritus and abdominal pain over 3 months. Labs:  
+Bilirubin 52 µmol/L (3–17)  
+ALT 123 U/L (5–35)  
+ALP 480 U/L (30–150)  
+AST 159 U/L (5–35)  
+GGT 290 U/L (8–60)  
+Albumin 38 g/L (35–50)  
+
+>50% of bilirubin is conjugated. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Choledocholithiasis' },
+    { label: 'B', text: 'Primary biliary cirrhosis' },
+    { label: 'C', text: 'Primary sclerosing cholangitis' },
+    { label: 'D', text: 'Viral hepatitis' },
+    { label: 'E', text: 'Pancreatic cancer' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GE 3112 ───
+{
+  text: `A 42-year-old man with type 2 diabetes presents with fatigue, shortness of breath, bronze skin and hepatomegaly. His ferritin is markedly elevated. A diagnosis of haemochromatosis is made but he is refusing treatment. Which organ is MOST at risk of developing cancer?`,
+  options: [
+    { label: 'A', text: 'Testes' },
+    { label: 'B', text: 'Adrenal gland' },
+    { label: 'C', text: 'Liver' },
+    { label: 'D', text: 'Pancreas' },
+    { label: 'E', text: 'Heart' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── PY 1012 ───
+{
+  text: `A 25-year-old woman ingests 42 paracetamol tablets. She receives N-acetylcysteine and 24 hours later labs show:  
+ALT 159 U/L  
+ALP 180 U/L  
+pH 7.2  
+Creatinine 263 µmol/L  
+
+What is the SINGLE most appropriate management?`,
+  options: [
+    { label: 'A', text: 'Discharge with advice' },
+    { label: 'B', text: 'Administer potassium' },
+    { label: 'C', text: 'Refer to psychiatric team' },
+    { label: 'D', text: 'Repeat LFT in 7 days' },
+    { label: 'E', text: 'Refer to a liver specialist centre' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+
+// ─── CT 3022 ───
+{
+  text: `A 78-year-old nursing-home resident with dementia is agitated and has not opened her bowels for a week (normally every 2 days). Rectal exam reveals impacted faeces. What is the most appropriate treatment?`,
+  options: [
+    { label: 'A', text: 'Encourage a high-fibre diet' },
+    { label: 'B', text: 'Isaghula husk' },
+    { label: 'C', text: 'Lactulose' },
+    { label: 'D', text: 'Phosphate enema' },
+    { label: 'E', text: 'Sodium docusate' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+
+// ─── GI 1085 ───
+{
+  text: `A 32-year-old woman has brief episodes of severe shooting rectal pain at night, lasting around 5 minutes. She denies constipation. Rectal exam and flexible sigmoidoscopy are normal. What is the SINGLE most probable diagnosis?`,
+  options: [
+    { label: 'A', text: 'Anal haematoma' },
+    { label: 'B', text: 'Anal fissure' },
+    { label: 'C', text: 'Rectal carcinoma' },
+    { label: 'D', text: 'Proctalgia fugax' },
+    { label: 'E', text: 'Piles' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+
+// ─── CN 3590 ───
+{
+  text: `A 56-year-old woman has 24 hours of severe abdominal pain radiating to the back, with nausea and vomiting. She denies diarrhoea or fever. She is tachycardic and hypotensive in shock. History of gallstones. What is the SINGLE most likely investigation to confirm the diagnosis?`,
+  options: [
+    { label: 'A', text: 'Ultrasound abdomen' },
+    { label: 'B', text: 'Abdominal X-ray' },
+    { label: 'C', text: 'Serum lipase' },
+    { label: 'D', text: 'Urea and electrolytes' },
+    { label: 'E', text: 'Liver function test' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GI 1016 ───
+{
+  text: `A 27-year-old man presents with six months of diarrhoea, abdominal pain and 5 kg weight loss. His symptoms include urgency. Exam shows pallor and mild right iliac fossa tenderness. Labs:  
+Hb 98 g/L (130–170)  
+MCV 72 fL (80–100)  
+CRP 85 mg/L (<5)  
+
+What is the most appropriate diagnostic investigation?`,
+  options: [
+    { label: 'A', text: 'Faecal immunochemical test (FIT)' },
+    { label: 'B', text: 'Colonoscopy' },
+    { label: 'C', text: 'Coeliac serology' },
+    { label: 'D', text: 'Stool culture and sensitivity' },
+    { label: 'E', text: 'Hydrogen breath test' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+
+// ─── GA 3073 ───
+{
+  text: `A 70-year-old woman presents after vomiting a large amount of blood over the past hour. She has mild epigastric tenderness, no chronic liver disease. Vitals: BP 92/54 mmHg, HR 115 bpm, O₂ 95% on 40% O₂. What is the most appropriate initial management?`,
+  options: [
+    { label: 'A', text: 'Intravenous proton pump inhibitor' },
+    { label: 'B', text: 'Insertion of a Sengstaken–Blakemore tube' },
+    { label: 'C', text: 'Urgent endoscopy' },
+    { label: 'D', text: 'Administration of normal saline' },
+    { label: 'E', text: 'Administration of intravenous terlipressin' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+{
+  text: `A 50-year-old man comes to A&E with abdominal pain that began suddenly about 1 hour ago. The pain is now generalized, constant, and extremely severe. He lies motionless on the stretcher, is diaphoretic, and has shallow, rapid breathing. His abdomen is rigid, very tender to deep palpation, and has guarding. X-ray shows free air under the diaphragm. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Biliary peritonitis' },
+    { label: 'B', text: 'Ischaemic colon' },
+    { label: 'C', text: 'Pancreatic necrosis' },
+    { label: 'D', text: 'Pulmonary embolism' },
+    { label: 'E', text: 'Perforated peptic ulcer' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+
+// ─── GI 1330 ───
+{
+  text: `A 78-year-old man with hypertension and type 2 diabetes was admitted after an ischaemic stroke. He has two days of right-sided weakness and now has dysphagia, impairing his ability to swallow safely. The dietetics team declares he cannot safely consume food orally and requires nutritional support. On exam he has right hemiparesis and an absent gag reflex. What is the most appropriate intervention to ensure adequate nutrition and minimise aspiration risk?`,
+  options: [
+    { label: 'A', text: 'Initiate oral nutritional supplements' },
+    { label: 'B', text: 'Insert a nasogastric (NG) tube' },
+    { label: 'C', text: 'Establish a percutaneous endoscopic gastrostomy (PEG)' },
+    { label: 'D', text: 'Encourage natural recovery of swallowing with time' },
+    { label: 'E', text: 'Commence parenteral nutrition' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+
+// ─── GA 4521 ───
+{
+  text: `A 21-year-old man is brought to A&E with scleral icterus and jaundice. He recently had flu-like symptoms and a nonproductive cough. Labs:  
+Haemoglobin 129 g/L (130–180)  
+Reticulocytes 1.2% (0.8–2.0)  
+Bilirubin 44 µmol/L (3–17)  
+ALP 88 U/L (30–150)  
+ALT 24 U/L (5–35)  
+Albumin 42 g/L (35–50)  
+
+What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Acute hepatitis' },
+    { label: 'B', text: 'Gilbert’s syndrome' },
+    { label: 'C', text: 'Dubin–Johnson syndrome' },
+    { label: 'D', text: 'Glucose-6-phosphate dehydrogenase deficiency' },
+    { label: 'E', text: 'Infectious mononucleosis' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+
+// ─── CA 1562 ───
+{
+  text: `A 58-year-old man presents with a firm lump in the left supraclavicular fossa for 6 months, plus dyspepsia and weight loss. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Gastric cancer' },
+    { label: 'B', text: 'Hodgkin’s lymphoma' },
+    { label: 'C', text: 'Pancoast tumour' },
+    { label: 'D', text: 'Thyroglossal cyst' },
+    { label: 'E', text: 'Tuberculous lymphadenitis' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── CN 3592 ───
+{
+  text: `A 42-year-old obese woman presents with 12 hours of severe epigastric pain radiating to the back, relieved by sitting forward, with nausea and two episodes of vomiting. She drinks 1.5 glasses of wine per day and has no significant past medical history. She is tachycardic and tender in the epigastric region. Which SINGLE investigation is most appropriate?`,
+  options: [
+    { label: 'A', text: 'Chest X-ray' },
+    { label: 'B', text: 'Abdominal ultrasound' },
+    { label: 'C', text: 'Serum lipase' },
+    { label: 'D', text: 'Abdominal X-ray' },
+    { label: 'E', text: 'Liver function test' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GI 4932 ───
+{
+  text: `A 42-year-old man returns from Southeast Asia after eating street food. Over the past week he’s felt unwell and has had malaise with 5 days of vomiting. On exam he is jaundiced. Which acute pathology is confirmed by the MOST likely diagnostic finding?`,
+  options: [
+    { label: 'A', text: 'Positive IgM antibodies to hepatitis B virus' },
+    { label: 'B', text: 'Positive IgM antibodies to hepatitis A virus' },
+    { label: 'C', text: 'Positive IgM antibodies to hepatitis C virus' },
+    { label: 'D', text: 'Positive IgG antibodies to hepatitis A virus' },
+    { label: 'E', text: 'Positive IgG antibodies to cytomegalovirus' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+
+// ─── CS 4001 ───
+{
+  text: `A 55-year-old man has persistent dysphagia to both solids and liquids, worsened by hot liquids. He has GORD managed with antacids and no regurgitation. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Achalasia' },
+    { label: 'B', text: 'Oesophageal carcinoma' },
+    { label: 'C', text: 'Benign oesophageal stricture' },
+    { label: 'D', text: 'Oesophageal motility disorders' },
+    { label: 'E', text: 'Pharyngeal pouch' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GA 2021 ───
+{
+  text: `A 45-year-old man has recurrent epigastric pain. Endoscopy shows ulcers in the duodenum, oesophagus, and stomach. Which investigation is most appropriate to confirm the underlying cause?`,
+  options: [
+    { label: 'A', text: 'Oesophageal manometry' },
+    { label: 'B', text: 'Serum gastrin' },
+    { label: 'C', text: 'Helicobacter pylori urea breath test' },
+    { label: 'D', text: 'Serum calcium' },
+    { label: 'E', text: 'Faecal calprotectin' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+{
+  text: `A 45-year-old man had his head of pancreas removed due to malignancy. Ten days later, he complains of worsening abdominal pain. On examination, his abdomen is rigid and tender. He is febrile (37.5°C), hypotensive (95/55 mmHg), and tachycardic (125 bpm). His past history includes peptic ulcer disease. What is the SINGLE most appropriate next action?`,
+  options: [
+    { label: 'A', text: 'CT abdomen' },
+    { label: 'B', text: 'Erect chest X-ray and abdominal X-ray' },
+    { label: 'C', text: 'MRI abdomen' },
+    { label: 'D', text: 'US abdomen' },
+    { label: 'E', text: 'Endoscopy' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+
+// ─── EM 2020 ───
+{
+  text: `A 33-year-old man recovering from a major burn (40% partial thickness) has been vomiting blood (350 mL) and has epigastric pain for 24 hours. IV fluids have been started. Endoscopy shows several gastric ulcers that were treated endoscopically. What is the SINGLE most appropriate management?`,
+  options: [
+    { label: 'A', text: 'Intravenous proton pump inhibitor' },
+    { label: 'B', text: 'Oral proton pump inhibitor' },
+    { label: 'C', text: 'Intravenous gentamicin' },
+    { label: 'D', text: 'Oral ibuprofen' },
+    { label: 'E', text: 'Oral antacids' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── GI 1007 ───
+{
+  text: `A 21-year-old woman has chronic diarrhoea and abdominal cramps for 5 months, now bloody. Rectal biopsy shows decreased goblet cells. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Ulcerative colitis' },
+    { label: 'B', text: 'Crohn’s disease' },
+    { label: 'C', text: 'Infective diarrhoea' },
+    { label: 'D', text: 'Colorectal cancer' },
+    { label: 'E', text: 'Irritable bowel syndrome' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── CF 3256 ───
+{
+  text: `A 23-year-old woman has abdominal bloating, weight loss and intermittent diarrhoea for 6 months. Stools are “frothy” and hard to flush. Labs: Hb 105 g/L, WCC 7.1×10^9/L, Plts 350×10^9/L, Ferritin 11 ng/mL, B12 225 ng/L, Folate 1.9 mcg/L. What is the SINGLE most appropriate next test?`,
+  options: [
+    { label: 'A', text: 'Tissue transglutaminase (TTG) antibodies (IgA)' },
+    { label: 'B', text: 'Duodenal biopsy' },
+    { label: 'C', text: 'Stool sample' },
+    { label: 'D', text: 'CRP' },
+    { label: 'E', text: 'Thyroid stimulating hormone' }
+  ],
+  correct: 'A',
+  explanation: ``
+},
+
+// ─── CN 3591 ───
+{
+  text: `A 39-year-old woman presents with 24 hours of central abdominal pain radiating to the back, relieved by leaning forward, with vomiting but no diarrhoea. She is tender in the epigastrium with guarding; vital signs: BP 100/70, RR 20, HR 106, T 37.9°C. Labs: Amylase 1335 U/mL, CRP 214 mg/L, WCC 19.6×10^9/L. What is the SINGLE best step in management?`,
+  options: [
+    { label: 'A', text: 'Parenteral nutrition' },
+    { label: 'B', text: 'Fluid resuscitation, analgesia and nutritional support' },
+    { label: 'C', text: 'Urgent laparoscopy' },
+    { label: 'D', text: 'Intravenous antibiotics' },
+    { label: 'E', text: 'Cholecystectomy' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+
+// ─── CS 4003 ───
+{
+  text: `A 69-year-old man has progressive dysphagia to solids and liquids, no weight loss or regurgitation, with intermittent chest discomfort. He takes weekly alendronate. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Achalasia' },
+    { label: 'B', text: 'Oesophageal carcinoma' },
+    { label: 'C', text: 'Benign oesophageal stricture' },
+    { label: 'D', text: 'Barrett’s oesophagus' },
+    { label: 'E', text: 'Pharyngeal pouch' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GI 2300 ───
+{
+  text: `A 44-year-old man with ulcerative colitis (no alcohol) has 3 months of fatigue, pruritus and abdominal pain. Labs: Bil 52 μmol/L, ALT 123 U/L, ALP 480 U/L, AST 159 U/L, GGT 290 U/L, Alb 38 g/L; >50% conjugated bilirubin. What is the SINGLE most likely diagnosis?`,
+  options: [
+    { label: 'A', text: 'Choledocholithiasis' },
+    { label: 'B', text: 'Primary biliary cirrhosis' },
+    { label: 'C', text: 'Primary sclerosing cholangitis' },
+    { label: 'D', text: 'Viral hepatitis' },
+    { label: 'E', text: 'Pancreatic cancer' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GE 3112 ───
+{
+  text: `A 42-year-old man with type 2 diabetes presents with fatigue, shortness of breath, bronze skin and hepatomegaly. Ferritin is markedly elevated. He refuses treatment. Which organ is MOST at risk of cancer?`,
+  options: [
+    { label: 'A', text: 'Testes' },
+    { label: 'B', text: 'Adrenal gland' },
+    { label: 'C', text: 'Liver' },
+    { label: 'D', text: 'Pancreas' },
+    { label: 'E', text: 'Heart' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── PY 1012 ───
+{
+  text: `A 25-year-old woman took 42 paracetamol tablets, was given N-acetylcysteine, and 24 h later labs show ALT 159 U/L, ALP 180 U/L, arterial pH 7.2, creatinine 263 μmol/L. What is the SINGLE most appropriate management?`,
+  options: [
+    { label: 'A', text: 'Discharge with advice' },
+    { label: 'B', text: 'Administer potassium' },
+    { label: 'C', text: 'Refer to psychiatric team' },
+    { label: 'D', text: 'Repeat liver function test in 7 days' },
+    { label: 'E', text: 'Refer to a liver specialist centre' }
+  ],
+  correct: 'E',
+  explanation: ``
+},
+
+// ─── CT 3022 ───
+{
+  text: `A 78-year-old nursing home resident with dementia is agitated and has not opened her bowels for a week (usual every 2 days). Rectal exam reveals impacted faeces. What is the most appropriate treatment?`,
+  options: [
+    { label: 'A', text: 'Encourage a high-fibre diet' },
+    { label: 'B', text: 'Isaghula husk' },
+    { label: 'C', text: 'Lactulose' },
+    { label: 'D', text: 'Phosphate enema' },
+    { label: 'E', text: 'Sodium docusate' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+
+// ─── GI 1085 ───
+{
+  text: `A 32-year-old woman has brief episodes (∼5 min) of severe rectal shooting pain at night, with normal examination and sigmoidoscopy. What is the SINGLE most probable diagnosis?`,
+  options: [
+    { label: 'A', text: 'Anal haematoma' },
+    { label: 'B', text: 'Anal fissure' },
+    { label: 'C', text: 'Rectal carcinoma' },
+    { label: 'D', text: 'Proctalgia fugax' },
+    { label: 'E', text: 'Piles' }
+  ],
+  correct: 'D',
+  explanation: ``
+},
+
+// ─── CN 3590 ───
+{
+  text: `A 56-year-old woman with gallstones has 24 h of tachycardia, shock and severe abdominal pain radiating to the back, no diarrhoea or fever. What is the SINGLE most likely investigation to confirm the diagnosis?`,
+  options: [
+    { label: 'A', text: 'Ultrasound abdomen' },
+    { label: 'B', text: 'Abdominal X-ray' },
+    { label: 'C', text: 'Serum lipase' },
+    { label: 'D', text: 'Urea and electrolytes' },
+    { label: 'E', text: 'Liver function test' }
+  ],
+  correct: 'C',
+  explanation: ``
+},
+
+// ─── GI 1016 ───
+{
+  text: `A 27-year-old man has 6 months of diarrhoea, abdominal pain, and weight loss. Hb 98 g/L, MCV 72 fL, CRP 85 mg/L. Examination shows pallor and mild RIF tenderness. What is the most appropriate diagnostic investigation?`,
+  options: [
+    { label: 'A', text: 'Faecal Immunochemical Test (FIT)' },
+    { label: 'B', text: 'Colonoscopy' },
+    { label: 'C', text: 'Coeliac serology' },
+    { label: 'D', text: 'Stool culture and sensitivity' },
+    { label: 'E', text: 'Hydrogen breath test' }
+  ],
+  correct: 'B',
+  explanation: ``
+},
+
+// ─── GA 3073 ───
+{
+  text: `A 70-year-old woman vomits a large amount of blood once. She takes ibuprofen occasionally, has mild epigastric tenderness, and is hypotensive (92/54) with tachycardia (115) on oxygen. What is the most appropriate initial management?`,
+  options: [
+    { label: 'A', text: 'Intravenous proton pump inhibitor' },
+    { label: 'B', text: 'Insertion of a Sengstaken-Blakemore tube' },
+    { label: 'C', text: 'Urgent endoscopy' },
+    { label: 'D', text: 'Administration of normal saline' },
+    { label: 'E', text: 'Administration of intravenous terlipressin' }
+  ],
+  correct: 'D',
+  explanation: ``
+}
+    
+    
+];
+    // Populate left sidebar with question numbers
+    const sidebarList = document.getElementById('sidebar-list');
+    questions.forEach((_, i) => {
+      const li = document.createElement('li');
+      const a  = document.createElement('a');
+      a.href        = '#';
+      a.textContent = i + 1;
+      a.addEventListener('click', () => {
+        current = i;
+        renderQ(i);
+        sidebar.classList.remove('open');
+      });
+      li.appendChild(a);
+      sidebarList.appendChild(li);
+    });
+
+    let startTime = Date.now(), current = 0, results = [];
+    const qText      = document.getElementById('question-text');
+    const optsList   = document.getElementById('options-list');
+    const explDiv    = document.getElementById('explanation');
+    const sumDiv     = document.getElementById('results-summary');
+    const counterDiv = document.getElementById('question-counter');
+    const prevBtn    = document.getElementById('prev-btn');
+    const nextBtn    = document.getElementById('next-btn');
+    const submitBtn  = document.getElementById('submit-btn');
+    const endBtn     = document.getElementById('end-btn');
+
+    function renderQ(i) {
+      const q = questions[i];
+      counterDiv.textContent = `Question ${i+1} of ${questions.length}`;
+      qText.innerHTML        = q.text.replace(/\n/g, '<br>');
+      optsList.innerHTML     = '';
+      q.options.forEach(o => {
+        const lbl       = document.createElement('label');
+        lbl.className   = 'option-label';
+        lbl.innerHTML   = `<input type="radio" name="answer" value="${o.label}"> ${o.label}. ${o.text}`;
+        optsList.appendChild(lbl);
+      });
+      explDiv.innerHTML   = '';
+      sumDiv.style.display = 'none';
+      prevBtn.disabled    = i === 0;
+      nextBtn.disabled    = true;
+      submitBtn.disabled  = false;
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="answer"]:checked'); if (!sel) return;
+      const val  = sel.value;
+      const corr = questions[current].correct;
+      const ok   = val === corr;
+      results[current] = ok;
+      document.querySelectorAll('.option-label').forEach(lbl => {
+        const inp = lbl.querySelector('input');
+        lbl.classList.remove('correct-answer','wrong-answer');
+        if (inp.value === corr) lbl.classList.add('correct-answer');
+        if (inp.checked && !ok) lbl.classList.add('wrong-answer');
+        inp.disabled = true;
+      });
+      explDiv.innerHTML = questions[current].explanation;
+      submitBtn.disabled = true;
+      nextBtn.disabled = false;
+    });
+
+    prevBtn.addEventListener('click', () => { if (current>0) { current--; renderQ(current); }});
+    nextBtn.addEventListener('click', () => { if (current<questions.length-1) { current++; renderQ(current); }});
+    endBtn.addEventListener('click', () => {
+      const score    = results.filter(r => r).length;
+      const total    = questions.length;
+      const duration = Math.floor((Date.now()-startTime)/1000);
+      sumDiv.style.display = 'block';
+      sumDiv.innerHTML = `<strong>Score: ${score}/${total} (${Math.round(score/total*100)}%)</strong><br>` +
+                          `Time: ${Math.floor(duration/60)}m ${duration%60}s<br>` +
+                          `<button onclick="location.href='index.html'">Back to Home</button>`;
+    });
+
+    renderQ(0);
+  </script>
+</body>
+</html>

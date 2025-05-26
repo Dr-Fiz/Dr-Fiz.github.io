@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Exam Results</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .results-container {
+      max-width: 600px;
+      margin: 4rem auto;
+      background: #fff;
+      padding: 2rem;
+      border: 2px solid var(--primary-color);
+      border-radius: 8px;
+      text-align: center;
+    }
+    .results-container h2 {
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+    }
+    .results-container p {
+      font-size: 1.1rem;
+      margin: 0.5rem 0;
+    }
+    .results-container button {
+      margin-top: 1.5rem;
+      background-color: var(--primary-color);
+      color: #fff;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .results-container button:hover {
+      background-color: var(--primary-hover);
+    }
+  </style>
+</head>
+<body>
+  <div class="results-container">
+    <h2>Your Exam Results</h2>
+    <p id="score"></p>
+    <p id="time"></p>
+    <button id="home-btn">Back to Home</button>
+  </div>
+
+  <script>
+    // read parameters
+    const params = new URLSearchParams(window.location.search);
+    const score = params.get('score');
+    const total = params.get('total');
+    const time = params.get('time'); // in seconds
+
+    document.getElementById('score').textContent =
+      `Score: ${score} out of ${total} (${Math.round(score/total*100)}%)`;
+    document.getElementById('time').textContent =
+      `Time taken: ${Math.floor(time/60)}m ${time % 60}s`;
+
+    document.getElementById('home-btn').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

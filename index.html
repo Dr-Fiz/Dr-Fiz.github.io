@@ -1,0 +1,89 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Medical Question Bank</title>
+  <!-- Embedded CSS -->
+  <style>
+    :root {
+      --primary-color: #2a9d8f;
+      --primary-hover: #21867a;
+      --bg-color: #f4f4f4;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem;
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+    header h1 { margin: 0; font-size: 2.5rem; }
+    header p { margin: 0.5rem 0 0; font-size: 1.1rem; }
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .bank-option {
+      background-color: var(--card-bg);
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .bank-option:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+    }
+    .bank-option h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--primary-color);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Medical Question Banks</h1>
+    <p>Select a platform to begin your practice.</p>
+  </header>
+  <main>
+    <div class="options-grid">
+      <div class="bank-option" data-bank="Plabable"><h2>Plabable</h2></div>
+      <div class="bank-option" data-bank="Pastest"><h2>Pastest</h2></div>
+      <div class="bank-option" data-bank="Uworld"><h2>Uworld</h2></div>
+      <div class="bank-option" data-bank="Boards & Beyond"><h2>Boards & Beyond</h2></div>
+      <div class="bank-option" data-bank="Osmosis"><h2>Osmosis</h2></div>
+      <div class="bank-option" data-bank="Lecturio"><h2>Lecturio</h2></div>
+    </div>
+  </main>
+  <!-- Embedded JS -->
+  <script>
+    document.querySelectorAll('.bank-option[data-bank]').forEach(option => {
+      option.addEventListener('click', () => {
+        const bank = option.dataset.bank;
+        if (bank === 'Plabable') {
+          window.location.href = 'plabable.html';
+        } else {
+          window.location.href = `question-bank.html?topic=${encodeURIComponent(bank)}`;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

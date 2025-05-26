@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pediatrics Quiz</title>
+  <!-- Embedded CSS -->
+  <style>
+    :root {
+      --primary-color: #2a9d8f;
+      --primary-hover: #21867a;
+      --bg-color: #f4f4f4;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --sidebar-bg: #264653;
+      --sidebar-text: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
+    .top-nav {
+      position: relative;
+      z-index: 1001;
+      display: flex; justify-content: space-between; align-items: center;
+      background-color: var(--primary-color); color: #ffffff; padding: 0.75rem 1rem;
+    }
+    .top-nav .nav-actions button { background: none; border: none; color: #ffffff; margin-left: 0.5rem; cursor: pointer; }
+    .menu-icon { cursor: pointer; font-size: 1.5rem; }
+    /* Sidebar styles */
+    .sidebar {
+      position: fixed;
+      left: -200px;
+      width: 200px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar li { margin-bottom: 0.5rem; }
+    .sidebar a { color: var(--sidebar-text); text-decoration: none; display: block; padding: 0.5rem; border-radius: 0.25rem; }
+    .sidebar a:hover { background: rgba(255,255,255,0.1); }
+    /* Lab Values sidebar */
+    .lab-sidebar {
+      position: fixed;
+      right: -300px;
+      width: 300px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .lab-sidebar.open { right: 0; }
+    /* Quiz container */
+    .question-container {
+      background-color: var(--card-bg);
+      border: 2px solid var(--primary-color);
+      border-radius: 0.5rem;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+    }
+    .options-list { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    .option-label { padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px; border: 1px solid transparent; display: flex; align-items: center; }
+    .options-list input { margin-right: 0.5rem; accent-color: var(--primary-color); }
+    .correct-answer { background-color: #d4edda; border-color: #28a745; }
+    .wrong-answer { background-color: #f8d7da; border-color: #dc3545; }
+    .submit-btn, #prev-btn, #next-btn, #end-btn {
+      margin-top: 0.5rem;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    .submit-btn:disabled, #prev-btn:disabled, #next-btn:disabled { opacity: 0.6; cursor: default; }
+    .submit-btn:hover:not(:disabled), #prev-btn:hover:not(:disabled), #next-btn:hover:not(:disabled), #end-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+    .explanation {
+      margin-top: 1rem;
+      background-color: #e8f5e9;
+      border-left: 4px solid var(--primary-color);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      white-space: pre-wrap;
+    }
+    .results-summary {
+      margin-top: 1rem;
+      background-color: #fff3cd;
+      border-left: 4px solid #ffeeba;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <div class="menu-icon">&#9776;</div>
+    <div id="question-counter">Question 1 of 10</div>
+    <div class="nav-actions">
+      <button id="prev-btn" disabled>&lt; Previous</button>
+      <button id="next-btn" disabled>Next &gt;</button>
+      <button id="fullscreen-btn">Full Screen</button>
+      <button id="labvals-btn">Lab Values</button>
+      <button id="end-btn">End Exam</button>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <ul id="sidebar-list"></ul>
+  </div>
+  <!-- Lab Values Sidebar -->
+  <div id="lab-sidebar" class="lab-sidebar">
+    <img src="Blood.jpg" alt="Blood Values" style="width:100%; margin-bottom:1rem;">
+    <img src="Blood%202.jpg" alt="Blood Plasma Serum" style="width:100%; margin-bottom:1rem;">
+    <img src="Hematological.jpg" alt="Hematologic Values" style="width:100%; margin-bottom:1rem;">
+    <img src="Sweat,%20Urine,%20BMI.jpg" alt="Sweat, Urine, BMI" style="width:100%; margin-bottom:1rem;">
+    <img src="CSF.jpg" alt="Cerebrospinal Fluid" style="width:100%;">
+  </div>
+
+  <main>
+    <section class="question-container">
+      <div id="question-text"></div>
+      <form id="options-list" class="options-list"></form>
+      <button id="submit-btn" class="submit-btn">Submit Answer</button>
+      <div id="explanation" class="explanation"></div>
+      <div id="results-summary" class="results-summary" style="display:none;"></div>
+    </section>
+  </main>
+
+  <!-- Embedded JS -->
+  <script>
+    // Sidebar toggle & positioning
+    const menuIcon   = document.querySelector('.menu-icon');
+    const sidebar    = document.getElementById('sidebar');
+    const labSidebar = document.getElementById('lab-sidebar');
+    const nav        = document.querySelector('.top-nav');
+    const navHeight  = nav.offsetHeight;
+    [sidebar, labSidebar].forEach(sb => {
+      sb.style.top    = navHeight + 'px';
+      sb.style.height = `calc(100% - ${navHeight}px)`;
+    });
+    menuIcon.addEventListener('click', () => sidebar.classList.toggle('open'));
+    document.getElementById('labvals-btn')
+      .addEventListener('click', () => labSidebar.classList.toggle('open'));
+
+    // Quiz data and logic
+    const questions = [
+      {
+        text: `An infant born at term, started to have jaundice when he was 2 days old. He is now 9 days old and the symptoms of jaundice have improved for the past 7 days. He is breastfed and is gaining weight within normal limits. What is the SINGLE most likely diagnosis?`,
+        options: [
+          {label:'A', text:'Galactosaemia'},
+          {label:'B', text:'Breast milk jaundice'},
+          {label:'C', text:'Prolonged jaundice'},
+          {label:'D', text:'Hypothyroidism'},
+          {label:'E', text:'Physiological jaundice'}
+        ],
+        correct: 'E',
+        explanation: ``
+      },
+      {
+        text: `A 6 week old infant presents to the clinic with a history of excessive crying following each feed. The infant was born at term via an uncomplicated vaginal delivery, with a birth weight of 3.4 kg (50th percentile). In the first week postpartum, he experienced a 10% weight loss to 3.06 kg, followed by steady weight gain; at 6 weeks, he weighed 4.2 kg (48th percentile). The mother exclusively breastfeeds and reports crying episodes after every feed, concerned about a possible cow's milk protein allergy. Physical examination is normal. Which management is most appropriate?`,
+        options: [
+          {label:'A', text:'Continue breastfeeding'},
+          {label:'B', text:'Eliminate dairy from the maternal diet'},
+          {label:'C', text:'Change to a hydrolysed formula'},
+          {label:'D', text:'Refer for paediatric allergy testing'},
+          {label:'E', text:'Reduce protein intake from maternal diet'}
+        ],
+        correct: 'A',
+        explanation: ``
+      },
+      {
+        text: `A 6 year old child presents with brief staring spells multiple times daily, associated with transient loss of awareness, no postictal confusion or other movements, and a normal neurological exam. Which diagnostic test confirms the suspected absence seizure diagnosis?`,
+        options: [
+          {label:'A', text:'Magnetic resonance imaging (MRI) of the brain'},
+          {label:'B', text:'Blood glucose level measurement'},
+          {label:'C', text:'Electrocardiogram (ECG)'},
+          {label:'D', text:'Electroencephalography (EEG)'},
+          {label:'E', text:'Lumbar puncture'}
+        ],
+        correct: 'D',
+        explanation: ``
+      },
+      {
+        text: `A 15 month old was born at 28 weeks and spent 20 days in the NICU. Now he says “mama” and “papa” but does not respond to loud noise or his name. A hearing test shows bilateral conductive loss. What is the most likely cause?`,
+        options: [
+          {label:'A', text:'Hyperbilirubinaemia'},
+          {label:'B', text:'Congenital cytomegalovirus'},
+          {label:'C', text:'Neonatal asphyxia'},
+          {label:'D', text:'Gentamicin effects'},
+          {label:'E', text:'Serous otitis media'}
+        ],
+        correct: 'E',
+        explanation: ``
+      },
+      {
+        text: `An 8 week old exclusively breastfed boy developed jaundice at 2 weeks, with poor feeding, vomiting, hepatomegaly, total bilirubin 310 µmol/L, direct bilirubin 90 µmol/L, and bilateral cataracts. What is the most likely diagnosis?`,
+        options: [
+          {label:'A', text:'Galactosaemia'},
+          {label:'B', text:'Biliary atresia'},
+          {label:'C', text:'Glucose-6-phosphate dehydrogenase (G6PD) deficiency'},
+          {label:'D', text:'Breast milk jaundice'},
+          {label:'E', text:'Congenital viral infection'}
+        ],
+        correct: 'A',
+        explanation: ``
+      },
+      {
+        text: `A 3 year old boy with 4 days of fever and rash was diagnosed with viral exanthem but developed lethargy, cracked red lips, sore eyes, cervical lymphadenopathy, and peeling of fingertips/toes after two weeks. What is the most likely diagnosis?`,
+        options: [
+          {label:'A', text:'Kawasaki disease'},
+          {label:'B', text:'Takayasu’s disease'},
+          {label:'C', text:'Drug reaction'},
+          {label:'D', text:'Scarlet fever'},
+          {label:'E', text:'Hand, foot and mouth disease'}
+        ],
+        correct: 'A',
+        explanation: ``
+      },
+      {
+        text: `A 6 week old with persistent non‑bilious vomiting, hypokalaemia (K+ 3.1 mmol/L), and persistent hunger is brought to A&E. What is the most likely diagnosis?`,
+        options: [
+          {label:'A', text:'Pyloric stenosis'},
+          {label:'B', text:'Duodenal atresia'},
+          {label:'C', text:'Malrotation'},
+          {label:'D', text:'Achalasia cardia'},
+          {label:'E', text:'Tracheo‑oesophageal fistula'}
+        ],
+        correct: 'A',
+        explanation: ``
+      },
+      {
+        text: `A 2 week old term female with prolonged unconjugated jaundice, normal growth and stools, split bilirubin showing elevated unconjugated fraction, is exclusively breastfed. What is the most appropriate management?`,
+        options: [
+          {label:'A', text:'Phototherapy'},
+          {label:'B', text:'Exchange transfusion'},
+          {label:'C', text:'Increase fluid intake'},
+          {label:'D', text:'Continue breastfeeding'},
+          {label:'E', text:'Stop breastfeeding completely'}
+        ],
+        correct: 'D',
+        explanation: ``
+      },
+      {
+        text: `A 6 year old asthmatic on budesonide with persistent SOB after salbutamol nebulisers, accessory muscle use, RR 30, SpO2 92%, HR 130, widespread wheeze, alert but anxious. What is the next step?`,
+        options: [
+          {label:'A', text:'Administer furosemide'},
+          {label:'B', text:'Prescribe salmeterol inhalers'},
+          {label:'C', text:'Administer intravenous magnesium sulphate'},
+          {label:'D', text:'Administer ipratropium bromide via nebulisation'},
+          {label:'E', text:'Increase the dose of budesonide'}
+        ],
+        correct: 'D',
+        explanation: ``
+      },
+      {
+        text: `A 2 year old boy with 3 days of fever and barking cough, hoarseness, worse at night, inspiratory stridor, intercostal recession, temp 38.4°C, RR 40, pulse 150, SpO2 87%. What is the most appropriate management?`,
+        options: [
+          {label:'A', text:'Intubation'},
+          {label:'B', text:'Intravenous hydrocortisone'},
+          {label:'C', text:'Nebulised salbutamol'},
+          {label:'D', text:'Intramuscular adrenaline'},
+          {label:'E', text:'Nebulised adrenaline'}
+        ],
+        correct: 'E',
+        explanation: ``
+      }
+    ];
+
+    // Populate left sidebar with question numbers
+    const sidebarList = document.getElementById('sidebar-list');
+    questions.forEach((_, i) => {
+      const li = document.createElement('li');
+      const a  = document.createElement('a');
+      a.href        = '#';
+      a.textContent = i + 1;
+      a.addEventListener('click', () => {
+        current = i;
+        renderQ(i);
+        sidebar.classList.remove('open');
+      });
+      li.appendChild(a);
+      sidebarList.appendChild(li);
+    });
+
+    let startTime = Date.now(), current = 0, results = [];
+    const qText      = document.getElementById('question-text');
+    const optsList   = document.getElementById('options-list');
+    const explDiv    = document.getElementById('explanation');
+    const sumDiv     = document.getElementById('results-summary');
+    const counterDiv = document.getElementById('question-counter');
+    const prevBtn    = document.getElementById('prev-btn');
+    const nextBtn    = document.getElementById('next-btn');
+    const submitBtn  = document.getElementById('submit-btn');
+    const endBtn     = document.getElementById('end-btn');
+
+    function renderQ(i) {
+      const q = questions[i];
+      counterDiv.textContent = `Question ${i+1} of ${questions.length}`;
+      qText.innerHTML        = q.text.replace(/\n/g, '<br>');
+      optsList.innerHTML     = '';
+      q.options.forEach(o => {
+        const lbl       = document.createElement('label');
+        lbl.className   = 'option-label';
+        lbl.innerHTML   = `<input type="radio" name="answer" value="${o.label}"> ${o.label}. ${o.text}`;
+        optsList.appendChild(lbl);
+      });
+      explDiv.innerHTML   = '';
+      sumDiv.style.display = 'none';
+      prevBtn.disabled    = i === 0;
+      nextBtn.disabled    = true;
+      submitBtn.disabled  = false;
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="answer"]:checked'); if (!sel) return;
+      const val  = sel.value;
+      const corr = questions[current].correct;
+      const ok   = val === corr;
+      results[current] = ok;
+      document.querySelectorAll('.option-label').forEach(lbl => {
+        const inp = lbl.querySelector('input');
+        lbl.classList.remove('correct-answer','wrong-answer');
+        if (inp.value === corr) lbl.classList.add('correct-answer');
+        if (inp.checked && !ok) lbl.classList.add('wrong-answer');
+        inp.disabled = true;
+      });
+      explDiv.innerHTML = questions[current].explanation;
+      submitBtn.disabled = true;
+      nextBtn.disabled = false;
+    });
+
+    prevBtn.addEventListener('click', () => { if (current>0) { current--; renderQ(current); }});
+    nextBtn.addEventListener('click', () => { if (current<questions.length-1) { current++; renderQ(current); }});
+    endBtn.addEventListener('click', () => {
+      const score    = results.filter(r => r).length;
+      const total    = questions.length;
+      const duration = Math.floor((Date.now()-startTime)/1000);
+      sumDiv.style.display = 'block';
+      sumDiv.innerHTML = `<strong>Score: ${score}/${total} (${Math.round(score/total*100)}%)</strong><br>` +
+                          `Time: ${Math.floor(duration/60)}m ${duration%60}s<br>` +
+                          `<button onclick="location.href='index.html'">Back to Home</button>`;
+    });
+
+    renderQ(0);
+  </script>
+</body>
+</html>

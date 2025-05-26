@@ -1,0 +1,117 @@
+<!-- plabable.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plabable Topics</title>
+  <!-- Embedded CSS -->
+  <style>
+    :root {
+      --primary-color: #2a9d8f;
+      --primary-hover: #21867a;
+      --bg-color: #f4f4f4;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    header {
+      text-align: center;
+      padding: 2rem 1rem;
+      background-color: var(--primary-color);
+      color: #ffffff;
+    }
+    header h1 { margin: 0; font-size: 2.5rem; }
+    header p { margin: 0.5rem 0 0; font-size: 1.1rem; }
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .bank-option {
+      background-color: var(--card-bg);
+      padding: 1.5rem;
+      text-align: center;
+      border-radius: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .bank-option:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+    }
+    .bank-option h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      color: var(--primary-color);
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Plabable Question Topics</h1>
+    <p>Select a sub-topic to continue.</p>
+  </header>
+
+  <main>
+    <div class="options-grid">
+      <div class="bank-option" data-subtopic="Cardiology"><h2>Cardiology</h2></div>
+      <div class="bank-option" data-subtopic="Neurology"><h2>Neurology</h2></div>
+      <div class="bank-option" data-subtopic="Gastroenterology"><h2>Gastroenterology</h2></div>
+      <div class="bank-option" data-subtopic="Pulmonology"><h2>Pulmonology</h2></div>
+      <div class="bank-option" data-subtopic="Endocrinology"><h2>Endocrinology</h2></div>
+      <div class="bank-option" data-subtopic="Nephrology"><h2>Nephrology</h2></div>
+      <div class="bank-option" data-subtopic="Hematology"><h2>Hematology</h2></div>
+      <div class="bank-option" data-subtopic="Oncology"><h2>Oncology</h2></div>
+      <div class="bank-option" data-subtopic="Rheumatology"><h2>Rheumatology</h2></div>
+      <div class="bank-option" data-subtopic="Dermatology"><h2>Dermatology</h2></div>
+      <div class="bank-option" data-subtopic="Infectious Diseases"><h2>Infectious Diseases</h2></div>
+      <div class="bank-option" data-subtopic="Psychiatry"><h2>Psychiatry</h2></div>
+      <div class="bank-option" data-subtopic="Obstetrics & Gynecology"><h2>Obstetrics & Gynecology</h2></div>
+      <div class="bank-option" data-subtopic="Pediatrics"><h2>Pediatrics</h2></div>
+      <div class="bank-option" data-subtopic="Orthopedics"><h2>Orthopedics</h2></div>
+    </div>
+  </main>
+
+  <!-- Updated Embedded JS -->
+  <script>
+    const pages = {
+      'Cardiology': 'cardiology.html',
+      'Neurology': 'neurology.html',
+      'Gastroenterology': 'gastroenterology.html',
+      'Pulmonology': 'pulmonology.html',
+      'Endocrinology': 'endocrinology.html',
+      'Nephrology': 'nephrology.html',
+      'Hematology': 'hematology.html',
+      'Oncology': 'oncology.html',
+      'Rheumatology': 'rheumatology.html',
+      'Dermatology': 'dermatology.html',
+      'Infectious Diseases': 'infectious-diseases.html',
+      'Psychiatry': 'psychiatry.html',
+      'Obstetrics & Gynecology': 'obstetrics-gynecology.html',
+      'Pediatrics': 'pediatrics.html',
+      'Orthopedics': 'orthopedics.html'
+    };
+
+    document.querySelectorAll('.bank-option').forEach(option => {
+      option.addEventListener('click', () => {
+        const sub = option.dataset.subtopic;
+        window.location.href = pages[sub] || 'index.html';
+      });
+    });
+  </script>
+</body>
+</html>
+
+
