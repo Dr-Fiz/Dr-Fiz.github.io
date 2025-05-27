@@ -1,0 +1,1431 @@
+<!-- gastroenterology.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gastroenterology Quiz</title>
+  <!-- Embedded CSS -->
+  <style>
+    :root {
+      --primary-color: #2a9d8f;
+      --primary-hover: #21867a;
+      --bg-color: #f4f4f4;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --sidebar-bg: #264653;
+      --sidebar-text: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
+    .top-nav {
+      position: relative;
+      z-index: 1001;
+      display: flex; justify-content: space-between; align-items: center;
+      background-color: var(--primary-color); color: #ffffff; padding: 0.75rem 1rem;
+    }
+    .top-nav .nav-actions button { background: none; border: none; color: #ffffff; margin-left: 0.5rem; cursor: pointer; }
+    .menu-icon { cursor: pointer; font-size: 1.5rem; }
+    /* Sidebar styles */
+    .sidebar {
+      position: fixed;
+      left: -200px;
+      width: 200px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar li { margin-bottom: 0.5rem; }
+    .sidebar a { color: var(--sidebar-text); text-decoration: none; display: block; padding: 0.5rem; border-radius: 0.25rem; }
+    .sidebar a:hover { background: rgba(255,255,255,0.1); }
+    /* Lab Values sidebar */
+    .lab-sidebar {
+      position: fixed;
+      right: -300px;
+      width: 300px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .lab-sidebar.open { right: 0; }
+    /* Quiz container */
+    .question-container {
+      background-color: var(--card-bg);
+      border: 2px solid var(--primary-color);
+      border-radius: 0.5rem;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+    }
+    .options-list { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    .option-label { padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px; border: 1px solid transparent; display: flex; align-items: center; }
+    .options-list input { margin-right: 0.5rem; accent-color: var(--primary-color); }
+    .correct-answer { background-color: #d4edda; border-color: #28a745; }
+    .wrong-answer { background-color: #f8d7da; border-color: #dc3545; }
+    .submit-btn, #prev-btn, #next-btn, #end-btn {
+      margin-top: 0.5rem;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    .submit-btn:disabled, #prev-btn:disabled, #next-btn:disabled { opacity: 0.6; cursor: default; }
+    .submit-btn:hover:not(:disabled), #prev-btn:hover:not(:disabled), #next-btn:hover:not(:disabled), #end-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+    .explanation {
+      margin-top: 1rem;
+      background-color: #e8f5e9;
+      border-left: 4px solid var(--primary-color);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      white-space: pre-wrap;
+    }
+    .results-summary {
+      margin-top: 1rem;
+      background-color: #fff3cd;
+      border-left: 4px solid #ffeeba;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <div class="menu-icon">&#9776;</div>
+    <div id="question-counter">Question 1 of 6</div>
+    <div class="nav-actions">
+      <button id="prev-btn" disabled>&lt; Previous</button>
+      <button id="next-btn" disabled>Next &gt;</button>
+      <button id="fullscreen-btn">Full Screen</button>
+      <button id="labvals-btn">Lab Values</button>
+      <button id="end-btn">End Exam</button>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <ul id="sidebar-list"></ul>
+  </div>
+  <!-- Lab Values Sidebar -->
+  <div id="lab-sidebar" class="lab-sidebar">
+    <img src="Blood.jpg" alt="Blood Values" style="width:100%; margin-bottom:1rem;">
+    <img src="Blood%202.jpg" alt="Blood Plasma Serum" style="width:100%; margin-bottom:1rem;">
+    <img src="Hematological.jpg" alt="Hematologic Values" style="width:100%; margin-bottom:1rem;">
+    <img src="Sweat,%20Urine,%20BMI.jpg" alt="Sweat, Urine, BMI" style="width:100%; margin-bottom:1rem;">
+    <img src="CSF.jpg" alt="Cerebrospinal Fluid" style="width:100%;">
+  </div>
+
+  <main>
+    <section class="question-container">
+      <div id="question-text"></div>
+      <form id="options-list" class="options-list"></form>
+      <button id="submit-btn" class="submit-btn">Submit Answer</button>
+      <div id="explanation" class="explanation"></div>
+      <div id="results-summary" class="results-summary" style="display:none;"></div>
+    </section>
+  </main>
+
+  <!-- Embedded JS -->
+  <script>
+    // Sidebar toggle & positioning
+    const menuIcon   = document.querySelector('.menu-icon');
+    const sidebar    = document.getElementById('sidebar');
+    const labSidebar = document.getElementById('lab-sidebar');
+    const nav        = document.querySelector('.top-nav');
+    const navHeight  = nav.offsetHeight;
+    [sidebar, labSidebar].forEach(sb => {
+      sb.style.top    = navHeight + 'px';
+      sb.style.height = `calc(100% - ${navHeight}px)`;
+    });
+    menuIcon.addEventListener('click', () => sidebar.classList.toggle('open'));
+    document.getElementById('labvals-btn')
+      .addEventListener('click', () => labSidebar.classList.toggle('open'));
+
+    // Quiz data and logic
+    const questions = [
+      {
+    text: "What are the important red flags in child development?",
+    options: [
+      { label: 'A', text: 'Unable to walk by 12 months' },
+      { label: 'B', text: 'Time-out works to get a child to begin doing a behavior' },
+      { label: 'C', text: 'Unable to sit by 9 months' },
+      { label: 'D', text: 'Unable to hold head by 1 month' }
+    ],
+    correct: 'C',
+    explanation: 'Key developmental milestones include head control by 4 months, sitting by 9 months, crawling by 12 months, and walking by 18 months. Failure to sit by 9 months is a “red flag” for gross motor delay. The other options either describe behavior management (B) or are not true delays at the given ages (A and D).'
+  },
+  {
+    text: "What characterizes the growth and development of a child during the school-age period (6–12 years)?",
+    options: [
+      { label: 'A', text: 'Growth in height' },
+      { label: 'B', text: 'Gradual growth' },
+      { label: 'C', text: 'Growth in weight' },
+      { label: 'D', text: 'Growth tables' }
+    ],
+    correct: 'B',
+    explanation: 'Between ages 6 and 12, children grow at a steady, gradual pace in both height and weight. This contrasts with the rapid “infancy” and “pubertal” growth spurts. Thus “gradual growth” best describes the pattern in the school‐age years.'
+  },
+  {
+    text: "What is the best method to reduce potassium levels in hyperkalemia by actually removing potassium from the body?",
+    options: [
+      { label: 'A', text: 'Calcium infusion' },
+      { label: 'B', text: 'Glucose and insulin infusion' },
+      { label: 'C', text: 'Sodium bicarbonate infusion' },
+      { label: 'D', text: 'Kayexalate enema' },
+      { label: 'E', text: 'Albuterol aerosol' }
+    ],
+    correct: 'D',
+    explanation: 'Kayexalate (sodium polystyrene sulfonate) binds potassium in the gut and increases its fecal excretion. The other therapies (A, B, C, E) shift potassium into cells or stabilize the myocardium but do not remove K⁺ from the body.'
+  },
+  {
+    text: "At what age should an infant regain the weight they had at birth?",
+    options: [
+      { label: 'A', text: '1 week' },
+      { label: 'B', text: '4–5 months' },
+      { label: 'C', text: '10 days' },
+      { label: 'D', text: '1 month' }
+    ],
+    correct: 'C',
+    explanation: 'Healthy newborns typically lose up to 10% of birth weight in the first week but regain it by 10–14 days of life. Regaining birth weight by around 10 days is the expected norm.'
+  },
+  {
+    text: "Which of the following actions can a typical one-year-old child perform?",
+    options: [
+      { label: 'A', text: 'Drinks from cup' },
+      { label: 'B', text: 'Sits down from standing position' },
+      { label: 'C', text: 'Rings bell purposefully' },
+      { label: 'D', text: 'Speaks one or two words with meaning' }
+    ],
+    correct: 'A',
+    explanation: 'By 12 months, most children can drink from a cup with some spilling. Purposeful ringing of a bell and meaningful words often emerge closer to 15–18 months, and sitting down from standing usually appears later as balance and coordination improve.'
+  },
+  {
+    text: "Which agent listed does NOT cause an increased anion gap metabolic acidosis?",
+    options: [
+      { label: 'A', text: 'Aspirin' },
+      { label: 'B', text: 'Carbon monoxide inhalation' },
+      { label: 'C', text: 'Paraldehyde' },
+      { label: 'D', text: 'Iron' },
+      { label: 'E', text: 'Acetazolamide' }
+    ],
+    correct: 'E',
+    explanation: 'Acetazolamide induces a normal anion gap (hyperchloremic) metabolic acidosis by causing bicarbonate loss (proximal RTA). Aspirin, paraldehyde, iron overdose, and CO poisoning can produce organic acids or impair metabolism, leading to an elevated anion gap.'
+  },
+  {
+    text: "Which of the following drugs is NOT associated with causing hypokalemia?",
+    options: [
+      { label: 'A', text: 'Corticosteroids' },
+      { label: 'B', text: 'Gentamicin' },
+      { label: 'C', text: 'Amiloride' },
+      { label: 'D', text: 'Loop diuretics' },
+      { label: 'E', text: 'Theophylline' }
+    ],
+    correct: 'C',
+    explanation: 'Amiloride is a potassium‐sparing diuretic that reduces urinary K⁺ excretion and can cause hyperkalemia. In contrast, corticosteroids, aminoglycosides (e.g., gentamicin), loop diuretics, and theophylline promote renal K⁺ loss, leading to hypokalemia.'
+  },
+  {
+    text: "Which childhood disorder tends to improve naturally with increasing age?",
+    options: [
+      { label: 'A', text: 'Sleep disorder' },
+      { label: 'B', text: 'Conduct disorder' },
+      { label: 'C', text: 'Temper tantrum' },
+      { label: 'D', text: 'Emotional problems' }
+    ],
+    correct: 'C',
+    explanation: 'Temper tantrums are most common in toddlers and typically diminish by preschool age as self‐regulation develops. Conduct disorders and emotional problems often persist without intervention, and sleep disorders have variable courses.'
+  },
+  {
+    text: "Which statement about colic in infants is correct?",
+    options: [
+      { label: 'A', text: 'Fever often accompanies colic' },
+      { label: 'B', text: 'Colic is very rarely seen' },
+      { label: 'C', text: 'None of the above are correct' },
+      { label: 'D', text: 'Colic usually occurs in infants greater than 3 months of age' }
+    ],
+    correct: 'C',
+    explanation: 'Infantile colic typically begins at 2–4 weeks of age, peaks around 6 weeks, and resolves by 3–4 months. It is common (up to 20% of infants) and is not accompanied by fever. Therefore, none of the provided statements are correct.'
+  },
+  {
+    text: "Which method for identifying children with developmental or behavioral concerns has the worst sensitivity?",
+    options: [
+      { label: 'A', text: 'Flagging all children in NICU with risk factors for disability' },
+      { label: 'B', text: 'Hands-on developmental screening tool (e.g., Denver II)' },
+      { label: 'C', text: 'Physician clinical impression about development, without a screening tool' },
+      { label: 'D', text: 'Parent-answered developmental questionnaire' },
+      { label: 'E', text: 'All have about equal sensitivity' }
+    ],
+    correct: 'C',
+    explanation: 'Unaided clinical impression by physicians misses many subtle delays: its sensitivity is far lower than standardized tools like the Denver II or validated parent questionnaires. Structured screening greatly improves detection of developmental concerns.'
+  },
+  {
+    text: "Which of the following statements about Kwashiorkor is NOT true?",
+    options: [
+      { label: 'A', text: 'Rash in sun-exposed areas' },
+      { label: 'B', text: 'Hypochromotrichia' },
+      { label: 'C', text: 'An increased susceptibility to infection' },
+      { label: 'D', text: 'Weak muscle' },
+      { label: 'E', text: 'The presence of edema' }
+    ],
+    correct: 'B',
+    explanation: "Kwashiorkor is a severe protein‐energy malnutrition marked by hypoalbuminemia and resultant peripheral edema, the classic 'flaky‐paint' dermatosis often on pressure or sun‐exposed areas, muscle wasting (manifesting as weakness), fatty liver, and immune compromise leading to increased infections. Hair changes include the 'flag sign'—alternating pigmented and depigmented bands—and brittle, discolored hair rather than uniform loss of pigment. Thus, 'hypochromotrichia' (uniformly pale hair) is not a characteristic feature and is the false statement."
+  },
+  {
+    text: "With regards to hypernatremia, which statement is incorrect?",
+    options: [
+      { label: 'A', text: 'It is clinically manifest primarily by neurological effects' },
+      { label: 'B', text: 'It should not be corrected faster than 0.5 mmol/L/hr' },
+      { label: 'C', text: 'Normal saline should not be used if the patient is hypovolemic and hypotensive' },
+      { label: 'D', text: 'It is usually associated with inadequate water intake' },
+      { label: 'E', text: 'If associated with hypervolemia, then furosemide should be used' }
+    ],
+    correct: 'C',
+    explanation: "Hypernatremia presents chiefly with neurological signs—lethargy, irritability, seizures—due to cellular dehydration in the brain. Correction must proceed slowly (<0.5 mmol/L/hr) to avoid cerebral edema. In hypovolemic hypernatremia, isotonic saline (0.9% NaCl) is first used to restore circulating volume before switching to hypotonic fluids for free water replacement, so the statement that 'normal saline should not be used' is false. Hypernatremia most often reflects inadequate water intake or loss; and if hypervolemic, loop diuretics such as furosemide can help remove excess sodium and water."
+  },
+  {
+    text: "Which drug listed below is NOT associated with causing hypokalemia?",
+    options: [
+      { label: 'A', text: 'Theophylline' },
+      { label: 'B', text: 'Gentamicin' },
+      { label: 'C', text: 'Amiloride' },
+      { label: 'D', text: 'Corticosteroids' },
+      { label: 'E', text: 'Loop diuretics' }
+    ],
+    correct: 'C',
+    explanation: "Amiloride is a potassium‐sparing diuretic that blocks ENaC channels in the distal nephron, reducing renal K⁺ excretion and predisposes to hyperkalemia. In contrast, loop diuretics inhibit the NKCC2 transporter in the thick ascending limb and cause significant K⁺ loss; corticosteroids have mineralocorticoid effects that increase renal K⁺ wasting; aminoglycosides like gentamicin can cause renal tubular injury and secondary K⁺ loss; and theophylline increases renal blood flow and tubular secretion of potassium."
+  },
+  {
+    text: "What is the primary reason newborns lose up to 10% of their weight in the first few days after birth?",
+    options: [
+      { label: 'A', text: 'Infant hormones' },
+      { label: 'B', text: 'All of the above' },
+      { label: 'C', text: 'Loss of extracellular fluids' },
+      { label: 'D', text: 'Breastfeeding' }
+    ],
+    correct: 'C',
+    explanation: "Physiologic weight loss in the first 3–5 days (up to ~10% of birth weight) is almost entirely due to diuresis of excess extracellular fluid and insensible water loss as the neonate transitions from intrauterine to extrauterine life. Hormonal adaptations and initial feeding patterns play minor roles, and delayed catabolism of fetal fluid stores—not inadequate intake—explains the early decline."
+  },
+  {
+    text: "Hyperkalemia may be associated with all of the following conditions EXCEPT?",
+    options: [
+      { label: 'A', text: 'Succinylcholine use' },
+      { label: 'B', text: 'Uremia' },
+      { label: 'C', text: 'Trauma' },
+      { label: 'D', text: 'Digitalis toxicity' },
+      { label: 'E', text: 'Chemotherapy' },
+      { label: 'F', text: 'Metabolic alkalosis' },
+      { label: 'G', text: 'Burns' }
+    ],
+    correct: 'F',
+    explanation: "Hyperkalemia arises from cellular release of K⁺ (as in trauma, burns, chemotherapy–induced tumor lysis, succinylcholine-mediated membrane depolarization) or impaired renal excretion (uremia, digitalis-induced Na⁺/K⁺‐ATPase inhibition). In contrast, metabolic alkalosis shifts K⁺ into cells in exchange for H⁺, leading to hypokalemia rather than hyperkalemia—making ‘metabolic alkalosis’ the exception."
+  },
+  {
+    text: "A 1-month-old baby with severe failure to thrive, vomiting (emesis), fever of 41 °C, very high sodium (185 mEq/L), and low urine specific gravity (1.001). What is the most likely diagnosis?",
+    options: [
+      { label: 'A', text: 'Nephrogenic diabetes insipidus' },
+      { label: 'B', text: 'Hypernatremic dehydration' },
+      { label: 'C', text: 'Salt poisoning' },
+      { label: 'D', text: 'Malignant hyperthermia' },
+      { label: 'E', text: 'Adrenal insufficiency' }
+    ],
+    correct: 'B',
+    explanation: "This infant’s presentation—high fever, vomiting, marked hypernatremia, dilute urine (low specific gravity), and failure to thrive—points to hypernatremic dehydration from free-water loss exceeding sodium loss. Nephrogenic DI would show persistent polyuria despite volume contraction; salt poisoning (acute hypernatremia) typically has very concentrated urine; malignant hyperthermia and adrenal insufficiency do not explain the lab pattern."
+  },
+  {
+    text: "Which is a true statement about using time-outs as a behavioral strategy for children?",
+    options: [
+      { label: 'A', text: 'A good rule of thumb is to use five minutes of time-out per year of age' },
+      { label: 'B', text: "A terrific place to have a time-out is the child's room" },
+      { label: 'C', text: 'This method should be considered with certain types of behaviors including impulsive, aggressive, hostile actions' },
+      { label: 'D', text: "A good time-out is when the parent praises the child outside of the child's playgroup" }
+    ],
+    correct: 'C',
+    explanation: "Time-outs are most effective when used selectively for targeted behaviors—especially impulsive or aggressive acts—allowing the child to calm down and reflect. The recommended duration is roughly one minute per year of age (not five), they should occur in a neutral setting (not the child's bedroom, which can feel punitive), and positive reinforcement—not praise outside the playgroup—should follow appropriate behaviors, not the time-out itself."
+  },
+  {
+    text: "Which is an acceptable approach to managing infant colic?",
+    options: [
+      { label: 'A', text: 'Let the baby cry and ignore the baby' },
+      { label: 'B', text: 'Try to discover why your infant is crying' },
+      { label: 'C', text: 'Shake the baby to sleep' },
+      { label: 'D', text: 'Put the baby in a car seat on the washing machine' }
+    ],
+    correct: 'D',
+    explanation: "While the exact cause of colic is unknown and no single therapy works for all, gentle vestibular stimulation—such as placing the safely buckled infant in a car seat on a running washing machine—can soothe by providing rhythmic motion. Ignoring the infant or shaking to sleep is unsafe, and prolonged attempts to identify a single cause can increase parental stress without relieving symptoms."
+  },
+  {
+    text: "An infant can briefly sit leaning forward, reaches for and grasps a cube, and transfers it between hands, but cannot wave bye-bye and cannot use a finger-thumb (pincer) grasp. What is her most likely age?",
+    options: [
+      { label: 'A', text: '14 months' },
+      { label: 'B', text: '4 months' },
+      { label: 'C', text: '7 months' },
+      { label: 'D', text: '10 months' }
+    ],
+    correct: 'C',
+    explanation: "By around 7 months, most infants can prop-sit (briefly support themselves by leaning on hands), reach deliberately for objects, grasp a cube with a raking grasp, and transfer objects hand-to-hand. Waving goodbye emerges closer to 9 months, and the mature pincer grasp (thumb-finger opposition) appears around 9–10 months; by 14 months, these fine motor skills are well established."
+  },
+  {
+    text: "Which of the following does NOT cause a metabolic alkalosis?",
+    options: [
+      { label: 'A', text: 'Thiazide diuretics' },
+      { label: 'B', text: 'Vomiting' },
+      { label: 'C', text: 'Loop diuretics' },
+      { label: 'D', text: 'Corticosteroids' },
+      { label: 'E', text: 'Diarrhea' }
+    ],
+    correct: 'E',
+    explanation: "Metabolic alkalosis results from net acid loss or bicarbonate retention—seen with thiazide and loop diuretics (contraction alkalosis), vomiting (gastric HCl loss), and corticosteroids (enhanced H⁺ secretion). Diarrhea causes bicarbonate loss in stool, leading instead to a normal-anion-gap metabolic acidosis, so it does not produce alkalosis."
+  },
+  {
+    text: "At what age (out of the options provided) is it best for a physician to administer a developmental screening tool?",
+    options: [
+      { label: 'A', text: 'In utero' },
+      { label: 'B', text: '7 years' },
+      { label: 'C', text: '2 years' },
+      { label: 'D', text: '10 years' }
+    ],
+    correct: 'C',
+    explanation: "The American Academy of Pediatrics recommends formal developmental screening at key intervals—most importantly at 9, 18, and 24 months—to detect delays in motor, language, social, and cognitive domains when early intervention is most effective. Of the ages listed, 2 years (24 months) falls squarely within this window. Screening 'in utero' is not possible, and waiting until 7 or 10 years misses critical opportunities for early diagnosis and intervention."
+  },
+  {
+    text: "A 6-month-old has a long tonic-clonic seizure, is hypothermic and lethargic. The mother diluted the baby’s formula with water to make it last longer. What is the most likely diagnosis?",
+    options: [
+      { label: 'A', text: 'Hypocalcemia' },
+      { label: 'B', text: 'Hyponatremia' },
+      { label: 'C', text: 'Hypokalemia' },
+      { label: 'D', text: 'Hypernatremia' },
+      { label: 'E', text: 'Hypoglycemia' }
+    ],
+    correct: 'B',
+    explanation: "Diluting formula introduces excess free water relative to solute, causing hypotonic hyponatremia. The resulting low plasma osmolality drives water into brain cells, leading to cerebral edema, seizures, lethargy, and even hypothermia. Hypoglycemia can cause seizures but would not produce a low urine specific gravity; hypernatremia dehydration would present with concentrated urine and hyperosmolar symptoms rather than low specific gravity."
+  },
+  {
+    text: "How is infant colic classified?",
+    options: [
+      { label: 'A', text: 'Crying constantly' },
+      { label: 'B', text: 'Crying for more than 3 hours a day, 3 days a week, for 3 weeks' },
+      { label: 'C', text: 'Crying in the evening' },
+      { label: 'D', text: 'Upset stomach' }
+    ],
+    correct: 'B',
+    explanation: "Infantile colic is defined by Wessel’s 'rule of threes': crying for >3 hours per day, on >3 days per week, for >3 weeks, in an otherwise healthy infant. While episodes often occur in the late afternoon or evening, and caregivers may attribute crying to 'upset stomach,' only the specified duration and frequency criteria establish the diagnosis. No healthy infant cries literally 'constantly.'"
+  },
+  {
+    text: "At what age should an infant normally regain their birth weight?",
+    options: [
+      { label: 'A', text: '4–5 months' },
+      { label: 'B', text: '10 days' },
+      { label: 'C', text: '1 month' },
+      { label: 'D', text: '1 week' }
+    ],
+    correct: 'B',
+    explanation: "Healthy newborns typically lose up to 5–10% of birth weight in the first 3–5 days due to diuresis of excess extracellular fluid and transition to extrauterine feeding. They generally regain that birth weight by 10–14 days of age. Regaining weight by around 10 days is the expected norm, whereas 1 week is often too soon and 1 month or later suggests inadequate intake or pathology."
+  },
+  {
+    text: "Which drug listed is NOT associated with causing hypokalemia?",
+    options: [
+      { label: 'A', text: 'Amiloride' },
+      { label: 'B', text: 'Gentamicin' },
+      { label: 'C', text: 'Loop diuretics' },
+      { label: 'D', text: 'Corticosteroids' },
+      { label: 'E', text: 'Theophylline' }
+    ],
+    correct: 'A',
+    explanation: "Amiloride is a potassium‐sparing diuretic that blocks epithelial sodium channels (ENaC) in the distal nephron, reducing potassium excretion and potentially causing hyperkalemia. In contrast, loop diuretics (e.g., furosemide) and corticosteroids increase renal K⁺ loss, aminoglycosides like gentamicin can cause renal tubular damage with secondary K⁺ wasting, and theophylline increases urinary potassium excretion."
+  },
+  {
+    text: "Which statement about autism is NOT true?",
+    options: [
+      { label: 'A', text: 'Vaccines can cause autism' },
+      { label: 'B', text: 'Mental retardation is common' },
+      { label: 'C', text: 'Autism Spectrum Disorder includes 5 different disorders' },
+      { label: 'D', text: 'Screening is recommended at 18 and 24 months' }
+    ],
+    correct: 'A',
+    explanation: "Extensive research has conclusively shown no causal link between vaccines and autism. Intellectual disability (previously termed 'mental retardation') is common in classic autistic disorder. Under DSM-IV, ASD encompassed five related conditions (autistic disorder, Asperger’s syndrome, PDD-NOS, Rett’s disorder, and childhood disintegrative disorder), and current guidelines endorse screening at both 18 and 24 months to catch early signs."
+  },
+  {
+    text: "At what age should an infant normally double their birth weight?",
+    options: [
+      { label: 'A', text: '1 week' },
+      { label: 'B', text: '10 days' },
+      { label: 'C', text: '1 month' },
+      { label: 'D', text: '4–5 months' }
+    ],
+    correct: 'D',
+    explanation: "Under typical growth patterns, infants regain birth weight by 10–14 days, double birth weight by 4–5 months, and triple it by about 12 months. Doubling at 4–5 months reflects adequate caloric intake and healthy linear and weight gain velocity."
+  },
+  {
+    text: "What is the purpose of using a growth chart?",
+    options: [
+      { label: 'A', text: 'Follows trend of growth over time' },
+      { label: 'B', text: 'Monitors weight for age' },
+      { label: 'C', text: 'All of the above' },
+      { label: 'D', text: 'Monitors weight for height' }
+    ],
+    correct: 'C',
+    explanation: "Growth charts are versatile tools that plot anthropometric measures—length/height-for-age, weight-for-age, weight-for-length (or BMI-for-age)—to monitor both relative and absolute growth trajectories over time. They help clinicians identify failure to thrive, undernutrition, overweight, or disproportionate growth patterns and guide nutritional or medical interventions."
+  },
+  {
+    text: "A 2-year-old child's parents are worried about poor eating, but the child's weight is at the 50th percentile and height is at the 75th percentile. What is the best management?",
+    options: [
+      { label: 'A', text: 'Advise multivitamin' },
+      { label: 'B', text: 'Ask parents to stop worrying' },
+      { label: 'C', text: 'Force to eat' },
+      { label: 'D', text: 'Investigate for UTI' }
+    ],
+    correct: 'B',
+    explanation: "Toddlers commonly exhibit variable appetites and 'picky eating,' yet maintaining steady growth percentiles (50th weight, 75th height) indicates adequate nutrition. Reassurance and parental education—encouraging responsive feeding practices and trust in the child's self-regulation—are the cornerstones; unnecessary supplementation or invasive investigations are unwarranted."
+  },
+  {
+    text: "Which statement about acid–base disturbances is incorrect?",
+    options: [
+      { label: 'A', text: 'In respiratory alkalosis, for every drop of 10 mmHg of pCO₂, HCO₃⁻ drops 1 mmol/L acutely' },
+      { label: 'B', text: 'In chronic respiratory alkalosis, for every drop of 10 mmHg of pCO₂, HCO₃⁻ drops 2 mmol/L' },
+      { label: 'C', text: 'In acute respiratory acidosis, for every 10 mmHg rise in pCO₂, HCO₃⁻ rises 1 mmol/L' },
+      { label: 'D', text: 'In chronic respiratory acidosis, for every 10 mmHg rise in pCO₂, HCO₃⁻ rises 2 mmol/L' },
+      { label: 'E', text: 'The normal A–a (alveolar–arterial) gradient is < age/4' }
+    ],
+    correct: 'D',
+    explanation: "Renal compensation in chronic respiratory acidosis is more robust than 2 mmol/L per 10 mmHg pCO₂ rise—typically around 3–4 mmol/L—as the kidneys increase bicarbonate reabsorption and acid excretion over days. Acute changes follow the 1 mmol/L per 10 mmHg rule. The other listed compensation formulas and the A–a gradient rule (approx. < (age/4) + 4) are accurate."
+  },
+  {
+    text: "A 15-year-old girl presents with moodiness, isolation, fatigue, loss of interest in activities, school performance decline, and weight loss for 2 months. What is the most likely diagnosis?",
+    options: [
+      { label: 'A', text: 'Bipolar disorder' },
+      { label: 'B', text: 'Teen pregnancy' },
+      { label: 'C', text: 'Major depression' },
+      { label: 'D', text: 'Undifferentiated somatoform disorder' }
+    ],
+    correct: 'C',
+    explanation: "Major depressive disorder in adolescents is characterized by at least two weeks of persistent depressed mood or anhedonia plus associated symptoms—fatigue, diminished interest in once-enjoyed activities, weight change, academic decline, and social withdrawal. Bipolar disorder would include episodes of elevated or irritable mood (mania/hypomania), which are not described here. Teen pregnancy might cause fatigue or weight changes but would present with amenorrhea and other pregnancy signs. Undifferentiated somatoform disorder involves physical complaints without identifiable organic cause, not a constellation of mood, cognitive, and somatic changes. The duration (2 months) and cluster of affective symptoms strongly support major depression."
+  },
+  {
+    text: "What are important causes of excessive crying that must be ruled out in an infant?",
+    options: [
+      { label: 'A', text: 'Hair tourniquet' },
+      { label: 'B', text: 'Corneal abrasion' },
+      { label: 'C', text: 'All of the above' },
+      { label: 'D', text: 'Fractures' }
+    ],
+    correct: 'C',
+    explanation: "Excessive crying in an otherwise healthy infant can signal serious underlying pathology. A hair tourniquet (a stray hair wrapped tightly around a toe, finger, or genitalia) can cause ischemia and intense pain. Corneal abrasions lead to eye pain, photophobia, and refusal to open the eye. Fractures—whether accidental or nonaccidental—cause pain on movement, swelling, or crepitus. Since each of these can be life- or limb-threatening and may be subtle on exam, 'all of the above' must be ruled out when evaluating a persistently crying infant."
+  },
+  {
+    text: "Which statement about infant colic is correct?",
+    options: [
+      { label: 'A', text: 'Fever often accompanies colic' },
+      { label: 'B', text: 'None of the above are correct' },
+      { label: 'C', text: 'Colic usually occurs in infants greater than 3 months of age' },
+      { label: 'D', text: 'Colic is very rarely seen' }
+    ],
+    correct: 'B',
+    explanation: "Infantile colic is defined by Wessel’s 'rule of threes': crying for more than 3 hours per day, on more than 3 days per week, for at least 3 weeks in an otherwise healthy baby. It typically begins between 2–4 weeks of age, peaks around 6 weeks, and resolves by 3–4 months. Fever does not accompany colic; it is common (up to 20% of infants), not rare; and it occurs before—not after—3 months. Therefore, none of the listed statements are correct."
+  },
+  {
+    text: "A 6-month-old infant presents with a tonic-clonic seizure lasting 30 minutes, is hypothermic and lethargic. The mother diluted formula with water due to limited supply. What is the most likely diagnosis?",
+    options: [
+      { label: 'A', text: 'Hypoglycemia' },
+      { label: 'B', text: 'Hypernatremia' },
+      { label: 'C', text: 'Hypocalcemia' },
+      { label: 'D', text: 'Hypokalemia' },
+      { label: 'E', text: 'Hyponatremia' }
+    ],
+    correct: 'E',
+    explanation: "Diluting infant formula with water creates a hypotonic solution and excess free water load, leading to dilutional hyponatremia. Low serum sodium reduces plasma osmolality, causing water to shift into brain cells, resulting in cerebral edema, seizures, lethargy, and even hypothermia. Hypoglycemia can cause seizures but would not explain a low serum sodium; hypernatremia causes dehydration and concentrated urine; hypocalcemia can cause neuromuscular irritability but typically presents earlier; hypokalemia seldom provokes seizures."
+  },
+  {
+    text: "Which of the following statements about solving child behavioral problems is FALSE?",
+    options: [
+      { label: 'A', text: 'Most children want to please their parents.' },
+      { label: 'B', text: 'Discipline is analogous to punishment.' },
+      { label: 'C', text: 'It takes many years for most children to be able to achieve self-control.' },
+      { label: 'D', text: "Children learn a lot through their parents' modeling of behaviors." }
+    ],
+    correct: 'B',
+    explanation: "Discipline and punishment are distinct: discipline is a systematic approach to teaching self-regulation, setting clear expectations, and reinforcing positive behavior over time; punishment is an immediate response aimed at penalizing unwanted behavior. Effective parenting relies on consistent discipline strategies—modeling, positive reinforcement, and natural consequences—rather than equating discipline with punitive measures. The other statements are true: children generally seek parental approval, self-control develops gradually over years, and observational learning through parental modeling is fundamental."
+  },
+  {
+    text: "A first-time mother asks about the correct age to start introducing solids in her healthy infant’s diet. What advice should you give her?",
+    options: [
+      { label: 'A', text: '2–4 months' },
+      { label: 'B', text: '8–9 months' },
+      { label: 'C', text: '6–7 months' },
+      { label: 'D', text: '4–6 months' }
+    ],
+    correct: 'C',
+    explanation: "Current guidelines (WHO, AAP) recommend exclusive breastmilk or formula feeding for about 6 months, followed by the introduction of complementary solid foods around 6–7 months of age. By this time, infants demonstrate good head control, the extrusion reflex diminishes, and gastrointestinal and renal systems are mature enough to handle solids. Introducing solids too early (2–4 months) risks choking and allergies; waiting until 8–9 months may lead to iron deficiency, as fetal iron stores become depleted by around 6 months."
+  },
+  {
+    text: "In the initial stages of septic shock, what is the most likely clinical finding?",
+    options: [
+      { label: 'A', text: 'Hyperpnea' },
+      { label: 'B', text: 'Abnormally low blood pressure' },
+      { label: 'C', text: 'Absent femoral pulses' },
+      { label: 'D', text: 'Tachypnea' },
+      { label: 'E', text: 'Delayed capillary refill' }
+    ],
+    correct: 'E',
+    explanation: "Early (compensated) septic shock in children maintains blood pressure via catecholamine-mediated vasoconstriction, so hypotension is a late sign. Tachypnea (rapid breathing) and hyperpnea (deep breathing) occur, but the most sensitive early indicator of poor perfusion is prolonged capillary refill (>2 seconds) due to microvascular dysregulation. Absent femoral pulses suggest obstructive or cardiogenic shock, not septic shock."
+  },
+  {
+    text: "A 5 kg infant with bronchiolitis is actively seizing and has hyponatremia (serum sodium 123 mmol/L). Which therapy is the most appropriate?",
+    options: [
+      { label: 'A', text: 'Intravenous mannitol (5 g over 15 min)' },
+      { label: 'B', text: '3% normal saline infusion at 5 mL/h' },
+      { label: 'C', text: '0.9% normal saline bolus (10 mL/kg)' },
+      { label: 'D', text: '3% normal saline bolus of 10 mL over 10 min' },
+      { label: 'E', text: 'Intravenous lorazepam (0.5 mg)' }
+    ],
+    correct: 'D',
+    explanation: "Symptomatic hyponatremia with seizures requires rapid partial correction with hypertonic saline to reduce cerebral edema. The recommended bolus is 3% NaCl at 2–5 mL/kg (≈10 mL for a 5 kg infant) given over 10–20 minutes, raising serum sodium by 3–5 mmol/L and aborting seizures. A slow infusion at 5 mL/h is too gradual; isotonic saline bolus may further dilute sodium; lorazepam treats the seizure but not the underlying hyponatremia; mannitol is for raised intracranial pressure of another etiology, not hyponatremic seizure."
+  },
+  {
+    text: "Ricky has been vomiting persistently for two days, is dehydrated (dry mucous membranes, capillary refill > 4 s), and presents with ABG: pH 7.5, PaO₂ 85 mm Hg, PaCO₂ 40 mm Hg, HCO₃⁻ 34 mmol/L. What acid–base disorder is shown?",
+    options: [
+      { label: 'A', text: 'Metabolic alkalosis, partially compensated' },
+      { label: 'B', text: 'Metabolic alkalosis, uncompensated' },
+      { label: 'C', text: 'T wave inversion in precordial leads' },
+      { label: 'D', text: 'Respiratory alkalosis, uncompensated' },
+      { label: 'E', text: 'Respiratory acidosis, partially compensated' }
+    ],
+    correct: 'A',
+    explanation: `Persistent vomiting causes loss of gastric H⁺ and chloride, leading to a primary metabolic alkalosis.  The elevated pH (7.50) and increased bicarbonate (34 mmol/L) confirm this.  In true physiologic compensation, the respiratory centers respond by hypoventilation to retain CO₂; a mild rise in PaCO₂ would indicate partial compensation.  Although in early stages PaCO₂ may still be near normal, the pattern fits “metabolic alkalosis with partial respiratory compensation.”`
+  },
+  {
+    text: "With regard to hypernatremia, which statement is INCORRECT?",
+    options: [
+      { label: 'A', text: 'It is usually associated with inadequate water intake' },
+      { label: 'B', text: 'Normal saline should NOT be used if the patient is hypovolemic and hypotensive' },
+      { label: 'C', text: 'It should not be corrected faster than 0.5 mmol/L per hour' },
+      { label: 'D', text: 'If associated with hypervolemia, then furosemide should be used' }
+    ],
+    correct: 'B',
+    explanation: `Hypernatremia commonly reflects free‐water loss exceeding sodium loss (e.g., inadequate intake, diarrhea, diuresis).  Safe correction limits (< 0.5 mmol/L/hr) avoid cerebral edema.  In hypervolemic hypernatremia, loop diuretics (e.g., furosemide) remove excess Na⁺ and water.  However, in hypovolemic hypernatremia with hypotension, isotonic (0.9%) saline is the initial fluid of choice to restore circulating volume before any hypotonic fluids—so saying “normal saline should NOT be used” is false.`
+  },
+  {
+    text: "Which enzyme deficiency leads to hemolytic anemia?",
+    options: [
+      { label: 'A', text: 'Phosphofructokinase' },
+      { label: 'B', text: 'Pyruvate kinase' },
+      { label: 'C', text: 'Glucokinase' },
+      { label: 'D', text: 'Phosphoglucomutase' }
+    ],
+    correct: 'B',
+    explanation: `Red blood cells rely exclusively on glycolysis for ATP.  Pyruvate kinase deficiency impairs the final step of glycolysis, causing insufficient ATP, rigid RBC membranes, and premature destruction in the spleen (hemolytic anemia).  Phosphofructokinase deficiency primarily affects muscle glycogen usage, glucokinase is a hepatic isozyme involved in glucose sensing, and phosphoglucomutase defects do not characteristically produce hemolysis.`
+  },
+  {
+    text: "The primary difference between distributive shock and hypovolemic shock is that:",
+    options: [
+      { label: 'A', text: 'Distributive shock is most commonly caused by trauma' },
+      { label: 'B', text: 'Hypovolemic shock results in decreased perfusion while distributive does not' },
+      { label: 'C', text: 'Hypovolemic shock results in decreased vascular tone' },
+      { label: 'D', text: 'Blood volume remains constant in distributive shock' }
+    ],
+    correct: 'D',
+    explanation: `Hypovolemic shock arises from a loss of intravascular volume (hemorrhage, dehydration), whereas distributive shock (e.g., septic, anaphylactic) features profound vasodilation and maldistribution of blood flow despite a normal or increased total blood volume.  Thus the intravascular volume in distributive shock is effectively unchanged, but systemic vascular resistance drops dramatically—distinguishing it from true volume loss.`
+  },
+  {
+    text: "The main areas affected in children with Autistic Spectrum Disorder are all except one:",
+    options: [
+      { label: 'A', text: 'Communication' },
+      { label: 'B', text: 'Social interaction' },
+      { label: 'C', text: 'Motor abilities' },
+      { label: 'D', text: 'Repetitive behaviors' }
+    ],
+    correct: 'C',
+    explanation: "Autism Spectrum Disorder is defined by impairments in social communication/interaction and the presence of restricted, repetitive patterns of behavior. While many children with ASD may exhibit motor delays or coordination challenges, these are not part of the core diagnostic criteria."
+  },
+  {
+    text: "A 7-year-old boy complains of stomach aches every day before school for the last 6 months. He occasionally vomits. His growth is normal, and all medical investigations are normal. He says that he likes school okay. What is your diagnosis?",
+    options: [
+      { label: 'A', text: 'Peptic ulcer' },
+      { label: 'B', text: 'Undifferentiated somatoform disorder' },
+      { label: 'C', text: 'School phobia' },
+      { label: 'D', text: 'Irritable bowel syndrome' }
+    ],
+    correct: 'B',
+    explanation: "Persistent physical complaints without identifiable organic pathology—especially when they cause significant distress or impairment—fit undifferentiated somatoform disorder. His normal growth, normal investigations, and lack of fear or avoidance of school rule out peptic ulcer, IBS, and school phobia."
+  },
+  {
+    text: "All of the following are disparities in pediatric health care, except:",
+    options: [
+      { label: 'A', text: 'Infant mortality increases as maternal education increases' },
+      { label: 'B', text: 'Ethnic minorities receive fewer health services' },
+      { label: 'C', text: 'Socioeconomic status affects access to care' },
+      { label: 'D', text: 'Insurance status impacts quality of care' }
+    ],
+    correct: 'A',
+    explanation: "Higher maternal education is consistently associated with lower infant mortality due to better health literacy and access to resources. The other statements describe well-documented disparities affecting ethnic minorities, low socioeconomic groups, and uninsured children."
+  },
+  {
+    text: "What are important ethical issue(s) in pediatrics?",
+    options: [
+      { label: 'A', text: 'Confidentiality' },
+      { label: 'B', text: 'Informed consent' },
+      { label: 'C', text: 'Best interest of the child' },
+      { label: 'D', text: 'All of the above' }
+    ],
+    correct: 'D',
+    explanation: "Pediatric practice must balance confidentiality (respecting the child’s privacy), appropriate informed consent/assent, and making decisions guided by the child’s best interests. All three domains are fundamental to ethical care of minors."
+  },
+  {
+    text: "Infant colic is classified by:",
+    options: [
+      { label: 'A', text: 'Crying for more than 1 hour a day, 5 days a week' },
+      { label: 'B', text: 'Crying for more than 2 hours a day, 4 days a week' },
+      { label: 'C', text: 'Crying for more than 3 hours a day, 3 days a week' },
+      { label: 'D', text: 'Crying mostly at night for a week' }
+    ],
+    correct: 'C',
+    explanation: "Wessel’s “rule of threes” defines colic as crying >3 hours per day, on >3 days per week, for ≥3 weeks in an otherwise healthy infant. This standardized definition helps distinguish colic from other causes of excessive crying."
+  },
+  {
+    text: "At what age should an infant double their birth weight?",
+    options: [
+      { label: 'A', text: '2–3 months' },
+      { label: 'B', text: '4–5 months' },
+      { label: 'C', text: '6–7 months' },
+      { label: 'D', text: '9 months' }
+    ],
+    correct: 'B',
+    explanation: "Typical growth trajectories show infants doubling birth weight by 4–5 months and tripling it by 12 months. Achieving this milestone confirms adequate nutrition and healthy growth velocity."
+  },
+  {
+    text: "Recognition of need for guidance and supervision is which part of the American Board of Pediatrics professional standards?",
+    options: [
+      { label: 'A', text: 'Altruism' },
+      { label: 'B', text: 'Self-awareness/knowledge of limits' },
+      { label: 'C', text: 'Honesty/integrity' },
+      { label: 'D', text: 'Communication' }
+    ],
+    correct: 'B',
+    explanation: "Self-awareness, including understanding one’s own limits and seeking help or supervision when needed, is a core competency. It ensures patient safety and high-quality care by preventing practitioners from operating beyond their expertise."
+  },
+  {
+    text: "Sleep disorders in children are mostly benign; what are potentially important or dangerous causes of a sleep disorder?",
+    options: [
+      { label: 'A', text: 'Night terrors' },
+      { label: 'B', text: 'Sleep enuresis' },
+      { label: 'C', text: 'Organic' },
+      { label: 'D', text: 'Sleepwalking' }
+    ],
+    correct: 'C',
+    explanation: "Although parasomnias like night terrors and sleepwalking and conditions like sleep enuresis are common and often benign, ‘organic’ causes—such as obstructive sleep apnea, epilepsy (nocturnal seizures), or cardiac arrhythmias—can present with sleep disturbances and carry significant morbidity. Clinicians must rule out these serious etiologies before attributing symptoms to benign pediatric sleep disorders."
+  },
+  {
+    text: "A 15-year-old girl presented alone, with 2 months of moodiness, social isolation, fatigue, loss of interest in activities, 2 kg weight loss, and declining grades. Physical exam is normal. What is your diagnosis?",
+    options: [
+      { label: 'A', text: 'Adjustment disorder' },
+      { label: 'B', text: 'Generalized anxiety disorder' },
+      { label: 'C', text: 'Major Depression' },
+      { label: 'D', text: 'Chronic fatigue syndrome' }
+    ],
+    correct: 'C',
+    explanation: "Major depressive disorder in adolescents is characterized by at least two weeks of depressed mood or anhedonia plus associated symptoms—fatigue, appetite/weight changes, sleep disturbance, diminished interest, and impaired functioning. The duration (2 months), weight loss, academic decline, and anhedonia strongly support major depression over adjustment disorder (shorter duration), anxiety (prominent worry rather than low mood), or chronic fatigue syndrome (primary fatigue without pronounced mood symptoms)."
+  },
+  {
+    text: "What are important red flags in development?",
+    options: [
+      { label: 'A', text: 'Unable to smile by 2 months' },
+      { label: 'B', text: 'Unable to sit by 9 months' },
+      { label: 'C', text: 'No babbling by 6 months' },
+      { label: 'D', text: 'All of the above' }
+    ],
+    correct: 'B',
+    explanation: "Key developmental milestones include social smiling by 2 months and canonical babbling by 6 months; delays in these warrant concern. However, inability to sit unsupported by 9 months indicates a significant gross motor delay and is classically cited as a red flag. While all listed delays merit evaluation, the specific milestone ‘sit by 9 months’ has highest predictive value for motor delay."
+  },
+  {
+    text: "What is the purpose of a growth chart?",
+    options: [
+      { label: 'A', text: 'Track nutritional status' },
+      { label: 'B', text: 'Identify growth abnormalities' },
+      { label: 'C', text: 'Monitor development over time' },
+      { label: 'D', text: 'All of the above' }
+    ],
+    correct: 'D',
+    explanation: "Growth charts plot weight-for-age, height-for-age, and BMI-for-age (or weight-for-length) percentiles over time, enabling clinicians to assess nutritional status, detect failure to thrive or obesity, identify growth abnormalities (e.g., endocrine or genetic disorders), and monitor longitudinal trends to guide interventions."
+  },
+  {
+    text: "What are important causes of crying that should be ruled out during excessive crying?",
+    options: [
+      { label: 'A', text: 'Hunger' },
+      { label: 'B', text: 'Pain' },
+      { label: 'C', text: 'Illness' },
+      { label: 'D', text: 'All of the above' }
+    ],
+    correct: 'D',
+    explanation: "Excessive crying may indicate basic needs (hunger), acute or chronic pain (e.g., hair tourniquet, injury), or underlying illness (infection, metabolic disease). A structured evaluation should systematically exclude each possibility before attributing crying to benign causes like colic."
+  },
+  {
+    text: "At what age should an infant regain their birth weight?",
+    options: [
+      { label: 'A', text: '5 days' },
+      { label: 'B', text: '7 days' },
+      { label: 'C', text: '10 days' },
+      { label: 'D', text: '14 days' }
+    ],
+    correct: 'C',
+    explanation: "Newborns typically lose up to 5–10% of birth weight in the first 3–5 days due to extracellular fluid loss; they generally regain birth weight by 10–14 days. Regaining birth weight by around 10 days indicates adequate feeding and hydration."
+  },
+  {
+    text: "Weight loss of up to 10% in the first days after birth is primarily due to:",
+    options: [
+      { label: 'A', text: 'Lack of breastfeeding' },
+      { label: 'B', text: 'Dehydration' },
+      { label: 'C', text: 'Loss of extracellular fluids' },
+      { label: 'D', text: 'Low birth weight' }
+    ],
+    correct: 'C',
+    explanation: "Physiologic neonatal weight loss results mainly from diuresis of excess extracellular fluid and insensible water loss as the neonate transitions to extrauterine life. This is a normal process not driven by inadequate intake or pathological dehydration."
+  },
+  {
+    text: "What is the main goal in managing a child with special needs?",
+    options: [
+      { label: 'A', text: 'Provide education' },
+      { label: 'B', text: 'Improve daily functioning' },
+      { label: 'C', text: 'Maximize potential for adult functioning' },
+      { label: 'D', text: 'Ensure medication compliance' }
+    ],
+    correct: 'C',
+    explanation: "While education, daily functioning, and medical management are important, the overarching aim of specialized pediatric care is to support the child’s development so they achieve the highest possible level of independence and quality of life in adulthood."
+  },
+  {
+    text: "All of the following are comorbidities of cerebral palsy, except:",
+    options: [
+      { label: 'A', text: 'Epilepsy' },
+      { label: 'B', text: 'Vision problems' },
+      { label: 'C', text: 'Cancer' },
+      { label: 'D', text: 'Learning disabilities' }
+    ],
+    correct: 'C',
+    explanation: "Cerebral palsy is frequently associated with neurological comorbidities such as epilepsy, vision and hearing impairments, cognitive and learning disabilities, and musculoskeletal issues. Cancer is not a recognized comorbidity of CP."
+  },
+  {
+    text: "What are important red flags in development?",
+    options: [
+      { label: 'A', text: 'Not smiling by 2 months' },
+      { label: 'B', text: 'Unable to walk by 18 months' },
+      { label: 'C', text: 'Not speaking single words by 12 months' },
+      { label: 'D', text: 'All of the above' }
+    ],
+    correct: 'B',
+    explanation: "Failure to walk independently by 18 months is a well‐validated gross motor red flag warranting further evaluation. While social smiling by 2 months and single‐word speech by 12 months are also milestones, the inability to walk at 18 months carries the greatest predictive value for motor delay."
+  },
+  {
+    text: "School-age period is between 6–12 years. The child's growth and development is characterized by:",
+    options: [
+      { label: 'A', text: 'Rapid height gain' },
+      { label: 'B', text: 'Puberty' },
+      { label: 'C', text: 'Gradual growth' },
+      { label: 'D', text: 'Emotional instability' }
+    ],
+    correct: 'C',
+    explanation: "Between ages 6 and 12, children grow at a steady, moderate pace in both height and weight. This ‘quiet period’ of gradual growth contrasts with the rapid acceleration of infancy and the pubertal growth spurt."
+  },
+  {
+    text: "ADHD is diagnosed based on multiple symptoms (≥6) from which categories?",
+    options: [
+      { label: 'A', text: 'Anxiety and hyperactivity' },
+      { label: 'B', text: 'Impulsivity, Hyperactivity, Inattention' },
+      { label: 'C', text: 'Impulsivity and aggression' },
+      { label: 'D', text: 'Inattention and mood instability' }
+    ],
+    correct: 'B',
+    explanation: "DSM-5 criteria require at least six symptoms of inattention and/or hyperactivity-impulsivity persisting for ≥6 months across settings, causing functional impairment. Anxiety, aggression, or mood changes are not core diagnostic domains."
+  },
+  {
+    text: "All of the following statements about autism are true except:",
+    options: [
+      { label: 'A', text: 'It typically presents before age 3' },
+      { label: 'B', text: 'It affects communication and behavior' },
+      { label: 'C', text: 'Vaccines can cause autism' },
+      { label: 'D', text: 'Early intervention can improve outcomes' }
+    ],
+    correct: 'C',
+    explanation: "Extensive epidemiologic and biologic research has disproven any causal link between immunizations and autism. Autism does typically manifest by age 3, affects social communication and restrictive behaviors, and benefits from intensive early intervention."
+  },
+  {
+    text: "What is the earliest and most sensitive sign of shock in children?",
+    options: [
+      { label: 'A', text: 'Hypotension' },
+      { label: 'B', text: 'Tachycardia' },
+      { label: 'C', text: 'Delayed capillary refill' },
+      { label: 'D', text: 'Altered mental status' }
+    ],
+    correct: 'B',
+    explanation: "In pediatric patients, the cardiovascular system compensates early by increasing heart rate to maintain cardiac output. Hypotension is a late and ominous sign of decompensation, making tachycardia the earliest and most sensitive clinical indicator of shock in children."
+  },
+  {
+    text: "What is the primary determinant of cardiac output in infants and young children?",
+    options: [
+      { label: 'A', text: 'Stroke volume' },
+      { label: 'B', text: 'Heart rate' },
+      { label: 'C', text: 'Afterload' },
+      { label: 'D', text: 'Preload' }
+    ],
+    correct: 'B',
+    explanation: "Infants have a limited ability to augment stroke volume due to less compliant ventricles, making them highly heart rate–dependent. Therefore, changes in heart rate are the predominant mechanism to increase or decrease cardiac output in this population."
+  },
+  {
+    text: "A child with cool extremities, weak pulses, prolonged capillary refill, and hypotension is most likely in which stage of shock?",
+    options: [
+      { label: 'A', text: 'Compensated' },
+      { label: 'B', text: 'Uncompensated' },
+      { label: 'C', text: 'Irreversible' },
+      { label: 'D', text: 'Hyperdynamic' }
+    ],
+    correct: 'B',
+    explanation: "The presence of hypotension alongside signs of poor perfusion (cool extremities, weak pulses, delayed refill) indicates decompensated (uncompensated) shock. In compensated shock, blood pressure remains normal."
+  },
+  {
+    text: "In hypovolemic shock, which parameter is typically normal until 30–40% blood volume is lost?",
+    options: [
+      { label: 'A', text: 'Pulse pressure' },
+      { label: 'B', text: 'Respiratory rate' },
+      { label: 'C', text: 'Blood pressure' },
+      { label: 'D', text: 'Urine output' }
+    ],
+    correct: 'C',
+    explanation: "Children maintain blood pressure through vigorous vasoconstriction and tachycardia until a substantial intravascular volume loss occurs (≈30–40%). Early on, tachycardia and oliguria are more sensitive than hypotension."
+  },
+  {
+    text: "Which of the following is NOT typically a feature of compensated shock?",
+    options: [
+      { label: 'A', text: 'Tachycardia' },
+      { label: 'B', text: 'Normal blood pressure' },
+      { label: 'C', text: 'Delayed capillary refill' },
+      { label: 'D', text: 'Altered mental status' }
+    ],
+    correct: 'D',
+    explanation: "Compensated shock features tachycardia, normal blood pressure, and delayed capillary refill as early perfusion markers. Altered mental status is a late sign, indicating progression to decompensated shock."
+  },
+  {
+    text: "Which of the following is the correct formula for oxygen delivery (DO₂)?",
+    options: [
+      { label: 'A', text: 'CO × Hb' },
+      { label: 'B', text: 'HR × SV' },
+      { label: 'C', text: 'CO × CaO₂' },
+      { label: 'D', text: 'PaO₂ × Hb' }
+    ],
+    correct: 'C',
+    explanation: "Oxygen delivery (DO₂) equals cardiac output (CO) multiplied by arterial oxygen content (CaO₂). This reflects the total oxygen transported to tissues per minute."
+  },
+  {
+    text: "Which of the following is the most appropriate initial fluid bolus for a child in hypovolemic shock?",
+    options: [
+      { label: 'A', text: '5 mL/kg albumin' },
+      { label: 'B', text: '10 mL/kg colloid' },
+      { label: 'C', text: '20 mL/kg crystalloid' },
+      { label: 'D', text: '10 mL/kg D5W' }
+    ],
+    correct: 'C',
+    explanation: "Initial resuscitation in hypovolemic shock uses 20 mL/kg of isotonic crystalloid (e.g., normal saline or lactated Ringer’s) to quickly restore intravascular volume."
+  },
+  {
+    text: "What physical exam finding suggests irreversible shock in a pediatric patient?",
+    options: [
+      { label: 'A', text: 'Capillary refill of 4 seconds' },
+      { label: 'B', text: 'Bradycardia and apnea' },
+      { label: 'C', text: 'Bounding pulses' },
+      { label: 'D', text: 'Mild tachypnea' }
+    ],
+    correct: 'B',
+    explanation: "Bradycardia and apnea indicate exhaustion of compensatory mechanisms and impending cardiovascular collapse, hallmarks of irreversible shock."
+  },
+  {
+    text: "In cardiogenic shock, what complication can fluid boluses worsen?",
+    options: [
+      { label: 'A', text: 'Vasodilation' },
+      { label: 'B', text: 'Pulmonary edema' },
+      { label: 'C', text: 'Hypovolemia' },
+      { label: 'D', text: 'Hypertension' }
+    ],
+    correct: 'B',
+    explanation: "Cardiogenic shock results from impaired myocardial contractility. Administering excess fluids can increase hydrostatic pressure in pulmonary capillaries, worsening pulmonary edema."
+  },
+  {
+    text: "A 4-month-old infant with hepatomegaly, cool extremities, and poor perfusion likely has what type of shock?",
+    options: [
+      { label: 'A', text: 'Distributive' },
+      { label: 'B', text: 'Cardiogenic' },
+      { label: 'C', text: 'Obstructive' },
+      { label: 'D', text: 'Hypovolemic' }
+    ],
+    correct: 'B',
+    explanation: "Hepatomegaly in an infant with signs of poor perfusion suggests fluid backup from weak cardiac pump function, consistent with cardiogenic shock."
+  },
+  {
+    text: "In distributive shock, particularly septic shock, what is the characteristic hemodynamic change?",
+    options: [
+      { label: 'A', text: 'Increased afterload' },
+      { label: 'B', text: 'Decreased systemic vascular resistance' },
+      { label: 'C', text: 'Decreased preload' },
+      { label: 'D', text: 'Increased myocardial contractility' }
+    ],
+    correct: 'B',
+    explanation: "Distributive shock, such as sepsis, is defined by profound vasodilation and maldistribution of blood flow, leading to markedly decreased systemic vascular resistance."
+  },
+  {
+    text: "What is the best way to assess perfusion in a child?",
+    options: [
+      { label: 'A', text: 'Blood pressure' },
+      { label: 'B', text: 'Oxygen saturation' },
+      { label: 'C', text: 'Capillary refill, mental status, and urine output' },
+      { label: 'D', text: 'Respiratory rate' }
+    ],
+    correct: 'C',
+    explanation: "Capillary refill time, level of consciousness, and urine output are dynamic clinical indicators of effective tissue perfusion and end-organ function."
+  },
+  {
+    text: "Which of the following interventions should be done first in a child with suspected shock?",
+    options: [
+      { label: 'A', text: 'Broad-spectrum antibiotics' },
+      { label: 'B', text: 'Vasopressor therapy' },
+      { label: 'C', text: 'Administer oxygen' },
+      { label: 'D', text: 'Blood transfusion' }
+    ],
+    correct: 'C',
+    explanation: "Ensuring adequate oxygenation is the first and most immediate intervention in any shock state to support cellular metabolism while other measures are initiated."
+  },
+  {
+    text: "What is the lower limit of systolic blood pressure in a child aged 5 years?",
+    options: [
+      { label: 'A', text: '60 mmHg' },
+      { label: 'B', text: '70 mmHg' },
+      { label: 'C', text: '80 mmHg' },
+      { label: 'D', text: '90 mmHg' }
+    ],
+    correct: 'C',
+    explanation: "The formula for the minimum acceptable systolic BP in children is 70 + (2 × age in years). For a 5-year-old: 70 + (2×5) = 80 mmHg."
+  },
+  {
+    text: "A child presents with flushed skin, bounding pulses, and fever. What type of shock is most likely?",
+    options: [
+      { label: 'A', text: 'Hypovolemic' },
+      { label: 'B', text: 'Cardiogenic' },
+      { label: 'C', text: 'Septic (distributive)' },
+      { label: 'D', text: 'Obstructive' }
+    ],
+    correct: 'C',
+    explanation: "Early septic (distributive) shock often presents with vasodilation, warm extremities, flushed skin, and bounding pulses despite underlying tissue hypoperfusion."
+  },
+  {
+    text: "Which of the following is a common cause of pediatric hypovolemic shock worldwide?",
+    options: [
+      { label: 'A', text: 'Trauma' },
+      { label: 'B', text: 'Sepsis' },
+      { label: 'C', text: 'Diarrhea' },
+      { label: 'D', text: 'Hemorrhage' }
+    ],
+    correct: 'C',
+    explanation: "Globally, diarrhea is the leading cause of pediatric hypovolemic shock due to massive fluid and electrolyte losses in resource-limited settings."
+  },
+  {
+    text: "Which lab result is most suggestive of tissue hypoperfusion in septic shock?",
+    options: [
+      { label: 'A', text: 'Elevated PCO₂' },
+      { label: 'B', text: 'Low pH' },
+      { label: 'C', text: 'Elevated lactate' },
+      { label: 'D', text: 'High hemoglobin' }
+    ],
+    correct: 'C',
+    explanation: "Elevated lactate indicates anaerobic metabolism in hypoperfused tissues and is a key marker of severity and prognosis in septic shock."
+  },
+  {
+    text: "Which electrolyte disturbance is commonly seen in pediatric shock?",
+    options: [
+      { label: 'A', text: 'Hypercalcemia' },
+      { label: 'B', text: 'Hypokalemia' },
+      { label: 'C', text: 'Hypernatremia' },
+      { label: 'D', text: 'Hyponatremia' }
+    ],
+    correct: 'D',
+    explanation: "Shock-induced ADH release and aggressive fluid resuscitation can lead to dilutional hyponatremia in children."
+  },
+  {
+    text: "A 4-year-old child has fever, lethargy, warm extremities, and a fast bounding pulse. What is the most likely diagnosis?",
+    options: [
+      { label: 'A', text: 'Cardiogenic shock' },
+      { label: 'B', text: 'Hypovolemic shock' },
+      { label: 'C', text: 'Early septic shock' },
+      { label: 'D', text: 'Obstructive shock' }
+    ],
+    correct: 'C',
+    explanation: "Warm extremities, bounding pulses, and hyperdynamic circulation are characteristic of the early, vasodilatory phase of septic (distributive) shock."
+  },
+  {
+    text: "What is the best initial imaging for suspected pericardial tamponade causing obstructive shock?",
+    options: [
+      { label: 'A', text: 'CT scan' },
+      { label: 'B', text: 'Echocardiogram' },
+      { label: 'C', text: 'Chest X-ray' },
+      { label: 'D', text: 'Abdominal ultrasound' }
+    ],
+    correct: 'B',
+    explanation: "Echocardiography is the fastest, most sensitive bedside modality to detect pericardial effusion and tamponade physiology."
+  },
+  {
+    text: "A 6-year-old with bloody diarrhea and no urine output is now sleepy. What type of shock is suspected?",
+    options: [
+      { label: 'A', text: 'Cardiogenic' },
+      { label: 'B', text: 'Hypovolemic' },
+      { label: 'C', text: 'Obstructive' },
+      { label: 'D', text: 'Septic (with renal involvement)' }
+    ],
+    correct: 'D',
+    explanation: "Hemolytic uremic syndrome from Shiga-toxin E. coli can precipitate septic-type shock with acute renal failure, oliguria, and altered mental status."
+  },
+  {
+    text: "When is intraosseous (IO) access indicated in pediatric shock?",
+    options: [
+      { label: 'A', text: 'After two failed blood draws' },
+      { label: 'B', text: 'Only if intubation is required' },
+      { label: 'C', text: 'If IV access cannot be rapidly obtained' },
+      { label: 'D', text: 'Only in trauma cases' }
+    ],
+    correct: 'C',
+    explanation: "IO access should be established promptly when peripheral IV access cannot be obtained within seconds in an emergency, to deliver fluids and medications."
+  },
+  {
+    text: "Which drug is preferred as a first-line vasopressor in fluid-refractory septic shock?",
+    options: [
+      { label: 'A', text: 'Norepinephrine' },
+      { label: 'B', text: 'Dopamine' },
+      { label: 'C', text: 'Epinephrine' },
+      { label: 'D', text: 'Vasopressin' }
+    ],
+    correct: 'C',
+    explanation: "In pediatric fluid-refractory septic shock, epinephrine is favored—especially in cold shock—to improve cardiac output and vascular tone."
+  },
+  {
+    text: "A child has hypotension, bradycardia, and cyanotic cold extremities. Which stage of shock is this?",
+    options: [
+      { label: 'A', text: 'Compensated' },
+      { label: 'B', text: 'Uncompensated' },
+      { label: 'C', text: 'Refractory' },
+      { label: 'D', text: 'Irreversible' }
+    ],
+    correct: 'D',
+    explanation: "Bradycardia and cold cyanotic extremities indicate exhaustion of compensatory mechanisms and progression to irreversible shock."
+  },
+  {
+    text: "What is the target central venous pressure (CVP) in shock resuscitation?",
+    options: [
+      { label: 'A', text: '< 5 mmHg' },
+      { label: 'B', text: '6–8 mmHg' },
+      { label: 'C', text: '> 10 mmHg' },
+      { label: 'D', text: '12–15 mmHg' }
+    ],
+    correct: 'C',
+    explanation: "A CVP > 10 mmHg generally indicates adequate preload during resuscitation, guiding fluid therapy in shock."
+  },
+  {
+    text: "A 15-year-old post-op trauma patient develops sudden hypotension, tachycardia, cool limbs, and muffled heart sounds. What’s the likely cause?",
+    options: [
+      { label: 'A', text: 'Hypovolemia' },
+      { label: 'B', text: 'Pericardial tamponade' },
+      { label: 'C', text: 'Sepsis' },
+      { label: 'D', text: 'Myocardial infarction' }
+    ],
+    correct: 'B',
+    explanation: "Beck’s triad (hypotension, muffled heart sounds, jugular venous distension) signals pericardial tamponade, a form of obstructive shock."
+  },
+  {
+    text: "Why is morphine used cautiously in cardiogenic shock?",
+    options: [
+      { label: 'A', text: 'It worsens oxygenation' },
+      { label: 'B', text: 'It increases preload' },
+      { label: 'C', text: 'It reduces anxiety and preload' },
+      { label: 'D', text: 'It lowers heart rate excessively' }
+    ],
+    correct: 'C',
+    explanation: "Morphine relieves anxiety and reduces venous return (preload), which can be beneficial but must be titrated carefully to avoid hypotension."
+  },
+  {
+    text: "Which compensatory mechanism does not help maintain oxygen delivery during early shock?",
+    options: [
+      { label: 'A', text: 'Increased heart rate' },
+      { label: 'B', text: 'Vasodilation' },
+      { label: 'C', text: 'Increased stroke volume' },
+      { label: 'D', text: 'Increased oxygen extraction' }
+    ],
+    correct: 'B',
+    explanation: "Early shock triggers vasoconstriction (not vasodilation) to maintain perfusion pressure; vasodilation would worsen hypotension."
+  },
+  {
+    text: "What is the formula to calculate lower limit of systolic BP in children?",
+    options: [
+      { label: 'A', text: '60 + (age × 3)' },
+      { label: 'B', text: '70 + (age × 2)' },
+      { label: 'C', text: '80 + (age × 2)' },
+      { label: 'D', text: '90 + (age × 1.5)' }
+    ],
+    correct: 'B',
+    explanation: "The pediatric hypotension threshold formula is 70 + 2 × age in years for the lower limit of systolic blood pressure."
+  },
+  {
+    text: "Why is careful monitoring required during fluid resuscitation in shock?",
+    options: [
+      { label: 'A', text: 'Fluids cause vasodilation' },
+      { label: 'B', text: 'Fluids often lead to hypokalemia' },
+      { label: 'C', text: 'Excess fluids may cause pulmonary edema' },
+      { label: 'D', text: 'Fluids reduce oxygen carrying capacity' }
+    ],
+    correct: 'C',
+    explanation: "Overzealous fluid administration—particularly in cardiogenic or septic shock—can precipitate pulmonary edema and worsen respiratory function."
+  },
+  {
+    text: "What is the primary goal in the initial management of pediatric shock?",
+    options: [
+      { label: 'A', text: 'Lower blood pressure' },
+      { label: 'B', text: 'Restore end-organ perfusion' },
+      { label: 'C', text: 'Correct all lab abnormalities' },
+      { label: 'D', text: 'Avoid fluid resuscitation' }
+    ],
+    correct: 'B',
+    explanation: "The cornerstone of shock management is rapidly restoring tissue perfusion and oxygen delivery; lowering blood pressure or avoiding fluids would be counterproductive, and labs can be corrected once perfusion is secured."
+  },
+  {
+    text: "Which component of cardiac output is most easily altered in children during early shock?",
+    options: [
+      { label: 'A', text: 'Afterload' },
+      { label: 'B', text: 'Heart rate' },
+      { label: 'C', text: 'Contractility' },
+      { label: 'D', text: 'Preload' }
+    ],
+    correct: 'B',
+    explanation: "Infants and young children have relatively fixed stroke volumes and contractility; they compensate for decreased perfusion primarily by increasing heart rate."
+  },
+  {
+    text: "What clinical sign differentiates warm from cold septic shock?",
+    options: [
+      { label: 'A', text: 'Presence of fever' },
+      { label: 'B', text: 'Normal blood pressure' },
+      { label: 'C', text: 'Peripheral perfusion' },
+      { label: 'D', text: 'Capillary refill time' }
+    ],
+    correct: 'C',
+    explanation: "Warm (hyperdynamic) shock presents with flushed skin and bounding pulses (good peripheral perfusion), whereas cold shock shows cool extremities and weak pulses."
+  },
+  {
+    text: "Which of the following is NOT a compensatory mechanism in pediatric shock?",
+    options: [
+      { label: 'A', text: 'Increased systemic vascular resistance' },
+      { label: 'B', text: 'Redistribution of blood flow' },
+      { label: 'C', text: 'Reduced respiratory rate' },
+      { label: 'D', text: 'Increased oxygen extraction' }
+    ],
+    correct: 'C',
+    explanation: "Respiratory rate increases to compensate for metabolic acidosis; a reduced rate would worsen acid–base balance and is not a compensatory response."
+  },
+  {
+    text: "What is the most appropriate next step in a child with suspected septic shock and poor perfusion after 60 mL/kg of fluids?",
+    options: [
+      { label: 'A', text: 'Administer antibiotics' },
+      { label: 'B', text: 'Intubate the child' },
+      { label: 'C', text: 'Begin vasopressor therapy' },
+      { label: 'D', text: 'Order a CT scan' }
+    ],
+    correct: 'C',
+    explanation: "When fluid resuscitation alone fails to restore perfusion, vasopressors are indicated to improve vascular tone and maintain blood pressure."
+  },
+  {
+    text: "Which organ systems are prioritized by the body during pediatric shock compensation?",
+    options: [
+      { label: 'A', text: 'Skin and GI' },
+      { label: 'B', text: 'Brain and kidneys' },
+      { label: 'C', text: 'Liver and spleen' },
+      { label: 'D', text: 'Pancreas and intestines' }
+    ],
+    correct: 'B',
+    explanation: "Compensatory mechanisms shunt blood to vital organs—particularly the brain, heart, and kidneys—at the expense of less critical tissues like skin and GI tract."
+  },
+  {
+    text: "Which is a hallmark sign of cardiogenic shock in a 4-month-old?",
+    options: [
+      { label: 'A', text: 'Warm extremities' },
+      { label: 'B', text: 'Hepatomegaly' },
+      { label: 'C', text: 'Tachypnea with bounding pulses' },
+      { label: 'D', text: 'Skin rash' }
+    ],
+    correct: 'B',
+    explanation: "Hepatomegaly indicates right-sided congestion due to poor cardiac pump function, a classic finding in infant cardiogenic shock."
+  },
+  {
+    text: "A 6-year-old has shock, bleeding, and thrombocytopenia. Which type of shock is most likely?",
+    options: [
+      { label: 'A', text: 'Obstructive' },
+      { label: 'B', text: 'Distributive' },
+      { label: 'C', text: 'Hypovolemic' },
+      { label: 'D', text: 'Septic' }
+    ],
+    correct: 'D',
+    explanation: "Disseminated intravascular coagulation (bleeding and low platelets) is characteristic of septic shock, not obstructive or purely hypovolemic shock."
+  },
+  {
+    text: "Which of the following is most appropriate to monitor response to therapy in pediatric shock?",
+    options: [
+      { label: 'A', text: 'Serial chest x-rays' },
+      { label: 'B', text: 'Pulse oximetry' },
+      { label: 'C', text: 'Capillary refill, urine output, and mental status' },
+      { label: 'D', text: 'Hematocrit levels' }
+    ],
+    correct: 'C',
+    explanation: "Bedside measures—capillary refill, urine output, and mental status—are rapid, reliable indicators of improving tissue perfusion."
+  },
+  {
+    text: "Which cause of obstructive shock results in decreased venous return due to increased intrathoracic pressure?",
+    options: [
+      { label: 'A', text: 'Pulmonary embolism' },
+      { label: 'B', text: 'Pericardial tamponade' },
+      { label: 'C', text: 'Tension pneumothorax' },
+      { label: 'D', text: 'Sepsis' }
+    ],
+    correct: 'C',
+    explanation: "Tension pneumothorax raises intrathoracic pressure, impeding venous return to the heart and causing obstructive shock."
+  },
+  {
+    text: "What is the primary mechanism of tissue hypoxia in shock?",
+    options: [
+      { label: 'A', text: 'Low oxygen saturation' },
+      { label: 'B', text: 'Impaired hemoglobin production' },
+      { label: 'C', text: 'Inadequate oxygen delivery relative to demand' },
+      { label: 'D', text: 'Hyperventilation' }
+    ],
+    correct: 'C',
+    explanation: "Shock leads to oxygen supply (DO₂) falling below tissue demand (VO₂), resulting in cellular hypoxia despite normal saturation or hemoglobin levels."
+  },
+  {
+    text: "A patient has shock with normal preload and contractility but poor cardiac output. What’s the most likely type?",
+    options: [
+      { label: 'A', text: 'Cardiogenic' },
+      { label: 'B', text: 'Distributive' },
+      { label: 'C', text: 'Obstructive' },
+      { label: 'D', text: 'Hypovolemic' }
+    ],
+    correct: 'C',
+    explanation: "Obstructive shock occurs when mechanical factors (e.g., tamponade, tension pneumothorax) block cardiac filling or output despite normal preload and contractility."
+  },
+  {
+    text: "A child in early septic shock may initially present with which finding?",
+    options: [
+      { label: 'A', text: 'Cold clammy skin' },
+      { label: 'B', text: 'Normal or elevated cardiac output' },
+      { label: 'C', text: 'Elevated systemic vascular resistance' },
+      { label: 'D', text: 'Bradycardia' }
+    ],
+    correct: 'B',
+    explanation: "Early septic (distributive) shock is hyperdynamic, with normal or increased cardiac output and decreased vascular resistance."
+  },
+  {
+    text: "What is the first-line antibiotic approach in a child with suspected septic shock and unknown source?",
+    options: [
+      { label: 'A', text: 'Amoxicillin alone' },
+      { label: 'B', text: 'Broad-spectrum antibiotics' },
+      { label: 'C', text: 'Antifungal therapy' },
+      { label: 'D', text: 'Antivirals' }
+    ],
+    correct: 'B',
+    explanation: "Empiric broad-spectrum antibiotics should be initiated promptly (ideally within 1 hour) in suspected sepsis to cover likely pathogens."
+  },
+  {
+    text: "In hypovolemic shock, what is the main pathophysiological event?",
+    options: [
+      { label: 'A', text: 'Increased preload' },
+      { label: 'B', text: 'Loss of vascular tone' },
+      { label: 'C', text: 'Inadequate intravascular volume' },
+      { label: 'D', text: 'Pulmonary embolism' }
+    ],
+    correct: 'C',
+    explanation: "Hypovolemic shock arises from decreased circulating blood volume, leading to reduced preload and cardiac output."
+  }
+    ];
+    // Populate left sidebar with question numbers
+    const sidebarList = document.getElementById('sidebar-list');
+    questions.forEach((_, i) => {
+      const li = document.createElement('li');
+      const a  = document.createElement('a');
+      a.href        = '#';
+      a.textContent = i + 1;
+      a.addEventListener('click', () => {
+        current = i;
+        renderQ(i);
+        sidebar.classList.remove('open');
+      });
+      li.appendChild(a);
+      sidebarList.appendChild(li);
+    });
+
+    let startTime = Date.now(), current = 0, results = [];
+    const qText      = document.getElementById('question-text');
+    const optsList   = document.getElementById('options-list');
+    const explDiv    = document.getElementById('explanation');
+    const sumDiv     = document.getElementById('results-summary');
+    const counterDiv = document.getElementById('question-counter');
+    const prevBtn    = document.getElementById('prev-btn');
+    const nextBtn    = document.getElementById('next-btn');
+    const submitBtn  = document.getElementById('submit-btn');
+    const endBtn     = document.getElementById('end-btn');
+
+    function renderQ(i) {
+      const q = questions[i];
+      counterDiv.textContent = `Question ${i+1} of ${questions.length}`;
+      qText.innerHTML        = q.text.replace(/\n/g, '<br>');
+      optsList.innerHTML     = '';
+      q.options.forEach(o => {
+        const lbl       = document.createElement('label');
+        lbl.className   = 'option-label';
+        lbl.innerHTML   = `<input type="radio" name="answer" value="${o.label}"> ${o.label}. ${o.text}`;
+        optsList.appendChild(lbl);
+      });
+      explDiv.innerHTML   = '';
+      sumDiv.style.display = 'none';
+      prevBtn.disabled    = i === 0;
+      nextBtn.disabled    = true;
+      submitBtn.disabled  = false;
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="answer"]:checked'); if (!sel) return;
+      const val  = sel.value;
+      const corr = questions[current].correct;
+      const ok   = val === corr;
+      results[current] = ok;
+      document.querySelectorAll('.option-label').forEach(lbl => {
+        const inp = lbl.querySelector('input');
+        lbl.classList.remove('correct-answer','wrong-answer');
+        if (inp.value === corr) lbl.classList.add('correct-answer');
+        if (inp.checked && !ok) lbl.classList.add('wrong-answer');
+        inp.disabled = true;
+      });
+      explDiv.innerHTML = questions[current].explanation;
+      submitBtn.disabled = true;
+      nextBtn.disabled = false;
+    });
+
+    prevBtn.addEventListener('click', () => { if (current>0) { current--; renderQ(current); }});
+    nextBtn.addEventListener('click', () => { if (current<questions.length-1) { current++; renderQ(current); }});
+    endBtn.addEventListener('click', () => {
+      const score    = results.filter(r => r).length;
+      const total    = questions.length;
+      const duration = Math.floor((Date.now()-startTime)/1000);
+      sumDiv.style.display = 'block';
+      sumDiv.innerHTML = `<strong>Score: ${score}/${total} (${Math.round(score/total*100)}%)</strong><br>` +
+                          `Time: ${Math.floor(duration/60)}m ${duration%60}s<br>` +
+                          `<button onclick="location.href='index.html'">Back to Home</button>`;
+    });
+
+    renderQ(0);
+  </script>
+</body>
+</html>
