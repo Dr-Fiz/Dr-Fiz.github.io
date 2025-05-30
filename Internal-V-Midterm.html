@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quiz</title>
+  <!-- Embedded CSS -->
+  <style>
+    :root {
+      --primary-color: #005eb8;
+      --primary-hover: #004c99;
+      --bg-color: #f0f4f8;
+      --text-color: #2a2a2a;
+      --sidebar-bg: #264653;
+      --sidebar-text: #ffffff;
+      --header-height: 60px;
+      --footer-height: 40px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    /* HEADER */
+    .top-nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      height: var(--header-height);
+      background-color: var(--primary-color);
+      display: flex; align-items: center; justify-content: space-between;
+      color: #fff; padding: 0 1rem;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      z-index: 1001;
+    }
+    .top-nav .menu-icon { font-size: 1.4rem; cursor: pointer; }
+    .top-nav .title { font-size: 1.1rem; font-weight: 500; text-transform: uppercase; }
+    .top-nav .nav-actions button { background: none; border: none; color: #fff; margin-left: 0.75rem; cursor: pointer; font-size: 1rem; padding: 0.25rem; }
+    .top-nav .nav-actions button:hover { color: var(--primary-hover); }
+    .top-nav .nav-actions #highlight-btn.active { background-color: var(--primary-hover); }
+    .highlighted-text { background-color: yellow; }
+    /* SIDEBARS */
+    .sidebar { position: fixed; left: -200px; width: 200px; background-color: var(--sidebar-bg); color: var(--sidebar-text); padding: 1rem; transition: left 0.3s ease; z-index: 1000; overflow-y: auto; }
+    .sidebar.open { left: 0; }
+    .sidebar ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar a { color: var(--sidebar-text); text-decoration: none; padding: 0.5rem; display: block; border-radius: 4px; }
+    .sidebar a:hover { background: rgba(255,255,255,0.1); }
+    .lab-sidebar { position: fixed; right: -600px; width: 600px; background-color: var(--sidebar-bg); color: var(--sidebar-text); padding: 1rem; transition: right 0.3s ease; z-index: 1000; overflow-y: auto; }
+    .lab-sidebar.open { right: 0; }
+    /* MAIN CONTENT */
+    main { padding-top: var(--header-height); padding-bottom: var(--footer-height); }
+    .question-container { background: transparent; padding: 1.5rem; margin: 2rem auto; max-width: 2000px; }
+    .qa-wrapper { display: flex; width: 100%; gap: 1.5rem; }
+    .question-content { flex: 0 0 50%; }
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      align-items: flex-start;
+    }
+    .option-label {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid #cbd5e0;
+      border-radius: 6px;
+      padding: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+      width: 600px;
+    }
+    .option-label:hover { background-color: #f1f5f9; }
+    .options-list input { margin-right: 0.5rem; accent-color: var(--primary-color); }
+    .correct-answer { background-color: #e6fffa; border-color: #2c7a7b; }
+    .wrong-answer { background-color: #ffe6e6; border-color: #c53030; }
+    .submit-btn, #prev-btn, #next-btn, #end-btn { background-color: var(--primary-color); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
+    .submit-btn:hover:not(:disabled), #prev-btn:hover:not(:disabled), #next-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+    .submit-btn:disabled, #prev-btn:disabled, #next-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .explanation { display: none; flex: 0 0 50%; background-color: #e8f5e9; border-left: 4px solid var(--primary-color); padding: 1rem; border-radius: 4px; white-space: pre-wrap; }
+    .results-summary { display: none; margin-top: 1rem; background-color: #fff3cd; border-left: 4px solid #ffeeba; padding: 1rem; border-radius: 4px; }
+    /* FOOTER */
+    .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; height: var(--footer-height); background-color: var(--primary-color); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; font-size: 0.9rem; box-shadow: 0 -2px 4px rgba(0,0,0,0.1); z-index: 1001; }
+    .footer-bar .actions button { background: none; border: none; color: #fff; margin-left: 1rem; cursor: pointer; font-size: 1.1rem; }
+
+    /* Responsive: move explanation below on mobile */
+    @media screen and (max-width: 600px) {
+      .qa-wrapper { flex-direction: column; }
+      .question-content,
+      .explanation { flex: none; width: 100%; }
+      .explanation { margin-top: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Top Navigation -->
+  <nav class="top-nav">
+    <div class="menu-icon">&#9776;</div>
+    <div id="question-counter">Question 1 of 6</div>
+    <div class="nav-actions">
+      <button id="prev-btn" disabled>&lt; Previous</button>
+      <button id="next-btn" disabled>Next &gt;</button>
+      <button id="fullscreen-btn">Full Screen</button>
+      <button id="labvals-btn">Lab Values</button>
+      <button id="highlight-btn">Highlight</button>
+      <button id="end-btn">End Exam</button>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <ul id="sidebar-list"></ul>
+  </div>
+
+  <!-- Lab Values Sidebar -->
+  <div id="lab-sidebar" class="lab-sidebar">
+    <img src="images/Blood.jpg" alt="Blood Values" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Blood 2.jpg" alt="Blood Plasma Serum" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Hematological.jpg" alt="Hematologic Values" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Sweat, Urine, BMI.jpg" alt="Sweat, Urine, BMI" style="width:100%; margin-bottom:1rem;">
+    <img src="images/CSF.jpg" alt="Cerebrospinal Fluid" style="width:100%;">
+  </div>
+
+  <main>
+    <section class="question-container">
+      <div class="qa-wrapper">
+        <!-- Left column: question + options -->
+        <div class="question-content">
+          <div id="question-text"></div>
+          <form id="options-list" class="options-list"></form>
+          <button id="submit-btn" class="submit-btn">Submit Answer</button>
+        </div>
+        <!-- Right column: explanation -->
+        <div id="explanation" class="explanation"></div>
+      </div>
+      <!-- Summary after ending -->
+      <div id="results-summary" class="results-summary"></div>
+    </section>
+  </main>
+
+  <!-- Embedded JS -->
+  <script>
+    // Sidebar toggles
+    const menuIcon   = document.querySelector('.menu-icon');
+    const sidebar    = document.getElementById('sidebar');
+    const labSidebar = document.getElementById('lab-sidebar');
+    const nav        = document.querySelector('.top-nav');
+    const navHeight  = nav.offsetHeight;
+    [sidebar, labSidebar].forEach(sb => {
+      sb.style.top    = navHeight + 'px';
+      sb.style.height = `calc(100% - ${navHeight}px)`;
+    });
+    menuIcon.addEventListener('click', () => sidebar.classList.toggle('open'));
+    document.getElementById('labvals-btn')
+      .addEventListener('click', () => labSidebar.classList.toggle('open'));
+
+    // Highlight mode toggle
+    const highlightBtn = document.getElementById('highlight-btn');
+    let highlightMode = false;
+    highlightBtn.addEventListener('click', () => {
+      highlightMode = !highlightMode;
+      highlightBtn.classList.toggle('active', highlightMode);
+    });
+    document.addEventListener('mouseup', () => {
+      if (!highlightMode) return;
+      const selection = window.getSelection();
+      if (selection.rangeCount === 0 || selection.isCollapsed) return;
+      const range = selection.getRangeAt(0);
+      try {
+        const span = document.createElement('span');
+        span.className = 'highlighted-text';
+        range.surroundContents(span);
+      } catch (e) {
+        document.execCommand('hiliteColor', false, 'yellow');
+      }
+      selection.removeAllRanges();
+    });
+
+    // Quiz data
+    const questions = [
+      {
+    text: `The following information is recorded in the health history: “The patient has had abdominal pain for 1 week. The pain lasts for 30 minutes at a time; it comes and goes. The severity is 7 to 8 on a scale of 1 to 10. It is accompanied by nausea and vomiting. It is located in the mid epigastric area”. Which of these categories does it belong to?`,
+    options: [
+      { label: 'A', text: 'Chief complaint' },
+      { label: 'B', text: 'Present illness' },
+      { label: 'C', text: 'Review of systems' },
+      { label: 'D', text: 'Personal and social history' }
+    ],
+    correct: 'B',
+    explanation: `🧠 Explanation:
+This excerpt provides a detailed account of the patient’s current symptom — abdominal pain — including:
+
+📍 Location: Mid epigastric
+
+🕒 Duration: 1 week
+
+🔁 Pattern: Comes and goes
+
+⏱️ Timing: Lasts for 30 minutes each time
+
+🔢 Severity: 7–8 out of 10
+
+🤢 Associated symptoms: Nausea and vomiting
+
+These characteristics are all key elements of the History of Present Illness (HPI) — a component of the health history that thoroughly explores the nature of the current complaint.
+
+❌ Why the other options are incorrect:
+Chief complaint
+📌 Typically a brief statement like “abdominal pain” — not a full narrative.
+📌 The detailed description here is too comprehensive to be the chief complaint.
+
+Review of systems
+📌 A systematic checklist of symptoms per body system.
+📌 Though symptoms like nausea could appear here, they are considered part of the HPI when directly related to the chief concern.
+
+Personal and social history
+📌 Covers habits, lifestyle, job, family, and social environment.
+📌 The excerpt contains no such personal details.
+
+🩺 Conclusion:
+➡️ The detailed nature and focus on the current abdominal pain episode clearly place this information in the Present Illness category.`
+  },
+  {
+    text: `You are seeing Mr. Dallas today in the primary care clinic. He is 60 years old and has a long history of tobacco abuse but no active medical problems. You notice on his intake form that he wishes to discuss lung cancer screening today. Which of the following statements regarding lung cancer screening can you accurately make to Mr. Dallas?`,
+    options: [
+      { label: 'A', text: '“There is really no evidence of benefit for lung cancer screening by any modality.”' },
+      { label: 'B', text: '“Screening for lung cancer is a ‘no-brainer’; there is really no harm in a false-positive test. The only real worry is always that you might have a cancer that we don’t know about.”' },
+      { label: 'C', text: '“Screening for lung cancer has a long history of successful implementation given the ease of obtaining a chest x-ray and the fact that most lung cancers are curable at the time of screening detection.”' },
+      { label: 'D', text: '“Because the sensitivity and specificity of any screening test do not depend on the population studied, your odds of having lung cancer after a positive chest x-ray do not depend on your smoking history.”' },
+      { label: 'E', text: '“The U.S. Preventive Services Task Force recommends low-dose chest CT as a screening tool in patients your age with a significant smoking history.”' }
+    ],
+    correct: 'E',
+    explanation: `🧠 Explanation:
+This statement is evidence-based and aligns with current guidelines. According to the U.S. Preventive Services Task Force (USPSTF):
+
+🔹 Low-dose chest CT is the recommended screening test.
+
+🔹 Target population includes individuals aged 50–80 with a 20 pack-year smoking history who currently smoke or have quit within the past 15 years.
+
+🔹 Mr. Dallas, at age 60 and with a significant tobacco history, fits this criteria.
+
+❌ Why the Other Options Are Incorrect:
+“No evidence of benefit…”
+🔻 This is false. Large trials (e.g., NLST) show mortality reduction from lung cancer screening with low-dose CT.
+
+“It’s a no-brainer; false-positives don’t matter…”
+🔻 Misleading. False-positives can cause harm, including unnecessary procedures and anxiety. The benefit must be weighed carefully.
+
+“Chest x-ray is effective…”
+🔻 Outdated. Studies show chest x-ray is not effective for screening; low-dose CT is the validated method.
+
+“Odds don’t depend on smoking history…”
+🔻 Incorrect. Pre-test probability, like smoking history, significantly influences positive predictive value of screening.
+
+🩺 Conclusion:
+➡️ The only accurate, guideline-based statement is the one supporting low-dose CT screening for eligible individuals like Mr. Dallas.`
+  },
+  {
+    text: `A 58-year-old retired banker presents to the clinic for evaluation of fatigue. He has elevated blood pressure with a widened pulse pressure. Upon auscultation of his heart, you hear a mid-systolic murmur at the right second interspace that radiates to the neck. It has a medium pitch and a harsh quality. What position would this murmur be heard best in?`,
+    options: [
+      { label: 'A', text: 'Standing position' },
+      { label: 'B', text: 'Left lateral decubitus position' },
+      { label: 'C', text: 'Sitting position, when the patient leans forward' },
+      { label: 'D', text: 'Supine position' }
+    ],
+    correct: 'C',
+    explanation: `🧠 Explanation:
+This clinical presentation is classic for aortic stenosis:
+
+🔊 Murmur characteristics:
+
+Mid-systolic
+
+Heard at the right 2nd intercostal space
+
+Radiates to the carotids
+
+Harsh in quality
+
+🩺 Best heard in:
+
+Sitting up and leaning forward, especially during expiration, as this brings the aortic valve closer to the chest wall and improves auscultation.
+
+❌ Why the Other Options Are Incorrect:
+Standing position
+🔻 Tends to decrease venous return, often diminishing murmurs like aortic stenosis.
+
+Left lateral decubitus position
+🔻 Enhances mitral valve sounds (e.g., mitral stenosis, mitral regurgitation), not aortic murmurs.
+
+Supine position
+🔻 Common for general exam but not optimal for isolating aortic murmurs.
+
+🩺 Conclusion:
+➡️ The sitting, leaning forward position is ideal for hearing aortic stenosis — especially in patients with classic signs like harsh systolic murmur radiating to the neck.`
+  },
+  {
+    text: `All the following have been shown to reduce the risk of atherothrombotic stroke in primary or secondary prevention EXCEPT:`,
+    options: [
+      { label: 'A', text: 'Clopidogrel' },
+      { label: 'B', text: 'Aspirin' },
+      { label: 'C', text: 'Statin therapy' },
+      { label: 'D', text: 'Blood pressure control' },
+      { label: 'E', text: 'Warfarin' }
+    ],
+    correct: 'E',
+    explanation: `🧠 Explanation:
+Atherothrombotic stroke is typically caused by large artery atherosclerosis or small vessel disease, and antiplatelet therapy is the cornerstone of its prevention.
+
+✅ Effective in atherothrombotic stroke prevention:
+Clopidogrel:
+🔹 An antiplatelet agent shown to reduce stroke risk.
+
+Aspirin:
+🔹 Widely used for primary and secondary prevention of ischemic stroke.
+
+Statin therapy:
+🔹 Reduces LDL cholesterol and stabilizes plaques, lowering stroke risk.
+
+Blood pressure control:
+🔹 One of the most effective strategies in stroke prevention.
+
+❌ Warfarin:
+An anticoagulant, not an antiplatelet.
+
+Indicated for cardioembolic stroke prevention (e.g., atrial fibrillation), not atherothrombotic stroke.
+
+Not recommended in patients without a cardioembolic source because of the increased bleeding risk without proven benefit in atherosclerotic disease.
+
+🩺 Conclusion:
+➡️ Warfarin is not effective for preventing atherothrombotic stroke in the absence of conditions like atrial fibrillation, making it the correct “EXCEPT” answer in this context.`
+  },
+  {
+    text: `A 49-year-old man presents for a routine physical examination. He has occasional constipation and increased frequency of urination. His BMI is 31 kg/m², A1c is 7.9%, glucose 170 mg/dL, total cholesterol 220 mg/dL, LDL 145 mg/dL, triglycerides 135 mg/dL, and HDL 38 mg/dL. Which of the following is the best next step in management?`,
+    options: [
+      { label: 'A', text: 'Lifestyle modification' },
+      { label: 'B', text: 'Sulfonylurea' },
+      { label: 'C', text: 'Niacin, fish oil, and lifestyle modification' },
+      { label: 'D', text: 'Atorvastatin and lifestyle modification' }
+    ],
+    correct: 'D',
+    explanation: `🧠 Explanation:
+This patient has:
+
+Type 2 Diabetes Mellitus (A1c ≥ 6.5%)
+
+Obesity (BMI > 30)
+
+Dyslipidemia (high LDL, low HDL)
+
+Increased cardiovascular risk
+
+🩺 Best management includes:
+
+Lifestyle modification
+🔹 Essential: diet, exercise, weight loss.
+
+Statin therapy (e.g., atorvastatin)
+🔹 Strong evidence supports moderate- to high-intensity statins in diabetics aged 40–75 with ≥1 cardiovascular risk factor, regardless of LDL level.
+
+❌ Why Other Options Are Incorrect:
+Lifestyle modification alone
+🔻 Necessary, but not sufficient — this patient has diabetes and elevated LDL.
+
+Sulfonylurea
+🔻 Not first-line. Metformin would typically be preferred if initiating pharmacologic treatment, but statin therapy is more urgent for CV risk reduction.
+
+Niacin, fish oil, and lifestyle
+🔻 These may help lipid profiles but do not reduce cardiovascular events like statins do. Niacin is also not well-tolerated in many patients.
+
+🩺 Conclusion:
+➡️ The best next step is Atorvastatin and lifestyle modification to reduce this patient’s high cardiovascular risk as a middle-aged diabetic with dyslipidemia.`
+  },
+  {
+    text: `The patient's record, laboratory studies, objective data, and subjective data combine to form the:`,
+    options: [
+      { label: 'A', text: 'Financial statement' },
+      { label: 'B', text: 'Discharge summary' },
+      { label: 'C', text: 'Data-base' },
+      { label: 'D', text: 'Admitting data' }
+    ],
+    correct: 'C',
+    explanation: `🧠 Explanation:
+In the context of clinical documentation and health assessment, the “data-base” refers to the comprehensive body of information collected during a patient’s evaluation, which includes:
+
+📄 Medical history (subjective data)
+
+🩺 Physical exam findings (objective data)
+
+🧪 Lab and diagnostic test results
+
+📋 Records from other sources, if applicable
+
+This data-base forms the foundation for:
+
+📊 Clinical reasoning
+
+🧩 Problem identification
+
+🧾 Formulating an assessment and plan
+
+❌ Why the Other Options Are Incorrect:
+Financial statement
+🔻 Refers to billing, not clinical information.
+
+Discharge summary
+🔻 A report created at the end of a hospital stay — not the cumulative intake data.
+
+Admitting data
+🔻 Usually includes initial demographics and chief complaint, but not the full clinical picture.
+
+🩺 Conclusion:
+➡️ The correct term for the complete, integrated clinical information gathered about a patient is the Data-base.`
+  },
+  {
+    text: `Which critical thinking skill helps the examiner see relationships among the data?`,
+    options: [
+      { label: 'A', text: 'Identifying gaps in data' },
+      { label: 'B', text: 'Clustering related cues' },
+      { label: 'C', text: 'Validation' },
+      { label: 'D', text: 'Distinguishing relevant from irrelevant' }
+    ],
+    correct: 'B',
+    explanation: `🧠 Explanation:
+Clustering related cues is the critical thinking skill that allows a healthcare provider to:
+
+🧩 Recognize patterns in the patient's history, physical exam, and diagnostic data
+
+🧠 Make connections between symptoms, signs, and test results
+
+🔍 Form a cohesive clinical picture that can lead to accurate problem identification or diagnosis
+
+By clustering cues, the examiner begins to see relationships — such as linking fatigue, pallor, and low hemoglobin to potential anemia.
+
+❌ Why the Other Options Are Incorrect:
+Identifying gaps in data
+🔻 Involves spotting missing pieces, not necessarily connecting existing ones.
+
+Validation
+🔻 Ensures that data is accurate and credible, but it doesn’t address how the data relates to other data.
+
+Distinguishing relevant from irrelevant
+🔻 Aids in filtering, but not in grouping or finding relationships between important cues.
+
+🩺 Conclusion:
+➡️ The ability to cluster related cues is essential for forming accurate clinical judgments and understanding the interconnectedness of patient data.
+
+`
+  },
+  {
+    text: `A 29-year-old woman with a first-degree relative diagnosed with colon cancer at age 46 asks when she should begin screening. Which of the following is most appropriate?`,
+    options: [
+      { label: 'A', text: 'Colonoscopy at age 50' },
+      { label: 'B', text: 'Colonoscopy at age 36' },
+      { label: 'C', text: 'Colonoscopy now' },
+      { label: 'D', text: 'Colonoscopy at age 40' }
+    ],
+    correct: 'B',
+    explanation: `Guidelines recommend starting colonoscopy 10 years before the age at which a first-degree relative was diagnosed (46 − 10 = 36). Average-risk screening begins at age 50 (or 45).`
+  },
+  {
+    text: `According to the 2018 ADA guideline, which of the following patients should be screened for diabetes mellitus EXCEPT:`,
+    options: [
+      { label: 'A', text: 'A 25-year-old female whose mother is diabetic' },
+      { label: 'B', text: 'A 40-year-old female whose BMI is 29 kg/m²' },
+      { label: 'C', text: 'A 40-year-old female with history of delivering a 9 lb 6 oz infant' },
+      { label: 'D', text: 'A 25-year-old female who really, really likes soft drinks' },
+      { label: 'E', text: 'Option 5' }
+    ],
+    correct: 'D',
+    explanation: `ADA recommends screening every 3 years starting at age 45 and earlier for adults with risk factors (BMI ≥25, first-degree relative with diabetes, history of GDM or macrosomic infant). Enjoying soft drinks alone is not an official risk criterion.`
+  },
+  {
+    text: `When considering priority setting of problems, the examiner keeps in mind that second-level priority problems include which of these aspects?`,
+    options: [
+      { label: 'A', text: 'Abnormal laboratory values' },
+      { label: 'B', text: 'Lack of knowledge' },
+      { label: 'C', text: 'Severely abnormal vital signs' },
+      { label: 'D', text: 'Low self-esteem' }
+    ],
+    correct: 'A',
+    explanation: `Second-level problems require prompt attention to prevent deterioration, such as abnormal laboratory values, acute pain, or untreated medical issues. First-level are life-threatening (e.g., severely abnormal vitals), and third-level are long-term (e.g., knowledge deficits, low self-esteem).`
+  },
+  {
+    text: `A 77-year-old woman has lost 25 lbs over 9 months unintentionally. She has no fever, good mobility post–hip fracture, intact appetite, and stable warfarin therapy. Which of the following is true regarding her weight loss?`,
+    options: [
+      { label: 'A', text: 'Although weight loss can be noticeable and worrisome, it is not associated with an increased risk of mortality.' },
+      { label: 'B', text: 'Appropriate testing for this patient would include laboratory testing, basic imaging, and depression and dementia screening.' },
+      { label: 'C', text: 'This is quite abnormal for someone in their 70s as healthy aging people tend to continually gain weight.' },
+      { label: 'D', text: 'With appropriate testing, a cause of weight loss is nearly always found.' },
+      { label: 'E', text: 'Fifteen pounds in 9 months is not a significant amount of weight loss, nothing to worry about.' }
+    ],
+    correct: 'B',
+    explanation: `Unintentional weight loss in older adults is a red flag linked to increased mortality. Evaluation should include basic labs (CBC, CMP, TSH), appropriate imaging (e.g., chest X-ray), and screening for depression and cognitive impairment.`
+  },
+  {
+    text: `In patients with impaired fasting glucose, all of the following interventions have been proven to decrease progression to type 2 diabetes mellitus EXCEPT:`,
+    options: [
+      { label: 'A', text: 'Exercise' },
+      { label: 'B', text: 'Diet modification' },
+      { label: 'C', text: 'Glyburide' },
+      { label: 'D', text: 'Metformin' }
+    ],
+    correct: 'C',
+    explanation: `Studies (e.g., the Diabetes Prevention Program) have shown that exercise, diet modification, and metformin can significantly reduce progression from impaired fasting glucose to type 2 diabetes. Sulfonylureas like glyburide have not been shown to delay progression and carry hypoglycemia risk.`
+  },
+  {
+    text: `According to the USPSTF and CDC, hepatitis C screening is recommended for all of the following groups EXCEPT:`,
+    options: [
+      { label: 'A', text: 'All individuals born between 1955 and 1975' },
+      { label: 'B', text: 'Hemodialysis patients' },
+      { label: 'C', text: 'Patients with a history of incarceration' },
+      { label: 'D', text: 'Users of illicit injection drugs' },
+      { label: 'E', text: 'Migrants from an endemic area (e.g., Southeast Asia)' },
+      { label: 'F', text: 'Option 6' }
+    ],
+    correct: 'A',
+    explanation: `The USPSTF and CDC recommend one-time hepatitis C screening for those born between 1945 and 1965, patients on hemodialysis, those with a history of incarceration, persons who use injection drugs, migrants from endemic regions, and individuals with HIV. The 1955–1975 birth cohort is not an official recommendation.`
+  },
+  {
+    text: `Which of the following best defines the Chief Complaint in a patient interview?`,
+    options: [
+      { label: 'A', text: 'Describes how each symptom developed' },
+      { label: 'B', text: 'Is the one or more symptoms or concerns causing the patient to seek care' },
+      { label: 'C', text: 'May include medications, allergies, and tobacco use' },
+      { label: 'D', text: 'Includes patient’s thoughts and feelings about the illness' }
+    ],
+    correct: 'B',
+    explanation: `The Chief Complaint is the patient’s brief statement — in their own words — of the main reason they are seeking care (e.g., “I have chest pain”). Other details belong in the HPI, PMH, or ROS sections.`
+  },
+  {
+    text: `Jason is a 41-year-old electrician who presents for evaluation of shortness of breath. The dyspnea occurs with exertion, is now triggered by minimal exertion, happens >12×/day, lasts <5 minutes, and he denies cough, orthopnea, PND, palpitations, or edema. Which symptom attribute was NOT addressed?`,
+    options: [
+      { label: 'A', text: 'Associated manifestations' },
+      { label: 'B', text: 'Timing' },
+      { label: 'C', text: 'Setting in which the symptom occurs' },
+      { label: 'D', text: 'Severity' }
+    ],
+    correct: 'D',
+    explanation: `Key symptom attributes include location, quality, severity, timing, setting, aggravating/relieving factors, and associated symptoms. This description covers timing, setting, and associated manifestations (negative findings) but does not address severity (mild, moderate, or severe).`
+  },
+  {
+    text: `What is a comprehensive examination?`,
+    options: [
+      { label: 'A', text: 'Personalized knowledge about the patient’s habits' },
+      { label: 'B', text: 'Fundamental and personalized knowledge about the patient' },
+      { label: 'C', text: 'Fundamental and personalized knowledge about the objective signs' },
+      { label: 'D', text: 'Fundamental knowledge about the symptoms' }
+    ],
+    correct: 'B',
+    explanation: `A comprehensive examination is a thorough, holistic assessment that gathers fundamental and personalized information about the patient’s medical history, lifestyle, psychosocial factors, and health goals, beyond just objective signs or isolated symptoms.`
+  },
+  {
+    text: `A patient presents for evaluation of a cough. Which of the following anatomic regions can be responsible for a cough?`,
+    options: [
+      { label: 'A', text: 'Respiratory' },
+      { label: 'B', text: 'Ophthalmologic' },
+      { label: 'C', text: 'Endocrine' },
+      { label: 'D', text: 'Auditory' }
+    ],
+    correct: 'A',
+    explanation: `Cough is a reflex initiated by irritation of receptors in the respiratory tract (e.g., larynx, trachea, bronchi, lung parenchyma) and sometimes from the esophagus in reflux. Ophthalmologic, endocrine, and auditory regions are not primary sources of the cough reflex.`
+  },
+  {
+    text: `“I feel really tired.” Which category does this belong to in the health history?`,
+    options: [
+      { label: 'A', text: 'Chief complaint' },
+      { label: 'B', text: 'Review of systems' },
+      { label: 'C', text: 'Personal and social history' },
+      { label: 'D', text: 'Present illness' }
+    ],
+    correct: 'A',
+    explanation: `“I feel really tired” is a brief statement in the patient’s own words describing the main reason for the visit and thus is recorded as the Chief Complaint.`
+  },
+  {
+    text: `Which of the following statements regarding the characteristics of the veritangin assay in this trial is true?`,
+    options: [
+      { label: 'A', text: 'The posttest probability of the veritangin test does not depend on the population studied.' },
+      { label: 'B', text: 'The sensitivity of the veritangin test cannot be calculated based on the above data.' },
+      { label: 'C', text: 'The sensitivity of the veritangin assay depends on the population studied and the disease prevalence in that population.' },
+      { label: 'D', text: 'The specificity of the veritangin assay is 0.93 (70/75).' },
+      { label: 'E', text: 'The sensitivity of the veritangin assay will decrease by 50% if you reduce the threshold for a positive result to >0.5 ng/dL.' }
+    ],
+    correct: 'D',
+    explanation: `Specificity = true negatives / (true negatives + false positives) = 70 / (70 + 5) = 0.93. Sensitivity and specificity are intrinsic test properties and do not depend on prevalence, while posttest probability does via Bayes’ theorem. The sensitivity can be calculated from true positives and false negatives, and the exact 50% decrease statement is unsupported.`
+  },
+  {
+    text: `A patient tells you about her experience with prolonged therapy for her breast cancer. You comment, “That must have been a very trying time for you.” What is this an example of?`,
+    options: [
+      { label: 'A', text: 'Summarization' },
+      { label: 'B', text: 'Reassurance' },
+      { label: 'C', text: 'Empathy' },
+      { label: 'D', text: 'Validation' }
+    ],
+    correct: 'D',
+    explanation: `Saying “That must have been a very trying time for you” is an example of validation, where the clinician acknowledges and affirms the patient’s emotional experience. Empathy involves sharing the feeling, reassurance aims to reduce anxiety, and summarization synthesizes the story.`
+  },
+  {
+    text: `Routine prenatal screening in the first trimester includes all of the following EXCEPT:`,
+    options: [
+      { label: 'A', text: 'Blood type and antibody screen' },
+      { label: 'B', text: 'Hepatitis B surface antigen' },
+      { label: 'C', text: 'HIV antibody' },
+      { label: 'D', text: 'MSAFP (maternal serum alpha-fetoprotein)' },
+      { label: 'E', text: 'Rubella antibody' },
+      { label: 'F', text: 'Option 6' }
+    ],
+    correct: 'D',
+    explanation: `Maternal Serum Alpha-Fetoprotein (MSAFP) is part of the second-trimester screening (15–20 weeks) for neural tube and chromosomal defects. First-trimester routine labs include blood type/antibody screen, hepatitis B surface antigen, HIV antibody, and rubella antibody.`
+  }
+    ];
+
+    // Build sidebar list
+    const sidebarList = document.getElementById('sidebar-list');
+    questions.forEach((_, i) => {
+      const li = document.createElement('li');
+      const a  = document.createElement('a');
+      a.href        = '#';
+      a.textContent = i + 1;
+      a.addEventListener('click', () => { current = i; renderQ(i); sidebar.classList.remove('open'); });
+      li.appendChild(a);
+      sidebarList.appendChild(li);
+    });
+
+    // State & elements
+    let startTime = Date.now(), current = 0, results = [];
+    const qText      = document.getElementById('question-text');
+    const optsList   = document.getElementById('options-list');
+    const explDiv    = document.getElementById('explanation');
+    const sumDiv     = document.getElementById('results-summary');
+    const counterDiv = document.getElementById('question-counter');
+    const prevBtn    = document.getElementById('prev-btn');
+    const nextBtn    = document.getElementById('next-btn');
+    const submitBtn  = document.getElementById('submit-btn');
+    const endBtn     = document.getElementById('end-btn');
+
+    // Render question
+    function renderQ(i) {
+      const q = questions[i];
+      counterDiv.textContent = `Question ${i+1} of ${questions.length}`;
+      qText.innerHTML        = q.text.replace(/\n/g,'<br>');
+      optsList.innerHTML     = '';
+      q.options.forEach(o => {
+        const lbl     = document.createElement('label');
+        lbl.className = 'option-label';
+        lbl.innerHTML = `<input type="radio" name="answer" value="${o.label}"> ${o.label}. ${o.text}`;
+        optsList.appendChild(lbl);
+      });
+      explDiv.innerHTML       = '';
+      explDiv.style.display   = 'none';
+      sumDiv.style.display    = 'none';
+      prevBtn.disabled        = i === 0;
+      nextBtn.disabled        = true;
+      submitBtn.disabled      = false;
+    }
+
+    // Submit handler
+    submitBtn.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="answer"]:checked');
+      if (!sel) return;
+      const val  = sel.value;
+      const corr = questions[current].correct;
+      const ok   = val === corr;
+      results[current] = ok;
+      document.querySelectorAll('.option-label').forEach(lbl => {
+        const inp = lbl.querySelector('input');
+        lbl.classList.remove('correct-answer','wrong-answer');
+        if (inp.value === corr) lbl.classList.add('correct-answer');
+        if (inp.checked && !ok) lbl.classList.add('wrong-answer');
+        inp.disabled = true;
+      });
+      explDiv.innerHTML       = questions[current].explanation;
+      explDiv.style.display   = 'block';
+      submitBtn.disabled      = true;
+      nextBtn.disabled        = false;
+    });
+
+    // Navigation buttons
+    prevBtn.addEventListener('click', () => { if(current>0){ current--; renderQ(current);} });
+    nextBtn.addEventListener('click', () => { if(current<questions.length-1){ current++; renderQ(current);} });
+    endBtn.addEventListener('click', () => {
+      const score    = results.filter(r => r).length;
+      const total    = questions.length;
+      const duration = Math.floor((Date.now()-startTime)/1000);
+      sumDiv.style.display = 'block';
+      sumDiv.innerHTML     = `<strong>Score: ${score}/${total} (${Math.round(score/total*100)}%)</strong><br>`+
+                             `Time: ${Math.floor(duration/60)}m ${duration%60}s<br>` +
+                             `<button onclick="location.href='index.html'">Back to Home</button>`;
+    });
+
+    // Initial render
+    renderQ(0);
+  </script>
+</body>
+</html>

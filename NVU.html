@@ -1,10 +1,9 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Medical Question Bank</title>
+  <title>Plabable Topics</title>
   <!-- Embedded CSS -->
   <style>
     :root {
@@ -57,43 +56,37 @@
     }
   </style>
 </head>
+
 <body>
   <header>
-    <h1>Medical Question Banks</h1>
-    <p>Select a platform to begin your practice.</p>
+    <h1>NVU Subjects</h1>
+    <p>Select a sub-topic to continue.</p>
   </header>
+
   <main>
     <div class="options-grid">
-      <div class="bank-option" data-bank="Plabable"><h2>Plabable</h2></div>
-      <div class="bank-option" data-bank="Pastest"><h2>Pastest</h2></div>
-      <div class="bank-option" data-bank="Uworld"><h2>Uworld</h2></div>
-      <div class="bank-option" data-bank="Boards & Beyond"><h2>Boards & Beyond</h2></div>
-      <div class="bank-option" data-bank="Osmosis"><h2>Osmosis</h2></div>
-      <div class="bank-option" data-bank="Lecturio"><h2>Lecturio</h2></div>
-      <div class="bank-option" data-bank="NVU"><h2>NVU</h2></div>
+      <div class="bank-option" data-subtopic="Oncology"><h2>Oncology</h2></div>
+      <div class="bank-option" data-subtopic="Obstetrics & Gynecology"><h2>Obstetrics & Gynecology</h2></div>
+      <div class="bank-option" data-subtopic="Pediatrics"><h2>Pediatrics</h2></div>
+      <div class="bank-option" data-subtopic="Pedatric Midterm"><h2>Pedatric Midterm</h2></div>
+      <div class="bank-option" data-subtopic="Internal V Midterm"><h2>Internal V Midterm</h2></div>
     </div>
   </main>
-  <!-- Embedded JS -->
+
+  <!-- Updated Embedded JS -->
   <script>
-    const bankPages = {
-      'Plabable':    'plabable.html',
-      'Pastest':     'pastest.html',
-      'Uworld':      'uworld.html',
-      'Boards & Beyond': 'boards-and-beyond.html',
-      'Osmosis':     'osmosis.html',
-      'Lecturio':    'lecturio.html',
-      'NVU':         'NVU.html'
+    const pages = {
+      'Oncology': 'nvu-oncology.html',
+      'Obstetrics & Gynecology': 'nvu-obstetrics-gynecology.html',
+      'Pediatrics': 'nvu-pediatrics.html',
+      'Pedatric Midterm': 'Pedatric-Midterm.html',
+      'Internal V Midterm': 'Internal-V-Midterm.html'
     };
 
-    document.querySelectorAll('.bank-option[data-bank]').forEach(option => {
+    document.querySelectorAll('.bank-option').forEach(option => {
       option.addEventListener('click', () => {
-        const bank = option.dataset.bank;
-        // if we have a direct page for it, go there; otherwise fallback
-        if (bankPages[bank]) {
-          window.location.href = bankPages[bank];
-        } else {
-          window.location.href = `question-bank.html?topic=${encodeURIComponent(bank)}`;
-        }
+        const sub = option.dataset.subtopic;
+        window.location.href = pages[sub] || 'index.html';
       });
     });
   </script>
