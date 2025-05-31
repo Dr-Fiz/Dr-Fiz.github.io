@@ -3,96 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Quiz</title>
+  <title>Gastroenterology Quiz</title>
   <!-- Embedded CSS -->
   <style>
     :root {
-      --primary-color: #005eb8;
-      --primary-hover: #004c99;
-      --bg-color: #f0f4f8;
-      --text-color: #2a2a2a;
+      --primary-color: #2a9d8f;
+      --primary-hover: #21867a;
+      --bg-color: #f4f4f4;
+      --card-bg: #ffffff;
+      --text-color: #333333;
       --sidebar-bg: #264653;
       --sidebar-text: #ffffff;
-      --header-height: 60px;
-      --footer-height: 40px;
     }
     * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: 'Roboto', sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
-    }
-    /* HEADER */
+    body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
     .top-nav {
-      position: fixed; top: 0; left: 0; right: 0;
-      height: var(--header-height);
-      background-color: var(--primary-color);
-      display: flex; align-items: center; justify-content: space-between;
-      color: #fff; padding: 0 1rem;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: relative;
       z-index: 1001;
+      display: flex; justify-content: space-between; align-items: center;
+      background-color: var(--primary-color); color: #ffffff; padding: 0.75rem 1rem;
     }
-    .top-nav .menu-icon { font-size: 1.4rem; cursor: pointer; }
-    .top-nav .title { font-size: 1.1rem; font-weight: 500; text-transform: uppercase; }
-    .top-nav .nav-actions button { background: none; border: none; color: #fff; margin-left: 0.75rem; cursor: pointer; font-size: 1rem; padding: 0.25rem; }
-    .top-nav .nav-actions button:hover { color: var(--primary-hover); }
-    .top-nav .nav-actions #highlight-btn.active { background-color: var(--primary-hover); }
-    .highlighted-text { background-color: yellow; }
-    /* SIDEBARS */
-    .sidebar { position: fixed; left: -200px; width: 200px; background-color: var(--sidebar-bg); color: var(--sidebar-text); padding: 1rem; transition: left 0.3s ease; z-index: 1000; overflow-y: auto; }
+    .top-nav .nav-actions button { background: none; border: none; color: #ffffff; margin-left: 0.5rem; cursor: pointer; }
+    .menu-icon { cursor: pointer; font-size: 1.5rem; }
+    /* Sidebar styles */
+    .sidebar {
+      position: fixed;
+      left: -200px;
+      width: 200px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
     .sidebar.open { left: 0; }
     .sidebar ul { list-style: none; padding: 0; margin: 0; }
-    .sidebar a { color: var(--sidebar-text); text-decoration: none; padding: 0.5rem; display: block; border-radius: 4px; }
+    .sidebar li { margin-bottom: 0.5rem; }
+    .sidebar a { color: var(--sidebar-text); text-decoration: none; display: block; padding: 0.5rem; border-radius: 0.25rem; }
     .sidebar a:hover { background: rgba(255,255,255,0.1); }
-    .lab-sidebar { position: fixed; right: -600px; width: 600px; background-color: var(--sidebar-bg); color: var(--sidebar-text); padding: 1rem; transition: right 0.3s ease; z-index: 1000; overflow-y: auto; }
+    /* Lab Values sidebar */
+    .lab-sidebar {
+      position: fixed;
+      right: -300px;
+      width: 300px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
     .lab-sidebar.open { right: 0; }
-    /* MAIN CONTENT */
-    main { padding-top: var(--header-height); padding-bottom: var(--footer-height); }
-    .question-container { background: transparent; padding: 1.5rem; margin: 2rem auto; max-width: 2000px; }
-    .qa-wrapper { display: flex; width: 100%; gap: 1.5rem; }
-    .question-content { flex: 0 0 50%; }
-    .options-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      align-items: flex-start;
+    /* Quiz container */
+    .question-container {
+      background-color: var(--card-bg);
+      border: 2px solid var(--primary-color);
+      border-radius: 0.5rem;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1.5rem;
     }
-    .option-label {
-      display: inline-flex;
-      align-items: center;
-      border: 1px solid #cbd5e0;
-      border-radius: 6px;
-      padding: 0.5rem;
-      cursor: pointer;
-      transition: background 0.2s, border-color 0.2s;
-      width: 600px;
-    }
-    .option-label:hover { background-color: #f1f5f9; }
+    .options-list { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    .option-label { padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px; border: 1px solid transparent; display: flex; align-items: center; }
     .options-list input { margin-right: 0.5rem; accent-color: var(--primary-color); }
-    .correct-answer { background-color: #e6fffa; border-color: #2c7a7b; }
-    .wrong-answer { background-color: #ffe6e6; border-color: #c53030; }
-    .submit-btn, #prev-btn, #next-btn, #end-btn { background-color: var(--primary-color); color: #fff; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; margin-right: 0.5rem; }
-    .submit-btn:hover:not(:disabled), #prev-btn:hover:not(:disabled), #next-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
-    .submit-btn:disabled, #prev-btn:disabled, #next-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .explanation { display: none; flex: 0 0 50%; background-color: #e8f5e9; border-left: 4px solid var(--primary-color); padding: 1rem; border-radius: 4px; white-space: pre-wrap; }
-    .results-summary { display: none; margin-top: 1rem; background-color: #fff3cd; border-left: 4px solid #ffeeba; padding: 1rem; border-radius: 4px; }
-    /* FOOTER */
-    .footer-bar { position: fixed; bottom: 0; left: 0; right: 0; height: var(--footer-height); background-color: var(--primary-color); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 0 1rem; font-size: 0.9rem; box-shadow: 0 -2px 4px rgba(0,0,0,0.1); z-index: 1001; }
-    .footer-bar .actions button { background: none; border: none; color: #fff; margin-left: 1rem; cursor: pointer; font-size: 1.1rem; }
-
-    /* Responsive: move explanation below on mobile */
-    @media screen and (max-width: 600px) {
-      .qa-wrapper { flex-direction: column; }
-      .question-content,
-      .explanation { flex: none; width: 100%; }
-      .explanation { margin-top: 1rem; }
+    .correct-answer { background-color: #d4edda; border-color: #28a745; }
+    .wrong-answer { background-color: #f8d7da; border-color: #dc3545; }
+    .submit-btn, #prev-btn, #next-btn, #end-btn {
+      margin-top: 0.5rem;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    .submit-btn:disabled, #prev-btn:disabled, #next-btn:disabled { opacity: 0.6; cursor: default; }
+    .submit-btn:hover:not(:disabled), #prev-btn:hover:not(:disabled), #next-btn:hover:not(:disabled), #end-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+    .explanation {
+      margin-top: 1rem;
+      background-color: #e8f5e9;
+      border-left: 4px solid var(--primary-color);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      white-space: pre-wrap;
+    }
+    .results-summary {
+      margin-top: 1rem;
+      background-color: #fff3cd;
+      border-left: 4px solid #ffeeba;
+      padding: 1rem;
+      border-radius: 0.5rem;
     }
   </style>
 </head>
 <body>
-  <!-- Top Navigation -->
+
   <nav class="top-nav">
     <div class="menu-icon">&#9776;</div>
     <div id="question-counter">Question 1 of 6</div>
@@ -101,7 +107,6 @@
       <button id="next-btn" disabled>Next &gt;</button>
       <button id="fullscreen-btn">Full Screen</button>
       <button id="labvals-btn">Lab Values</button>
-      <button id="highlight-btn">Highlight</button>
       <button id="end-btn">End Exam</button>
     </div>
   </nav>
@@ -110,36 +115,28 @@
   <div id="sidebar" class="sidebar">
     <ul id="sidebar-list"></ul>
   </div>
-
   <!-- Lab Values Sidebar -->
   <div id="lab-sidebar" class="lab-sidebar">
-    <img src="images/Blood.jpg" alt="Blood Values" style="width:100%; margin-bottom:1rem;">
-    <img src="images/Blood 2.jpg" alt="Blood Plasma Serum" style="width:100%; margin-bottom:1rem;">
-    <img src="images/Hematological.jpg" alt="Hematologic Values" style="width:100%; margin-bottom:1rem;">
-    <img src="images/Sweat, Urine, BMI.jpg" alt="Sweat, Urine, BMI" style="width:100%; margin-bottom:1rem;">
-    <img src="images/CSF.jpg" alt="Cerebrospinal Fluid" style="width:100%;">
+    <img src="Blood.jpg" alt="Blood Values" style="width:100%; margin-bottom:1rem;">
+    <img src="Blood%202.jpg" alt="Blood Plasma Serum" style="width:100%; margin-bottom:1rem;">
+    <img src="Hematological.jpg" alt="Hematologic Values" style="width:100%; margin-bottom:1rem;">
+    <img src="Sweat,%20Urine,%20BMI.jpg" alt="Sweat, Urine, BMI" style="width:100%; margin-bottom:1rem;">
+    <img src="CSF.jpg" alt="Cerebrospinal Fluid" style="width:100%;">
   </div>
 
   <main>
     <section class="question-container">
-      <div class="qa-wrapper">
-        <!-- Left column: question + options -->
-        <div class="question-content">
-          <div id="question-text"></div>
-          <form id="options-list" class="options-list"></form>
-          <button id="submit-btn" class="submit-btn">Submit Answer</button>
-        </div>
-        <!-- Right column: explanation -->
-        <div id="explanation" class="explanation"></div>
-      </div>
-      <!-- Summary after ending -->
-      <div id="results-summary" class="results-summary"></div>
+      <div id="question-text"></div>
+      <form id="options-list" class="options-list"></form>
+      <button id="submit-btn" class="submit-btn">Submit Answer</button>
+      <div id="explanation" class="explanation"></div>
+      <div id="results-summary" class="results-summary" style="display:none;"></div>
     </section>
   </main>
 
   <!-- Embedded JS -->
   <script>
-    // Sidebar toggles
+    // Sidebar toggle & positioning
     const menuIcon   = document.querySelector('.menu-icon');
     const sidebar    = document.getElementById('sidebar');
     const labSidebar = document.getElementById('lab-sidebar');
@@ -153,30 +150,9 @@
     document.getElementById('labvals-btn')
       .addEventListener('click', () => labSidebar.classList.toggle('open'));
 
-    // Highlight mode toggle
-    const highlightBtn = document.getElementById('highlight-btn');
-    let highlightMode = false;
-    highlightBtn.addEventListener('click', () => {
-      highlightMode = !highlightMode;
-      highlightBtn.classList.toggle('active', highlightMode);
-    });
-    document.addEventListener('mouseup', () => {
-      if (!highlightMode) return;
-      const selection = window.getSelection();
-      if (selection.rangeCount === 0 || selection.isCollapsed) return;
-      const range = selection.getRangeAt(0);
-      try {
-        const span = document.createElement('span');
-        span.className = 'highlighted-text';
-        range.surroundContents(span);
-      } catch (e) {
-        document.execCommand('hiliteColor', false, 'yellow');
-      }
-      selection.removeAllRanges();
-    });
+// Quiz data and logic
 
-    // Quiz data
-    const questions = [
+const questions = [
       {
     text: `The following information is recorded in the health history: “The patient has had abdominal pain for 1 week. The pain lasts for 30 minutes at a time; it comes and goes. The severity is 7 to 8 on a scale of 1 to 10. It is accompanied by nausea and vomiting. It is located in the mid epigastric area”. Which of these categories does it belong to?`,
     options: [
@@ -455,7 +431,34 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Colonoscopy at age 40' }
     ],
     correct: 'B',
-    explanation: `Guidelines recommend starting colonoscopy 10 years before the age at which a first-degree relative was diagnosed (46 − 10 = 36). Average-risk screening begins at age 50 (or 45).`
+    explanation: `🧠 Explanation:
+This woman has a first-degree relative (her father) who had early-onset colon cancer (diagnosed at 46). That puts her in a high-risk group for colorectal cancer.
+
+🔍 Guideline-Based Screening:
+
+For average-risk individuals: Begin at age 50 (or 45 per updated guidelines).
+
+For high-risk individuals: Begin at age 40 or 10 years before the age at which the relative was diagnosed — whichever comes first.
+
+📌 In this case:
+
+Her father was diagnosed at 46
+
+46 – 10 = 36
+➡️ She should begin screening at age 36
+
+❌ Why the Other Options Are Incorrect:
+Colonoscopy at age 50
+🔻 Appropriate only for average-risk patients.
+
+Colonoscopy now (at age 29)
+🔻 Too early — she’s not yet reached the threshold based on guidelines.
+
+Colonoscopy at age 40
+🔻 Acceptable if the relative was diagnosed at age 50 or older. But here, age 36 is earlier and correct.
+
+🩺 Conclusion:
+➡️ For a patient with a first-degree relative diagnosed with colon cancer at age 46, the correct and guideline-recommended screening age is 36.`
   },
   {
     text: `According to the 2018 ADA guideline, which of the following patients should be screened for diabetes mellitus EXCEPT:`,
@@ -467,7 +470,48 @@ Distinguishing relevant from irrelevant
       { label: 'E', text: 'Option 5' }
     ],
     correct: 'D',
-    explanation: `ADA recommends screening every 3 years starting at age 45 and earlier for adults with risk factors (BMI ≥25, first-degree relative with diabetes, history of GDM or macrosomic infant). Enjoying soft drinks alone is not an official risk criterion.`
+    explanation: `🧠 Explanation:
+According to the 2018 ADA guidelines, screening for type 2 diabetes is recommended:
+
+🔁 Every 3 years starting at age 45 for all asymptomatic adults
+
+✅ Earlier for adults with risk factors, such as:
+
+BMI ≥ 25 (≥ 23 in Asian Americans)
+
+First-degree relative with diabetes
+
+High-risk ethnicity
+
+History of CVD
+
+Hypertension
+
+HDL < 35 or triglycerides > 250
+
+PCOS
+
+Physical inactivity
+
+History of delivering a baby > 9 lb
+
+✅ All the first three listed patients have clear risk factors warranting early screening:
+
+Family history (mother diabetic)
+
+Elevated BMI (29 kg/m²)
+
+History of macrosomic baby (>9 lb)
+
+❌ Why the Correct Answer Is the EXCEPTION:
+“Really, really likes soft drinks”
+🔻 While excessive sugar intake may raise concern, this alone is not an official screening criterion per the 2018 ADA guidelines.
+🔻 Without other risk factors, this 25-year-old does not meet the criteria for early screening.
+
+🩺 Conclusion:
+➡️ The correct answer is the 25-year-old who just enjoys soft drinks, as she lacks the clinical risk factors outlined in the ADA guidelines.
+
+`
   },
   {
     text: `When considering priority setting of problems, the examiner keeps in mind that second-level priority problems include which of these aspects?`,
@@ -478,7 +522,50 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Low self-esteem' }
     ],
     correct: 'A',
-    explanation: `Second-level problems require prompt attention to prevent deterioration, such as abnormal laboratory values, acute pain, or untreated medical issues. First-level are life-threatening (e.g., severely abnormal vitals), and third-level are long-term (e.g., knowledge deficits, low self-esteem).`
+    explanation: `🧠 Explanation:
+In clinical priority setting, problems are ranked based on their urgency and impact on the patient's well-being:
+
+🔼 Priority Levels:
+First-level priorities:
+
+Life-threatening issues
+
+Airway, breathing, circulation (e.g., severely abnormal vital signs)
+
+Second-level priorities:
+
+Require prompt attention to prevent further deterioration
+
+Examples include:
+
+Abnormal lab values
+
+Acute pain
+
+Untreated medical problems
+
+Mental status changes
+
+Risks of infection or safety issues
+
+Third-level priorities:
+
+Important but not urgent
+
+Long-term issues (e.g., knowledge deficits, low self-esteem)
+
+❌ Why the Other Options Are Incorrect:
+Lack of knowledge
+🔻 Considered a third-level priority (education-focused, not immediately harmful)
+
+Severely abnormal vital signs
+🔻 This is a first-level priority due to its life-threatening potential
+
+Low self-esteem
+🔻 Also a third-level priority — important but not an immediate threat
+
+🩺 Conclusion:
+➡️ Among the options, abnormal laboratory values fall into the second-level priority category — they require prompt intervention to avoid progression to a critical condition.`
   },
   {
     text: `A 77-year-old woman has lost 25 lbs over 9 months unintentionally. She has no fever, good mobility post–hip fracture, intact appetite, and stable warfarin therapy. Which of the following is true regarding her weight loss?`,
@@ -490,7 +577,40 @@ Distinguishing relevant from irrelevant
       { label: 'E', text: 'Fifteen pounds in 9 months is not a significant amount of weight loss, nothing to worry about.' }
     ],
     correct: 'B',
-    explanation: `Unintentional weight loss in older adults is a red flag linked to increased mortality. Evaluation should include basic labs (CBC, CMP, TSH), appropriate imaging (e.g., chest X-ray), and screening for depression and cognitive impairment.`
+    explanation: `🧠 Explanation:
+In older adults, unintentional weight loss is a red flag and must be taken seriously. It is linked with:
+
+⚠️ Increased mortality and morbidity
+
+🧪 Possible underlying medical, psychiatric, or social causes
+
+🧠 Cognitive and mood disorders
+
+For someone like this patient, testing should include:
+
+🩺 Basic labs: CBC, CMP, TSH, ESR, etc.
+
+🖼️ Imaging: Chest X-ray or abdominal ultrasound if indicated
+
+🧠 Mental health screening: Depression and cognitive function tests (e.g., PHQ-9, MMSE)
+
+❌ Why the Other Options Are Incorrect:
+"Not associated with increased risk of mortality"
+🔻 False — in the elderly, weight loss can be a predictor of mortality.
+
+"Healthy people in their 70s tend to gain weight"
+🔻 Inaccurate — weight trends vary and loss is more common and more concerning.
+
+"A cause is nearly always found"
+🔻 Not always true — many cases remain unexplained despite thorough evaluation.
+
+"15 lbs in 9 months is not significant"
+🔻 Incorrect — this represents >10% of her body weight, which is clinically significant.
+
+🩺 Conclusion:
+➡️ In an elderly patient with unexplained weight loss, the correct approach involves comprehensive testing, including labs, imaging, and mental health evaluations.
+
+`
   },
   {
     text: `In patients with impaired fasting glucose, all of the following interventions have been proven to decrease progression to type 2 diabetes mellitus EXCEPT:`,
@@ -501,7 +621,31 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Metformin' }
     ],
     correct: 'C',
-    explanation: `Studies (e.g., the Diabetes Prevention Program) have shown that exercise, diet modification, and metformin can significantly reduce progression from impaired fasting glucose to type 2 diabetes. Sulfonylureas like glyburide have not been shown to delay progression and carry hypoglycemia risk.`
+    explanation: `🧠 Explanation:
+Impaired fasting glucose (IFG) is a form of prediabetes, and several interventions have been shown to prevent or delay progression to full-blown type 2 diabetes:
+
+✅ Proven effective interventions:
+🏃 Exercise: Improves insulin sensitivity and glucose utilization.
+
+🥗 Diet modification: Reduces insulin resistance and body weight.
+
+💊 Metformin: Especially useful in high-risk patients (e.g., BMI >35, age <60, women with GDM history). Supported by the Diabetes Prevention Program (DPP).
+
+❌ Why Glyburide Is Incorrect:
+💊 Glyburide is a sulfonylurea that stimulates insulin secretion.
+
+It is not recommended for prediabetes or IFG because:
+
+It does not address insulin resistance (a core issue in prediabetes)
+
+It poses a risk of hypoglycemia
+
+It has not been shown to prevent progression to diabetes
+
+🩺 Conclusion:
+➡️ Glyburide is the only option here that has not been proven effective in preventing type 2 diabetes in patients with impaired fasting glucose, making it the correct "EXCEPT" answer.
+
+`
   },
   {
     text: `According to the USPSTF and CDC, hepatitis C screening is recommended for all of the following groups EXCEPT:`,
@@ -514,7 +658,33 @@ Distinguishing relevant from irrelevant
       { label: 'F', text: 'Option 6' }
     ],
     correct: 'A',
-    explanation: `The USPSTF and CDC recommend one-time hepatitis C screening for those born between 1945 and 1965, patients on hemodialysis, those with a history of incarceration, persons who use injection drugs, migrants from endemic regions, and individuals with HIV. The 1955–1975 birth cohort is not an official recommendation.`
+    explanation: `🧠 Explanation:
+The correct birth cohort for universal hepatitis C screening according to USPSTF and CDC is:
+
+🗓️ Individuals born between 1945 and 1965, not 1955–1975.
+
+This cohort has a higher prevalence of hepatitis C infection, often undiagnosed, which is why one-time screening is recommended regardless of risk factors.
+
+✅ Groups recommended for hepatitis C screening:
+💉 People who use/have used injection drugs
+
+🧑‍⚕️ Patients on long-term hemodialysis
+
+🧑‍⚖️ Those with a history of incarceration
+
+🌍 Persons from endemic regions (e.g., Southeast Asia)
+
+🧬 Patients with HIV
+
+These populations are at increased risk for hepatitis C transmission.
+
+❌ Why the Correct Answer Is Incorrect:
+✅ "1955 to 1975" is not the official screening cohort
+
+📌 The correct range is 1945 to 1965
+
+🩺 Conclusion:
+➡️ The EXCEPT choice is “individuals born between 1955 and 1975”, as this range is not included in the CDC and USPSTF birth cohort recommendation for routine hepatitis C screening.`
   },
   {
     text: `Which of the following best defines the Chief Complaint in a patient interview?`,
@@ -525,7 +695,29 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Includes patient’s thoughts and feelings about the illness' }
     ],
     correct: 'B',
-    explanation: `The Chief Complaint is the patient’s brief statement — in their own words — of the main reason they are seeking care (e.g., “I have chest pain”). Other details belong in the HPI, PMH, or ROS sections.`
+    explanation: `🧠 Explanation:
+The Chief Complaint (CC) is a brief statement, ideally in the patient’s own words, that captures:
+
+🗣️ The main reason they are seeking medical attention
+
+🕐 Often includes timing or duration (e.g., "I've had chest pain for 2 hours")
+
+It is the starting point for the clinical encounter and sets the direction for history-taking and diagnosis.
+
+❌ Why the Other Options Are Incorrect:
+Describes how each symptom developed
+🔻 This is part of the History of Present Illness (HPI)
+
+May include medications, allergies, and tobacco use
+🔻 This belongs to the Past Medical History (PMH) and Social History
+
+Includes patient’s thoughts and feelings about the illness
+🔻 This is part of the Review of Systems (ROS) or HPI, not the chief complaint
+
+🩺 Conclusion:
+➡️ The Chief Complaint is the initial concern or symptom(s) that prompt the patient to seek medical care — a concise but crucial part of the health history.
+
+`
   },
   {
     text: `Jason is a 41-year-old electrician who presents for evaluation of shortness of breath. The dyspnea occurs with exertion, is now triggered by minimal exertion, happens >12×/day, lasts <5 minutes, and he denies cough, orthopnea, PND, palpitations, or edema. Which symptom attribute was NOT addressed?`,
@@ -536,7 +728,39 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Severity' }
     ],
     correct: 'D',
-    explanation: `Key symptom attributes include location, quality, severity, timing, setting, aggravating/relieving factors, and associated symptoms. This description covers timing, setting, and associated manifestations (negative findings) but does not address severity (mild, moderate, or severe).`
+    explanation: `🧠 Explanation:
+When evaluating symptoms (like dyspnea), clinicians consider 7 key attributes:
+
+Location (not always applicable)
+
+Quality
+
+Severity ✅
+
+Timing ⏱️
+
+Setting (context/when it happens)
+
+Aggravating/Relieving factors
+
+Associated symptoms
+
+🔍 In this case:
+✅ Timing: "For several months," "more than a dozen times per day"
+
+✅ Setting: During exertion, now minimal exertion — clearly described
+
+✅ Associated manifestations: A comprehensive list of negative symptoms was included
+
+❌ Severity: There is no information about how intense the shortness of breath feels (e.g., mild/moderate/severe, impact on activity, distress caused)
+
+❌ Why the Chosen Answer Was Incorrect:
+"Setting in which the symptom occurs" was described in detail (exertion vs. rest, frequency, context of daily activity)
+
+🩺 Conclusion:
+➡️ The symptom attribute that was missing from the description was Severity, making it the correct answer.
+
+`
   },
   {
     text: `What is a comprehensive examination?`,
@@ -547,7 +771,37 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Fundamental knowledge about the symptoms' }
     ],
     correct: 'B',
-    explanation: `A comprehensive examination is a thorough, holistic assessment that gathers fundamental and personalized information about the patient’s medical history, lifestyle, psychosocial factors, and health goals, beyond just objective signs or isolated symptoms.`
+    explanation: `🧠 Explanation:
+A comprehensive examination is a thorough assessment that goes beyond just physical findings. It’s typically done:
+
+🩺 During initial visits or annual check-ups
+
+🔍 To collect in-depth information across multiple domains, such as:
+
+Medical history
+
+Social and lifestyle factors
+
+Psychological well-being
+
+Risk factors
+
+Health goals and preferences
+
+It builds a foundational and individualized understanding of the patient, not just the illness.
+
+❌ Why the Other Options Are Incorrect:
+Personalized knowledge about the patient's habits
+🔻 Too narrow; habits are just one component of a full assessment.
+
+Knowledge about objective signs
+🔻 Focuses only on physical exam findings, missing the broader picture.
+
+Knowledge about symptoms
+🔻 Symptoms are subjective complaints — only part of the full picture.
+
+🩺 Conclusion:
+➡️ A comprehensive examination delivers both fundamental and personalized insight into the patient as a whole, making it essential for high-quality, patient-centered care.`
   },
   {
     text: `A patient presents for evaluation of a cough. Which of the following anatomic regions can be responsible for a cough?`,
@@ -558,7 +812,35 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Auditory' }
     ],
     correct: 'A',
-    explanation: `Cough is a reflex initiated by irritation of receptors in the respiratory tract (e.g., larynx, trachea, bronchi, lung parenchyma) and sometimes from the esophagus in reflux. Ophthalmologic, endocrine, and auditory regions are not primary sources of the cough reflex.`
+    explanation: `🧠 Explanation:
+A cough is a reflex primarily initiated by stimulation of receptors in the respiratory tract, especially in areas such as:
+
+👃 Nasal passages
+
+🫁 Trachea and bronchi
+
+🗣️ Pharynx and larynx
+
+🫁 Lung parenchyma
+
+➕ Sometimes the esophagus or stomach (e.g., in GERD-related cough)
+
+These areas are all closely tied to the respiratory system, which is the main anatomic source of cough reflex triggers.
+
+❌ Why the Other Options Are Incorrect:
+Ophthalmologic 👁️
+🔻 No known connection between eye disorders and the cough reflex.
+
+Endocrine 🧬
+🔻 Hormonal issues may indirectly affect the lungs (e.g., thyroid masses), but not typically associated with causing a cough.
+
+Auditory 👂
+🔻 While there is a small connection via the auricular branch of the vagus nerve (Arnold’s reflex), it's rare and not a primary cause.
+
+🩺 Conclusion:
+➡️ The respiratory system is the correct anatomical region responsible for a cough, making it the right answer here.
+
+`
   },
   {
     text: `“I feel really tired.” Which category does this belong to in the health history?`,
@@ -569,7 +851,27 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Present illness' }
     ],
     correct: 'A',
-    explanation: `“I feel really tired” is a brief statement in the patient’s own words describing the main reason for the visit and thus is recorded as the Chief Complaint.`
+    explanation: `🧠 Explanation:
+The Chief Complaint (CC) is a brief statement — typically in the patient’s own words — describing the main reason for seeking medical attention.
+
+🗣️ Example:
+
+“I feel really tired.” — This is a classic chief complaint, providing the symptom that triggered the visit.
+
+It is usually documented at the beginning of the encounter and leads to deeper exploration in the History of Present Illness (HPI).
+
+❌ Why the Other Options Are Incorrect:
+Review of systems
+🔻 Involves a structured checklist of symptoms, typically later in the exam, not the patient's opening concern.
+
+Personal and social history
+🔻 Includes lifestyle, occupation, substance use, etc. — not a symptom report.
+
+Present illness
+🔻 Explores details of the chief complaint (onset, duration, severity, etc.), but the phrase alone fits better under chief complaint.
+
+🩺 Conclusion:
+➡️ “I feel really tired” is the initial concern that brought the patient in, making it the correct entry for the Chief Complaint section.`
   },
   {
     text: `Which of the following statements regarding the characteristics of the veritangin assay in this trial is true?`,
@@ -581,7 +883,38 @@ Distinguishing relevant from irrelevant
       { label: 'E', text: 'The sensitivity of the veritangin assay will decrease by 50% if you reduce the threshold for a positive result to >0.5 ng/dL.' }
     ],
     correct: 'D',
-    explanation: `Specificity = true negatives / (true negatives + false positives) = 70 / (70 + 5) = 0.93. Sensitivity and specificity are intrinsic test properties and do not depend on prevalence, while posttest probability does via Bayes’ theorem. The sensitivity can be calculated from true positives and false negatives, and the exact 50% decrease statement is unsupported.`
+    explanation: `🧠 Explanation:
+📌 Key Definitions:
+Specificity = True negatives / (True negatives + False positives)
+
+Sensitivity = True positives / (True positives + False negatives)
+
+Posttest probability = Influenced by disease prevalence via Bayes' theorem
+
+🧪 Veritangin Trial Data Summary:
+70 patients with no MI had a negative veritangin test → ✅ True negatives
+
+5 patients with no MI had a positive veritangin test → ❌ False positives
+
+➡️ Specificity = 70 / (70 + 5) = 0.93
+
+✅ This makes the correct answer the one citing a specificity of 0.93 (70/75).
+
+❌ Why the Other Options Are Incorrect:
+Posttest probability doesn’t depend on population
+🔻 Incorrect — it does depend on disease prevalence (via Bayes' theorem)
+
+Sensitivity cannot be calculated
+🔻 False — the data includes true positives and false negatives, allowing for calculation
+
+Sensitivity depends on prevalence
+🔻 Incorrect concept — sensitivity and specificity are intrinsic test properties and do not depend on prevalence
+
+Sensitivity decreases by 50% if threshold changes
+🔻 Sensitivity may change, but this exact percentage change is not supported by the provided data
+
+🩺 Conclusion:
+➡️ Specificity is correctly calculated in the trial as 0.93, making that the only valid statement among the options.`
   },
   {
     text: `A patient tells you about her experience with prolonged therapy for her breast cancer. You comment, “That must have been a very trying time for you.” What is this an example of?`,
@@ -592,7 +925,30 @@ Distinguishing relevant from irrelevant
       { label: 'D', text: 'Validation' }
     ],
     correct: 'D',
-    explanation: `Saying “That must have been a very trying time for you” is an example of validation, where the clinician acknowledges and affirms the patient’s emotional experience. Empathy involves sharing the feeling, reassurance aims to reduce anxiety, and summarization synthesizes the story.`
+    explanation: `🧠 Explanation:
+💬 The phrase “That must have been a very trying time for you” is an example of validation — acknowledging and affirming the legitimacy of the patient’s feelings and experience.
+
+🧾 Validation:
+Confirms that the patient's feelings or thoughts are understandable and acceptable
+
+Helps the patient feel heard, respected, and supported
+
+Encourages open communication
+
+❌ Why the Other Choices Are Incorrect:
+Summarization
+🔻 Would involve restating the overall content of what the patient shared, not this specific response.
+
+Reassurance
+🔻 Focuses on reducing fear or concern (e.g., “You’ll be fine”), not acknowledging feelings.
+
+Empathy
+🔻 Very closely related and often overlaps, but empathy usually involves feeling or imagining what the patient is feeling, not just recognizing and validating it.
+
+🧠 Think of validation as a clinical skill used to acknowledge emotions without necessarily expressing your own emotional resonance — that would be empathy.
+
+🩺 Conclusion:
+➡️ Saying “That must have been a very trying time for you” is a textbook example of validation, where the provider affirms and accepts the patient’s emotional experience.`
   },
   {
     text: `Routine prenatal screening in the first trimester includes all of the following EXCEPT:`,
@@ -605,23 +961,291 @@ Distinguishing relevant from irrelevant
       { label: 'F', text: 'Option 6' }
     ],
     correct: 'D',
-    explanation: `Maternal Serum Alpha-Fetoprotein (MSAFP) is part of the second-trimester screening (15–20 weeks) for neural tube and chromosomal defects. First-trimester routine labs include blood type/antibody screen, hepatitis B surface antigen, HIV antibody, and rubella antibody.`
-  }
+    explanation: `🧠 Explanation:
+Routine first trimester prenatal screening is essential for identifying risks to the mother and fetus early in pregnancy. Typical first trimester labs include:
+
+✅ Included in 1st trimester:
+🩸 Blood type & antibody screen → Identify Rh status, prevent hemolytic disease of the newborn
+
+🦠 Hepatitis B surface antigen → Prevent perinatal transmission
+
+🧬 HIV antibody → Ensure early treatment and reduce transmission
+
+💉 Rubella antibody → Determine immunity; rubella can cause congenital infections
+
+❌ Why MSAFP is the Exception:
+MSAFP (Maternal Serum Alpha-Fetoprotein) is a second-trimester test
+🔍 Part of the triple or quadruple screen (usually done between 15–20 weeks)
+🎯 Used to assess risk for:
+
+Neural tube defects
+
+Abdominal wall defects
+
+Chromosomal abnormalities
+
+🩺 Conclusion:
+➡️ MSAFP is not part of routine first trimester screening — making it the correct “EXCEPT” answer in this context.
+
+`
+  },
+  {
+  "text": "A 40-year-old male complains of fever and multiple swollen joints with pain. Physical examination reveals subcutaneous nodules, and a difficult-to-distinguish new heart murmur. This patient should be evaluated for what condition?",
+  "options": [
+    { "label": "A", "text": "Human immunodeficiency virus" },
+    { "label": "B", "text": "Aortic regurgitation" },
+    { "label": "C", "text": "IV drug abuse" },
+    { "label": "D", "text": "Rheumatic fever" }
+  ],
+  "correct": "D",
+  "explanation": "Rheumatic fever is a sequela of untreated or inadequately treated group A Streptococcus pharyngitis. It commonly presents with:\n\n• Fever 🌡️\n• Migratory polyarthritis 🤕\n• Subcutaneous nodules 🧩\n• Carditis 💓 — often heard as a new murmur\n• Erythema marginatum or Sydenham chorea (not listed in this case but part of Jones Criteria)\n\nThe Jones Criteria are used to diagnose rheumatic fever and include both major and minor clinical findings. This patient presents with classic major criteria: migratory arthritis, subcutaneous nodules, and a new murmur suggestive of carditis.\n\nPrompt diagnosis is critical as rheumatic fever can cause permanent heart damage (rheumatic heart disease).\n\n❌ Why the Other Options Are Incorrect:\n• HIV 🧬: While HIV can present with generalized symptoms and joint pain, subcutaneous nodules and new murmurs are not characteristic of initial or opportunistic HIV infection.\n\n• Aortic regurgitation 🔁: This is a specific valve lesion, not a diagnosis. It may result from rheumatic fever but does not itself explain fever, nodules, and joint swelling.\n\n• IV drug abuse 💉: IV drug use can lead to infective endocarditis (which causes murmurs and fever), but the patient has no history of drug use or track marks. Migratory arthritis and subcutaneous nodules are also less typical.\n\n📝 Summary:\nRheumatic fever presents with systemic inflammatory signs (joint pain, nodules, new murmur). The other choices describe complications or alternate diagnoses that don’t match the full clinical picture."
+},
+  {
+    "text": "A 67-year-old postal supervisor comes to your office saying, \"Doctor, I think I have arthritis.\" He reports intermittent left shoulder pain gradually worsening over the past 6 months. The pain occurs when he walks up the hill to the bus stop in the morning and has been occurring earlier on the ascent over time and more frequently with cold weather. It is unaffected by arm movement and relieved by resting for 5 minutes. What is the most likely diagnosis?",
+    "options": [
+      { "label": "A", "text": "Osteoarthritis" },
+      { "label": "B", "text": "Referred pain" },
+      { "label": "C", "text": "Frozen shoulder" },
+      { "label": "D", "text": "Rotator cuff tendinopathy" }
+    ],
+    "correct": "B",
+    "explanation": "This presentation is highly suggestive of angina—a type of referred pain often felt in areas like the shoulder, jaw, or arm, particularly on the left side. Clues that point to referred cardiac pain rather than a musculoskeletal issue include:\n\n📈 Exertional pain: Occurs during uphill walking (increased oxygen demand).\n\n🌬️ Cold-induced symptoms: Classic anginal trigger.\n\n🚫 Not worsened by arm movement: Rules out local shoulder joint/tendon pathology.\n\n⏱️ Improves with rest within minutes: Typical of angina (relieved by decreased cardiac workload).\n\nThis patient is describing exertional angina masquerading as shoulder pain — a common misinterpretation, especially in older adults.\n\n❌ Why the Other Options Are Incorrect:\nOsteoarthritis 🦴\nOA of the shoulder causes persistent, activity-related pain that worsens with shoulder use, not exertion involving walking or cardiovascular effort. Rest helps, but the connection with walking uphill is not typical.\n\nFrozen shoulder (Adhesive capsulitis) 🧊\nCharacterized by progressive shoulder stiffness and pain, especially with movement and at night. This patient's pain is not aggravated by movement and is instead linked to exertion, which points away from this diagnosis.\n\nRotator cuff tendinopathy 🎯\nWould cause pain with specific arm motions, especially overhead activities or lifting. Again, this patient's pain has no correlation with arm movement, making this unlikely.\n\n📝 Summary:\nThis patient's presentation strongly supports a diagnosis of referred pain due to angina, not a primary musculoskeletal disorder. It’s a great reminder to always consider cardiac causes in older adults with exertional upper body pain — even when it’s not in the chest! ❤️‍🔥"
+
+  },
+   {
+  "text": "A 65-year-old man presents to the clinic for left leg pain. He has no significant past medical history and takes no medications. Four weeks ago, he fell off the stairs and hurt his left leg. X-rays performed thereafter did not reveal a fracture and the patient was discharged with routine follow-up. Physical examination shows left leg edema, hyperesthesia, inflammation, loss of hair, and decreased leg movements due to pain. Pulses are equal and strong in both legs. A bone scan is performed, which does not reveal a fracture. What is the most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Occult fracture" },
+    { "label": "B", "text": "Compartment syndrome" },
+    { "label": "C", "text": "Complex regional pain syndrome" },
+    { "label": "D", "text": "Phantom pain" }
+  ],
+  "correct": "C",
+  "explanation": "📚 Explanation:\n\nCRPS is a neuropathic pain condition that typically follows trauma or surgery, even minor injuries. It involves abnormal nerve responses leading to exaggerated pain and autonomic dysregulation. Hallmarks include:\n\n🌡️ Pain out of proportion to the initial injury\n\n🔥 Edema, hyperesthesia, and inflammation\n\n🧊 Skin changes: mottling, hair loss, temperature or color changes\n\n⚡ Decreased ROM due to pain\n\n❗ Normal imaging (initially)—no fracture or visible pathology\n\nThis patient’s history of trauma (fall), coupled with sensory, motor, and autonomic changes, fits CRPS perfectly.\n\n❌ Why the Other Options Are Incorrect:\n- Occult fracture 🦴  \n  A hidden fracture could cause persistent pain, but would not typically present with autonomic symptoms like hair loss, hyperesthesia, or swelling. Also, the bone scan was negative, which makes this less likely.\n\n- Compartment syndrome 💢  \n  Usually presents acutely, with tense swelling, severe pain, and diminished pulses. This is a surgical emergency, not a chronic pain syndrome. The patient has strong pulses and is 4 weeks post-injury—ruling this out.\n\n- Phantom pain 👻  \n  This occurs after amputation, where pain is perceived in the missing limb. This patient has an intact limb, making phantom pain not applicable.\n\n📝 Summary:\nThis is a classic case of Complex Regional Pain Syndrome (CRPS), marked by persistent pain, sensory changes, and autonomic dysfunction after a minor injury. Recognizing the pattern of symptoms and negative imaging is key to early diagnosis and management."
+}
+,
+ {
+  "text": "A 65-year-old woman presents to the clinic for a follow-up. She has a history of poorly controlled type 2 diabetes. She currently takes metformin, gliclazide, and lisinopril. She is currently complaining of bilateral leg pain (describes as pins and needles), paresthesias, and decreased sensation. Physical examination reveals decreased sensation of pin-prick up to the knees. Which of the following is the best initial therapy for this patient?",
+  "options": [
+    { "label": "A", "text": "Ibuprofen" },
+    { "label": "B", "text": "Acetaminophen" },
+    { "label": "C", "text": "Oxycodone" },
+    { "label": "D", "text": "Duloxetine" }
+  ],
+  "correct": "D",
+  "explanation": "📚 Explanation:\n\nThis patient is presenting with diabetic peripheral neuropathy (DPN) — a common complication of long-standing, poorly controlled diabetes. The symptoms include:\n\n- Tingling and burning pain (pins and needles)\n- Numbness or paresthesia\n- Symmetrical sensory loss in a “stocking-glove” distribution\n\n🧠 Duloxetine is a serotonin-norepinephrine reuptake inhibitor (SNRI) that is FDA-approved for the treatment of painful diabetic neuropathy. It helps modulate pain by enhancing descending inhibitory pain pathways in the CNS.\n\nOther first-line agents for DPN include:\n\n- Pregabalin\n- Gabapentin\n- Amitriptyline (less preferred in older adults due to anticholinergic side effects)\n\n❌ Why the Other Options Are Incorrect:\n- Ibuprofen 🧊\n  NSAIDs are not effective for neuropathic pain, and long-term use can lead to GI, renal, and cardiovascular risks — especially in diabetic patients.\n\n- Acetaminophen 💊\n  May help with general pain, but it’s ineffective for neuropathic pain, which involves altered nerve signaling, not inflammation.\n\n- Oxycodone 💀\n  Opioids should be avoided as first-line therapy for chronic neuropathic pain due to risk of dependence, tolerance, and side effects. They're reserved for severe, refractory cases.\n\n📝 Summary:\nThis is a classic case of painful diabetic neuropathy, and the best initial treatment is Duloxetine, a medication specifically targeting neuropathic pain pathways. Always prioritize disease-specific treatments over general analgesics in neuropathy management."
+}
+,
+  {
+  "text": "A 68-year-old man presents to the clinic with a complaint of lower back and perineal pain. He also complains of chills and dysuria. On rectal examination, the prostate is tender. Which of the following is the best treatment option?",
+  "options": [
+    { "label": "A", "text": "Oral trimethoprim-sulfamethoxazole for 1 week" },
+    { "label": "B", "text": "One dose of IM Fosfomycin" },
+    { "label": "C", "text": "Oral penicillin for 4 weeks" },
+    { "label": "D", "text": "Oral nitrofurantoin for 7 days" },
+    { "label": "E", "text": "Oral ciprofloxacin for 4 weeks" }
+  ],
+  "correct": "E",
+  "explanation": "📚 Explanation:\n\nThis patient presents with acute bacterial prostatitis, as indicated by:\n\n- 🔥 Fever and chills\n- 😖 Perineal and lower back pain\n- 💧 Dysuria\n- 👉 Tender prostate on rectal exam\n\nIn men over 50, the most common pathogens are Enterobacteriaceae (especially E. coli). Treatment requires antibiotics that penetrate the prostate well and cover Gram-negative bacteria.\n\n💊 Fluoroquinolones (like ciprofloxacin) are first-line due to their:\n- Broad-spectrum coverage\n- Good prostatic tissue penetration\n- Efficacy with a longer course (typically 4–6 weeks to prevent chronic prostatitis)\n\n❌ Why the Other Options Are Incorrect:\n- Trimethoprim-sulfamethoxazole for 1 week 🧪\n  While TMP-SMX is an alternative with good prostatic penetration, 1 week is too short; the standard course is also 4–6 weeks.\n\n- One dose of IM Fosfomycin 💉\n  Fosfomycin is used for uncomplicated urinary tract infections, not prostatitis, and one dose is insufficient for a deep-tissue infection like this.\n\n- Oral penicillin for 4 weeks 🧫\n  Penicillin has poor Gram-negative coverage and does not penetrate prostatic tissue effectively — not suitable for prostatitis.\n\n- Oral nitrofurantoin for 7 days 💊\n  Nitrofurantoin does not achieve therapeutic concentrations in prostatic tissue. It's used only for lower urinary tract infections like cystitis.\n\n📝 Summary:\nThis is a textbook case of acute bacterial prostatitis, and the best treatment is a fluoroquinolone like ciprofloxacin for 4 weeks, due to its excellent tissue penetration and Gram-negative coverage."
+}
+,
+  {
+  "text": "A 40-year-old female presents with a complaint of left hip pain. The pain started 1 day prior. Initially it was mild but has worsened since. She denies any trauma, fever, chills, recent illness, or prior similar episodes. She has a history of rheumatoid arthritis. Her vital signs are as follows: heart rate 96/min, blood pressure 151/86 mm Hg, respiratory rate is 18/min, saturation 98%, temp 37°C. On physical examination you noticed facial hair and abdominal striae. The left hip has decreased range of motion due to pain but otherwise normal. This patient is at risk of what complication?",
+  "options": [
+    { "label": "A", "text": "Hypoglycemia episodes" },
+    { "label": "B", "text": "Increased muscle mass" },
+    { "label": "C", "text": "Weight loss" },
+    { "label": "D", "text": "Cardiovascular disease" }
+  ],
+  "correct": "D",
+  "explanation": "📚 Explanation:\n\nThis patient likely has Cushing’s syndrome, as evidenced by:\n\n💊 History of rheumatoid arthritis → often treated with chronic corticosteroids\n\n👩‍🦱 Facial hair (hirsutism) and abdominal striae → classic Cushingoid features\n\n📈 Hypertension, central obesity, and possibly osteoporosis or avascular necrosis (hip pain)\n\nCushing’s syndrome significantly increases cardiovascular risk due to:\n\n- Hypertension\n- Hyperglycemia\n- Dyslipidemia\n- Increased thrombotic tendency\n\nThese metabolic changes contribute to atherosclerosis and increased cardiovascular morbidity and mortality.\n\n❌ Why the Other Options Are Incorrect:\n- Hypoglycemia episodes 🍬\n  Cushing’s syndrome causes hyperglycemia, not hypo—due to cortisol-induced insulin resistance.\n\n- Increased muscle mass 💪\n  Patients with Cushing’s have muscle wasting and weakness, especially in proximal muscles — not hypertrophy.\n\n- Weight loss ⚖️\n  Cushing’s typically causes weight gain, especially truncal obesity and fat redistribution (e.g., “moon face,” “buffalo hump”).\n\n📝 Summary:\nThis patient likely has Cushing’s syndrome secondary to chronic steroid use, with cardiovascular disease being a key long-term complication due to the metabolic derangements caused by excess cortisol."
+},
+  {
+  "text": "A 36-year-old patient must undergo right radical mastectomy for cancer. The patient read that she could feel a sensation of residual breast tissue and painful sensations. This data creates profound anxiety that adds to the concerns for the intervention and for the oncological pathology. Which of the following risk factors is most consistent with the underlying diagnosis in this patient?",
+  "options": [
+    { "label": "A", "text": "Chemotherapy and radiation therapy" },
+    { "label": "B", "text": "Severe acute postoperative pain and greater postoperative use of analgesics" },
+    { "label": "C", "text": "Younger age (< 35 years of age)" },
+    { "label": "D", "text": "Old age (> 50 years of age)" }
+  ],
+  "correct": "B",
+  "explanation": "📚 Explanation:\n\nThe patient is describing postmastectomy pain syndrome (PMPS) — a neuropathic pain condition characterized by:\n\n- Burning, tingling, or sharp pain in the chest wall, axilla, or arm\n- Sensation of phantom breast tissue\n- Onset following mastectomy or other breast surgery\n\n🔍 Key risk factors include:\n\n- Severe acute postoperative pain\n- Greater use of postoperative analgesics\n- Younger age (though not <35 specifically)\n- Extent of nerve injury (especially intercostobrachial nerve)\n\nThese factors are believed to contribute to central and peripheral sensitization, increasing the risk for chronic pain development.\n\n❌ Why the Other Options Are Incorrect:\n- Chemotherapy and radiation therapy ☢️\n  These treatments can cause other complications (e.g., fatigue, fibrosis, dermatitis), but they are not primary risk factors for PMPS.\n\n- Younger age (< 35 years) & Old age (> 50 years) 📉\n  Age can influence risk, but younger age alone is not as predictive as the severity of acute postoperative pain and analgesic use.\n\n📝 Summary:\nThis patient is at risk for postmastectomy pain syndrome (PMPS) — a chronic neuropathic pain condition. The most consistent risk factor is experiencing severe acute postoperative pain and needing increased postoperative analgesia, both of which indicate a heightened pain sensitivity that may persist."
+}
+,
+  {
+  "text": "A 31-year-old male patient presents to the clinic with complaints of mild pain and distress in the right hand, which was amputated after a motor vehicle collision three weeks back. He also complains of increased pain when he goes out in the cold. A blood test done reveals no significant abnormality. According to the classification for the suspected condition, the patient falls into which of the following groups?",
+  "options": [
+    { "label": "A", "text": "I" },
+    { "label": "B", "text": "II" },
+    { "label": "C", "text": "III" },
+    { "label": "D", "text": "IV" }
+  ],
+  "correct": "C",
+  "explanation": "📚 Explanation:\n\nThis patient is most likely experiencing phantom limb pain, which falls under the broader category of Complex Regional Pain Syndrome (CRPS) Type III — also known as “causalgia with major nerve injury”.\n\nThe classification being referenced here is most likely a type-based pain classification used for neuropathic pain conditions following trauma or nerve injury.\n\n💡 Key Clues:\n- 🦾 Recent amputation\n- ❄️ Cold sensitivity (vasomotor symptom)\n- 😖 Pain in the absence of abnormal lab results\n- ⏱️ Onset weeks after trauma\n\nGroup III includes pain syndromes following major nerve injury, such as amputation, where there is persistent pain without other systemic findings.\n\n❌ Why the Other Options Are Incorrect:\n- Group I\n  Often includes nociceptive pain or minor injury without nerve involvement. Not consistent with an amputation case.\n\n- Group II\n  Typically refers to CRPS Type I, which occurs without identifiable nerve injury. This patient has had an amputation, so this does not apply.\n\n- Group IV\n  Generally reserved for pain conditions with psychogenic origin or unclear mechanisms. Not fitting here due to the clear physical cause.\n\n📝 Summary:\nThe patient is showing signs of phantom limb pain post-amputation, with features like cold-induced pain and no systemic abnormalities. This best fits Group III classification — related to major nerve injury."
+},
+  {
+  "text": "A 48-year-old woman presents to the office with a history of poorly controlled, insulin-dependent type 2 diabetes complicated by peripheral neuropathy. Her past medical history is also significant for major depressive disorder. The patient complains of diffuse pain, which is dull and achy, but sometimes it is made worse depending on the patient’s stress levels. She takes maximum dose gabapentin. The gabapentin helps somewhat with the numbness and tingling from her peripheral neuropathy but not much with her pain. She often complains of fatigue but denies any constipation or changes to her hair or nails. Her pain is currently a 4/10. She denies any loss of muscle strength or changes to sensation. The only thing which has made her pain better was duloxetine, which she stopped due to worsening irritability and restlessness. Her physical exam is mostly unremarkable. She also reports pain to light palpation of her extremities and axial skeleton. What is the next best step in the management of this patient?",
+  "options": [
+    { "label": "A", "text": "Autoimmune profile" },
+    { "label": "B", "text": "Increase the dose of gabapentin" },
+    { "label": "C", "text": "Amitriptyline" },
+    { "label": "D", "text": "Switch gabapentin to pregabalin" }
+  ],
+  "correct": "C",
+  "explanation": "📚 Explanation:\n\nThis patient's presentation is classic for fibromyalgia — a chronic pain condition characterized by:\n\n- Widespread musculoskeletal pain\n- Fatigue, sleep disturbance, and cognitive complaints\n- Tenderness to light palpation (diagnostic hallmark)\n- Normal labs and physical strength\n\n🔍 She also has:\n\n- A history of major depressive disorder (common in fibromyalgia)\n- Diffuse, non-neuropathic pain unresponsive to neuropathy treatment\n- Previous improvement with duloxetine (an SNRI used for fibromyalgia)\n\n💊 Amitriptyline (a tricyclic antidepressant) is a first-line treatment for fibromyalgia, effective at low doses due to its impact on serotonin and norepinephrine modulation, improving both pain and sleep.\n\n❌ Why the Other Options Are Incorrect:\n- Autoimmune profile 🧬\n  Not indicated here. The absence of systemic symptoms (rash, joint swelling, muscle weakness, etc.) and normal exam findings do not suggest autoimmune disease.\n\n- Increase the dose of gabapentin 💊\n  She’s already at the maximum dose, and gabapentin is not effective for the type of pain seen in fibromyalgia.\n\n- Switch to pregabalin 🔄\n  While pregabalin is also used in neuropathic pain and fibromyalgia, it’s not more effective than amitriptyline and might have similar efficacy to gabapentin. Since she had success with duloxetine (an antidepressant), another antidepressant (amitriptyline) makes more sense.\n\n📝 Summary:\nThis is a classic case of fibromyalgia in a patient with comorbid depression and chronic diabetes. With gabapentin failing to relieve her diffuse pain, amitriptyline is the best next step — targeting both her pain and underlying mood symptoms."
+},
+  {
+  "text": "A 33-year-old male presents with burning pain, allodynia, swelling, and intermittent blue discoloration in his left hand with all fingers and most of the forearm to the elbow. This occurred four months ago when he suffered a skateboarding accident and fell onto his left arm. Workup is negative for infection, non-union fracture, and vasculitis. He reports that instead of improving, the pain has worsened and spread proximally. A procedural intervention is considered for pain control to help the patient tolerate physical therapy. Which of the following would be most appropriate?",
+  "options": [
+    { "label": "A", "text": "Left ulnar nerve block" },
+    { "label": "B", "text": "Left stellate ganglion block" },
+    { "label": "C", "text": "Left median nerve block" },
+    { "label": "D", "text": "Left supraclavicular block" }
+  ],
+  "correct": "B",
+  "explanation": "📚 Explanation:\n\nThis patient is experiencing Complex Regional Pain Syndrome (CRPS), likely Type I, characterized by:\n\n- Burning pain\n- Allodynia (pain from non-painful stimuli)\n- Swelling\n- Skin color/temperature changes\n- Progressive spread of symptoms\n\nIt often follows trauma, even without major nerve injury.\n\n🧠 In CRPS with upper limb involvement, the stellate ganglion (part of the sympathetic chain at C6–T1) is targeted for:\n\n- Sympathetic nerve blockade\n- Pain relief\n- Improved blood flow\n- Helping the patient engage in physical therapy (essential in CRPS treatment)\n\n❌ Why the Other Options Are Incorrect:\n- Left ulnar nerve block\n  Only targets the medial forearm and two fingers — too limited in distribution to address diffuse symptoms.\n\n- Left median nerve block\n  Affects thumb to half of the ring finger but not the whole forearm or dorsal hand; too focused for diffuse CRPS.\n\n- Left supraclavicular block\n  Though it can anesthetize the entire upper limb, it’s used perioperatively, not for long-term sympathetic modulation or CRPS.\n\n📝 Summary:\nThe patient's symptoms align with CRPS, and the best targeted pain intervention to enable physical therapy is a left stellate ganglion block, which disrupts the abnormal sympathetic activity sustaining the pain."
+},
+  {
+  "text": "A 49-year-old woman presents to the clinic for a follow-up. She has a history of chronic low backache. She currently takes a regimen consisting of three analgesics. Her dose of one analgesic has been increased for the past five months, but her symptoms always seem to require higher doses to attain the same effect after some time. Which of the following complications is most likely to be associated with this medication as the dosage increases?",
+  "options": [
+    { "label": "A", "text": "Liver dysfunction" },
+    { "label": "B", "text": "Renal failure" },
+    { "label": "C", "text": "Respiratory depression" },
+    { "label": "D", "text": "Pancreatitis" }
+  ],
+  "correct": "C",
+  "explanation": "📚 Explanation:\n\nThe patient's need for increasing doses of an analgesic suggests opioid tolerance. Chronic pain management often includes opioids, and a key concern with long-term and escalating opioid use is respiratory depression, especially as doses climb.\n\nOpioids depress the respiratory centers in the brainstem, reducing responsiveness to CO₂. This becomes particularly dangerous when:\n\n- Doses are increased quickly\n- There's co-administration with other CNS depressants (e.g., benzodiazepines)\n- The patient has underlying respiratory conditions\n\n🔁 Tolerance develops to the analgesic and euphoric effects, but less so to respiratory depression, which is why dose escalation increases the risk.\n\n❌ Why the Other Options Are Incorrect:\n- Liver dysfunction 🧬\n  While acetaminophen (another common analgesic) can cause liver injury, the case emphasizes opioid use and escalating dosage—pointing more toward opioid-specific risks.\n\n- Renal failure 🧽\n  NSAIDs can cause renal impairment, but again, the pattern of increasing dose and tolerance aligns with opioids, not NSAIDs.\n\n- Pancreatitis 🔥\n  Not typically linked to opioids or other common analgesics. This would be more relevant with alcohol use, gallstones, or certain other medications.\n\n📝 Summary:\nThe most concerning complication of increasing opioid doses in chronic pain management is respiratory depression — a potentially life-threatening effect that can occur even in tolerant individuals when doses rise too high."
+},
+  {
+  "text": "A 51-year-old male patient presents to the clinic with blurring of vision in his left eye for the past few days. He denies weakness, urinary incontinence, facial pain, or any other neurologic symptoms. His past medical history is significant for conversion disorder. His father has diabetes mellitus type 2 and his mother has hypertension. Physical examination reveals remarkable left eye visual acuity of 20/200, left-sided afferent pupillary defect on swinging light test, and a pale optic disc on left eye fundoscopy. A brain MRI with high T2 signaling intensity shows multiple lesions in the supratentorial white matter, but no mass or any other lesions. He is diagnosed with clinically isolated syndrome. The underlying pathogenesis is the development of the autoimmunity against a specific type of neurological cells present in the central nervous system. Which of the following cells of visceral afferent Aδ-type fibers are functionally most similar to the neurological cells targeted by the autoantibody in this patient’s medical condition?",
+  "options": [
+    { "label": "A", "text": "Schwann cells" },
+    { "label": "B", "text": "Microglia" },
+    { "label": "C", "text": "Oligodendrocytes" },
+    { "label": "D", "text": "Astrocytes" }
+  ],
+  "correct": "A",
+  "explanation": "📚 Explanation:\n\nIn Multiple Sclerosis (MS), the immune system attacks oligodendrocytes, which are the myelinating cells of the CNS.\n\nAδ-type visceral afferent fibers are peripheral nerves, which are myelinated by Schwann cells, the PNS equivalent of oligodendrocytes.\n\n🧠 The question isn’t asking which cells are attacked in MS, but rather:\nWhich peripheral cells are functionally similar to oligodendrocytes?\n➡️ Answer: Schwann cells, because they both myelinate axons—just in different parts of the nervous system (PNS vs. CNS).\n\n❌ Why the Other Options Are Incorrect:\n- Microglia 🧬\n  These are CNS immune cells, not involved in myelination.\n\n- Oligodendrocytes 🧠\n  These are the cells targeted in MS, but the question is asking for the PNS analog to these cells — not the actual MS target.\n\n- Astrocytes 🌟\n  Involved in blood-brain barrier and support functions, not myelination.\n\n📝 Summary:\nIn MS, oligodendrocytes (CNS myelinating cells) are targeted. The functional equivalent in the PNS (like Aδ fibers) is the Schwann cell, making it the correct answer in this context."
+},
+  {
+  "text": "Substance P, which is released from primary afferent nociceptors, has all of the following biologic activities EXCEPT:",
+  "options": [
+    { "label": "A", "text": "Increase intracellular concentration of cyclic guanosine monophosphate (cGMP)" },
+    { "label": "B", "text": "Vasodilation" },
+    { "label": "C", "text": "Chemoattractant for leukocytes" },
+    { "label": "D", "text": "Degranulation of mast cells" },
+    { "label": "E", "text": "Increase the production and release of inflammatory mediators" }
+  ],
+  "correct": "A",
+  "explanation": "📚 Explanation:\nSubstance P is a neuropeptide released by primary afferent nociceptors, especially during pain and inflammation. It exerts pro-inflammatory and pro-nociceptive effects, including:\n\n- 🩸 Vasodilation\n- 🧲 Chemoattractant for leukocytes\n- 🌩️ Mast cell degranulation\n- 🔥 Promoting release of inflammatory cytokines and mediators\n\nHowever, Substance P does NOT increase intracellular cGMP levels. In fact:\n\n- Increased cGMP (and cAMP) is associated with anti-inflammatory effects in many cells.\n- Substance P acts against this pathway, making cGMP elevation inconsistent with its biology.\n\n📝 Summary:\nSubstance P plays a key role in neurogenic inflammation by promoting vasodilation, immune cell recruitment, and mast cell degranulation.\n❌ It does not increase intracellular cGMP — which is why this is the correct \"EXCEPT\" answer."
+},
+  {
+  "text": "A 43-year-old female is being evaluated at the office for chronic pain and swelling of her hands worse in the mornings. The patient feels her fingers have started deforming. She has had subjective fevers and warmth of the hands. There is no report of trauma. There has been no recent trauma, or insect bites. The vital signs are all normal. The x-ray shows soft tissue swelling and joint space narrowing. Physical examination shows a swan-neck deformity of the distal fingers and subcutaneous nodules. Which of the following is the most specific for diagnosing this patient’s condition?",
+  "options": [
+    { "label": "A", "text": "Rheumatoid factor (RF)" },
+    { "label": "B", "text": "Antinuclear antibodies (ANA)" },
+    { "label": "C", "text": "Anti-Jo antibodies" },
+    { "label": "D", "text": "Anti-citrullinated peptide antibodies (ACPA)" }
+  ],
+  "correct": "D",
+  "explanation": "📚 Explanation:\nThis patient presents with a classic picture of Rheumatoid Arthritis (RA):\n\n- Morning stiffness\n- Joint space narrowing\n- Swan-neck deformities\n- Subcutaneous nodules\n\n✅ ACPA (anti-cyclic citrullinated peptide antibodies) is the most specific marker for RA — with specificity >95%. It's associated with:\n\n- More severe disease\n- Progressive joint damage\n- Predictive value even before clinical symptoms\n\n❌ Why the Other Options Are Incorrect:\n- Rheumatoid Factor (RF)\n  Sensitive but not specific — can be positive in other autoimmune diseases, infections, and even healthy elderly individuals.\n\n- ANA (Antinuclear Antibodies)\n  Highly nonspecific, positive in many conditions (e.g., lupus, Sjögren’s), and even in healthy people.\n\n- Anti-Jo antibodies\n  Seen in polymyositis/dermatomyositis, not rheumatoid arthritis.\n\n📝 Summary:\nIn a patient with symmetric small joint arthritis, deformities, and systemic symptoms, ACPA is the most specific diagnostic marker for RA, outperforming RF in both accuracy and predictive value."
+},
+  {
+  "text": "A 47-year-old woman who has not seen a physician in over 20 years presents with painful joints, fatigue, weakness, and what she describes as “hideously misshapen hands.” Family history is significant for type 1 diabetes. Physical examination reveals deformed hands and a 2-cm soft mass that is mobile and tender to palpation in the left popliteal fossa. Which of the following is the underlying pathophysiology of this popliteal fossa mass?",
+  "options": [
+    { "label": "A", "text": "Monosodium urate crystal deposition" },
+    { "label": "B", "text": "Fluid production from inflamed synovium" },
+    { "label": "C", "text": "Redundant bone growth" },
+    { "label": "D", "text": "Obstruction of lymphatic drainage" }
+  ],
+  "correct": "B",
+  "explanation": "📚 Explanation:\nThis patient likely has Rheumatoid Arthritis (RA) with classic findings:\n\n- Deformed hands\n- Fatigue, weakness\n- Family history of autoimmune disease\n- Popliteal fossa mass ➡️ most likely a Baker's cyst (popliteal cyst)\n\n🧪 Baker’s cysts form due to:\n\n- Synovial fluid overproduction → secondary to chronic synovial inflammation (as seen in RA) → fluid accumulates and dissects into the popliteal space.\n\nThis is a non-neoplastic fluid-filled swelling that can be painful and mimic a mass.\n\n❌ Why the Other Options Are Incorrect:\n- Monosodium urate crystal deposition 🧂\n  Seen in gout, not RA. Gout typically affects the great toe and presents as acute monoarthritis, not a chronic deforming polyarthritis.\n\n- Redundant bone growth 🦴\n  Seen in osteoarthritis, not RA. OA leads to bony enlargements like Heberden's and Bouchard's nodes, but not soft, fluid-filled cysts.\n\n- Obstruction of lymphatic drainage 🚫\n  Causes lymphedema, which is typically non-tender, non-mobile swelling, unlike the mobile tender cyst described here.\n\n📝 Summary:\nThis is a classic case of a Baker’s cyst caused by synovial fluid production from inflamed synovium in a patient with longstanding rheumatoid arthritis."
+},
+  {
+  "text": "A 51-year-old man presents to the clinic with pain in his right leg. He mentions that he hurt himself when he fell from a ladder about a month prior. Physical examination is notable for right leg edema, hyperesthesia, inflammation, loss of hair, and decreased leg movements due to pain. Pulses are equal and strong in both legs. A bone scan is performed, which does not reveal a fracture. Different pain medications are prescribed but fail in relieving the pain. The clinician recommends a new treatment where tiny electrodes are surgically inserted along the spinal cord. Which of the following infective complications is most commonly associated with this treatment modality?",
+  "options": [
+    { "label": "A", "text": "Discitis" },
+    { "label": "B", "text": "Spinal cord abscess" },
+    { "label": "C", "text": "Meningitis" },
+    { "label": "D", "text": "Vertebral osteomyelitis" }
+  ],
+  "correct": "B",
+  "explanation": "📚 Explanation:\nThis patient has Complex Regional Pain Syndrome (CRPS), which often follows trauma and is characterized by:\n\n- Persistent pain out of proportion to injury\n- Edema, sensory changes, skin/hair alterations\n- Often unrelieved by standard analgesics\n\nWhen conservative treatment fails, Spinal Cord Stimulators (SCS) — devices that deliver electrical pulses to the spinal cord — are considered.\n\n🔍 Most common infective complication of SCS? → Spinal cord abscess\n\n🦠 Spinal cord abscesses are rare but serious. Infection risk after SCS placement ranges from 2.5% to 12%, with epidural abscess being the most feared complication due to risk of neurologic compromise.\n\n❌ Why the Other Options Are Incorrect:\n- Discitis 🦴\n  Inflammation of the intervertebral discs can occur with hematogenous spread or procedures, but it’s less common than a spinal cord abscess in this setting.\n\n- Meningitis 🧠\n  Though a risk in neurosurgical procedures, meningitis is not the most common complication of SCS insertion.\n\n- Vertebral osteomyelitis 🦴\n  Like discitis, possible — but not as frequently seen as spinal cord abscess in SCS-related infections.\n\n📝 Summary:\nIn a patient receiving spinal cord stimulator implantation for CRPS, the most likely infectious complication is a spinal cord (epidural) abscess, which requires rapid diagnosis and management due to risk of spinal cord compression and neurologic damage."
+},
+  {
+  "text": "A 71-year-old morbidly obese male with a history of uncontrolled type 2 diabetes presents with burning pain in his hands and feet. His symptoms have lasted over a year and are worsening. He also describes numbness and tingling in both hands and feet. Physical exam reveals decreased pinprick sensation on the plantar surface of both feet, with no other neurologic deficits. What is the best treatment option for his pain?",
+  "options": [
+    { "label": "A", "text": "Acetaminophen and ibuprofen" },
+    { "label": "B", "text": "Gabapentin" },
+    { "label": "C", "text": "Tramadol" },
+    { "label": "D", "text": "Ibuprofen" }
+  ],
+  "correct": "B",
+  "explanation": "📚 Explanation:\nThis patient is presenting with painful diabetic peripheral neuropathy (DPN) — a common complication of long-standing, poorly controlled diabetes. Key features:\n\n- Burning, tingling pain in a stocking-glove distribution\n- Bilateral sensory loss, especially pinprick or vibration\n- Chronic progression without trauma or acute cause\n\nFirst-line pharmacologic treatments for DPN include:\n\n- Gabapentin or Pregabalin — modulates calcium channels to reduce nerve excitability\n- Duloxetine (SNRI)\n- TCAs (e.g., amitriptyline — less favored in elderly due to side effects)\n\nGabapentin is especially appropriate in older adults due to its favorable safety profile and effectiveness for neuropathic pain.\n\n❌ Why the Other Options Are Incorrect:\n- Acetaminophen and ibuprofen 🧪\n  Effective for nociceptive pain (e.g., arthritis, trauma), but ineffective for neuropathic pain.\n\n- Tramadol 💊\n  An opioid-like drug sometimes used for severe cases, but not first-line due to risk of dependency and side effects in the elderly.\n\n- Ibuprofen 🧂\n  As with acetaminophen, it's not useful for nerve pain and can cause renal issues, especially in diabetics.\n\n📝 Summary:\nThis is a classic case of painful diabetic neuropathy, best treated initially with gabapentin — a well-tolerated, effective agent for chronic neuropathic pain."
+},
+  {
+  "text": "A 71-year-old man presents to the clinic for evaluation. He was recently diagnosed with stage 4 pancreatic cancer with metastasis discovered in the spine, liver, and ribs. He describes severe pain in the involved regions. He has tried acetaminophen and naproxen with minimal benefit. He is prescribed a regular dose of oxycodone to take daily. Which of the following additional medications is most appropriate to be prescribed for this patient?",
+  "options": [
+    { "label": "A", "text": "Methylcellulose" },
+    { "label": "B", "text": "Loperamide" },
+    { "label": "C", "text": "Senna" },
+    { "label": "D", "text": "Psyllium" }
+  ],
+  "correct": "C",
+  "explanation": "📚 Explanation:\nPatients on chronic opioid therapy, especially for cancer-related pain, are at very high risk of opioid-induced constipation (OIC).\n\n💡 Senna is a stimulant laxative — it promotes peristalsis and is considered first-line for preventing and treating opioid-induced constipation.\n\n🧪 Oxycodone (like all opioids) reduces bowel motility by acting on mu-opioid receptors in the gastrointestinal tract. Unlike other opioid side effects (e.g., nausea, drowsiness), constipation does not improve with time — making proactive management essential.\n\n❌ Why the Other Options Are Incorrect:\n- Methylcellulose & Psyllium 🌾 (Bulk-forming laxatives)\n  These rely on increased fluid intake and gut motility, which are impaired by opioids — making them less effective or even harmful (can worsen constipation or cause obstruction).\n\n- Loperamide 🚫\n  An antidiarrheal — the opposite of what this patient needs! It would worsen opioid-induced constipation.\n\n📝 Summary:\nIn any patient on long-term opioids, especially for palliative or cancer pain, a stimulant laxative like Senna should be co-prescribed proactively to prevent constipation — a common, predictable, and preventable complication."
+},
+  {
+  "text": "A 35-year-old male presents for foot pain one day after an injury. He was playing soccer when he twisted his right foot and ankle and fell. He has trouble bearing weight on the foot due to pain. You order an x-ray of his foot and ankle. The radiologist calls to tell you he has a Jones fracture. When you look at the x-ray, you expect to find a:",
+  "options": [
+    { "label": "A", "text": "Distal 5th metatarsal fracture" },
+    { "label": "B", "text": "Midshaft 5th metatarsal fracture" },
+    { "label": "C", "text": "5th metatarsophalangeal joint dislocation" },
+    { "label": "D", "text": "Proximal 5th metatarsal fracture (but distal to the tuberosity)" }
+  ],
+  "correct": "D",
+  "explanation": "📚 Explanation:\nA Jones fracture is defined as a transverse fracture at the metaphyseal-diaphyseal junction of the 5th metatarsal. It occurs just distal to the tuberosity (styloid) of the 5th metatarsal base.\n\n🩻 Key anatomical location:\n\n- NOT at the very base (which would be an avulsion fracture)\n- NOT midshaft\n- Exactly at the proximal metaphyseal-diaphyseal junction\n  ⮕ High risk of nonunion due to poor blood supply\n\n❌ Why the Other Options Are Incorrect:\n- Midshaft 5th metatarsal fracture 🦴\n  This is farther down the bone and not where a Jones fracture occurs.\n\n- Distal 5th metatarsal fracture\n  Would involve the area near the metatarsal head — far from the typical Jones fracture site.\n\n- 5th metatarsophalangeal joint dislocation\n  Unrelated to a Jones fracture, which is a bony injury, not a joint dislocation.\n\n📝 Summary:\nA Jones fracture occurs at the proximal 5th metatarsal, just distal to the tuberosity, at the metaphyseal-diaphyseal junction. It's important due to its risk of delayed healing or nonunion and often requires non-weight bearing or surgical intervention."
+},
+  {
+  "text": "A 67-year-old man presents to the clinic for evaluation. He had an episode of herpes zoster on the right side of his chest six months ago. Since then, he has had severe pain in the region. He has tried duloxetine and pregabalin with moderate relief. Physical examination is unremarkable. Which of the following is the next best step in the management of this patient?",
+  "options": [
+    { "label": "A", "text": "Topical acyclovir" },
+    { "label": "B", "text": "Topical lidocaine" },
+    { "label": "C", "text": "Oral imipramine" },
+    { "label": "D", "text": "Oral morphine" }
+  ],
+  "correct": "B",
+  "explanation": "📚 Explanation:\nThis is a classic presentation of postherpetic neuralgia (PHN) — defined as persistent neuropathic pain lasting >3 months after a herpes zoster episode.\n\n💡 Key treatment strategies for PHN include:\n\n- First-line options:\n  - Gabapentinoids (e.g., pregabalin, gabapentin)\n  - SNRIs (e.g., duloxetine)\n  - Topical lidocaine\n  - TCAs (e.g., amitriptyline)\n\n🧴 Topical lidocaine is particularly helpful when:\n\n- Pain is localized\n- Patients are elderly and at risk for systemic side effects from oral medications\n\n❌ Why the Other Options Are Incorrect:\n- Topical acyclovir 🧪\n  Used for active herpes virus infections, not for chronic neuropathic pain.\n\n- Oral imipramine 💊\n  A tricyclic antidepressant, sometimes used in neuropathic pain — but less preferred due to anticholinergic side effects, especially in the elderly.\n\n- Oral morphine 💀\n  Opioids are not first-line for PHN. They carry risks of tolerance, dependence, and adverse effects, especially when safer alternatives exist.\n\n📝 Summary:\nIn this patient with persistent post-zoster pain, adding topical lidocaine is the best next step — offering local pain relief with minimal systemic risk, especially useful when prior oral medications have only been partially effective."
+},
+  {
+  "text": "A 56-year-old woman presents to the clinic for evaluation of chronic pain in her arms, legs, and back for the past six months. She has a past medical history of diabetes mellitus, chronic hepatitis B, cholelithiasis, and bipolar disorder. Her current medications include metformin and lithium. Repeated evaluations, including x-rays, chemistry, and autoimmune workup, have been unremarkable. Physical examination does not show any joint deformities. She does appear to have tender points in symmetrical areas over the legs, arms, and shoulders. The patient is being considered for a serotonin-norepinephrine reuptake inhibitor (SNRI) for her condition. Which of the following is the strongest contraindication to the use of this medication in this patient?",
+  "options": [
+    { "label": "A", "text": "Cholelithiasis" },
+    { "label": "B", "text": "Lithium use" },
+    { "label": "C", "text": "Diabetes" },
+    { "label": "D", "text": "Liver disease" }
+  ],
+  "correct": "D",
+  "explanation": "📚 Explanation:\nThis patient likely has fibromyalgia, a chronic pain syndrome treated with medications like:\n\n- SNRIs (e.g., duloxetine, milnacipran)\n- Gabapentinoids (e.g., pregabalin)\n- TCAs (e.g., amitriptyline)\n\nHowever, SNRIs are extensively metabolized by the liver, and liver impairment can:\n\n- Reduce drug clearance\n- Increase risk of hepatotoxicity\n- Exacerbate pre-existing liver dysfunction (e.g., in hepatitis B)\n\n⚠️ Chronic liver disease is a strong contraindication to SNRI use, particularly duloxetine.\n\n❌ Why the Other Options Are Incorrect:\n- Lithium use ⚠️\n  SNRIs can interact with serotonergic agents, but there is no absolute contraindication to using an SNRI with lithium — though close monitoring is advised.\n\n- Diabetes 🍬\n  Not a contraindication — in fact, SNRIs (like duloxetine) are often used to treat diabetic peripheral neuropathy.\n\n- Cholelithiasis 🪨\n  Gallstones do not affect SNRI metabolism or clearance.\n\n📝 Summary:\nIn a patient with chronic liver disease, SNRIs are contraindicated due to their hepatic metabolism and potential for hepatotoxicity. This makes liver disease the strongest contraindication in this scenario."
+}
     ];
 
-    // Build sidebar list
+
+    // Populate left sidebar with question numbers
     const sidebarList = document.getElementById('sidebar-list');
     questions.forEach((_, i) => {
       const li = document.createElement('li');
       const a  = document.createElement('a');
       a.href        = '#';
       a.textContent = i + 1;
-      a.addEventListener('click', () => { current = i; renderQ(i); sidebar.classList.remove('open'); });
+      a.addEventListener('click', () => {
+        current = i;
+        renderQ(i);
+        sidebar.classList.remove('open');
+      });
       li.appendChild(a);
       sidebarList.appendChild(li);
     });
 
-    // State & elements
     let startTime = Date.now(), current = 0, results = [];
     const qText      = document.getElementById('question-text');
     const optsList   = document.getElementById('options-list');
@@ -633,30 +1257,26 @@ Distinguishing relevant from irrelevant
     const submitBtn  = document.getElementById('submit-btn');
     const endBtn     = document.getElementById('end-btn');
 
-    // Render question
     function renderQ(i) {
       const q = questions[i];
       counterDiv.textContent = `Question ${i+1} of ${questions.length}`;
-      qText.innerHTML        = q.text.replace(/\n/g,'<br>');
+      qText.innerHTML        = q.text.replace(/\n/g, '<br>');
       optsList.innerHTML     = '';
       q.options.forEach(o => {
-        const lbl     = document.createElement('label');
-        lbl.className = 'option-label';
-        lbl.innerHTML = `<input type="radio" name="answer" value="${o.label}"> ${o.label}. ${o.text}`;
+        const lbl       = document.createElement('label');
+        lbl.className   = 'option-label';
+        lbl.innerHTML   = `<input type="radio" name="answer" value="${o.label}"> ${o.label}. ${o.text}`;
         optsList.appendChild(lbl);
       });
-      explDiv.innerHTML       = '';
-      explDiv.style.display   = 'none';
-      sumDiv.style.display    = 'none';
-      prevBtn.disabled        = i === 0;
-      nextBtn.disabled        = true;
-      submitBtn.disabled      = false;
+      explDiv.innerHTML   = '';
+      sumDiv.style.display = 'none';
+      prevBtn.disabled    = i === 0;
+      nextBtn.disabled    = true;
+      submitBtn.disabled  = false;
     }
 
-    // Submit handler
     submitBtn.addEventListener('click', () => {
-      const sel = document.querySelector('input[name="answer"]:checked');
-      if (!sel) return;
+      const sel = document.querySelector('input[name="answer"]:checked'); if (!sel) return;
       const val  = sel.value;
       const corr = questions[current].correct;
       const ok   = val === corr;
@@ -668,26 +1288,23 @@ Distinguishing relevant from irrelevant
         if (inp.checked && !ok) lbl.classList.add('wrong-answer');
         inp.disabled = true;
       });
-      explDiv.innerHTML       = questions[current].explanation;
-      explDiv.style.display   = 'block';
-      submitBtn.disabled      = true;
-      nextBtn.disabled        = false;
+      explDiv.innerHTML = questions[current].explanation;
+      submitBtn.disabled = true;
+      nextBtn.disabled = false;
     });
 
-    // Navigation buttons
-    prevBtn.addEventListener('click', () => { if(current>0){ current--; renderQ(current);} });
-    nextBtn.addEventListener('click', () => { if(current<questions.length-1){ current++; renderQ(current);} });
+    prevBtn.addEventListener('click', () => { if (current>0) { current--; renderQ(current); }});
+    nextBtn.addEventListener('click', () => { if (current<questions.length-1) { current++; renderQ(current); }});
     endBtn.addEventListener('click', () => {
       const score    = results.filter(r => r).length;
       const total    = questions.length;
       const duration = Math.floor((Date.now()-startTime)/1000);
       sumDiv.style.display = 'block';
-      sumDiv.innerHTML     = `<strong>Score: ${score}/${total} (${Math.round(score/total*100)}%)</strong><br>`+
-                             `Time: ${Math.floor(duration/60)}m ${duration%60}s<br>` +
-                             `<button onclick="location.href='index.html'">Back to Home</button>`;
+      sumDiv.innerHTML = `<strong>Score: ${score}/${total} (${Math.round(score/total*100)}%)</strong><br>` +
+                          `Time: ${Math.floor(duration/60)}m ${duration%60}s<br>` +
+                          `<button onclick="location.href='index.html'">Back to Home</button>`;
     });
 
-    // Initial render
     renderQ(0);
   </script>
 </body>
