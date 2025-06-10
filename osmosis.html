@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gastroenterology Quiz</title>
+  
+  <!-- Embedded CSS -->
+  <style>
+    :root {
+      --primary-color: #2a9d8f;
+      --primary-hover: #21867a;
+      --bg-color: #f4f4f4;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --sidebar-bg: #264653;
+      --sidebar-text: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
+    .top-nav {
+      position: relative;
+      z-index: 1001;
+      display: flex; justify-content: space-between; align-items: center;
+      background-color: var(--primary-color); color: #ffffff; padding: 0.75rem 1rem;
+    }
+    .top-nav .nav-actions button { background: none; border: none; color: #ffffff; margin-left: 0.5rem; cursor: pointer; }
+    
+    /* highlight‐mode button “on” state */
+    .top-nav .nav-actions #highlight-btn.active {
+      background-color: var(--primary-hover);
+    }
+
+    /* the yellow highlight style */
+    .highlighted-text {
+      background-color: yellow;
+    }
+
+    .menu-icon { cursor: pointer; font-size: 1.5rem; }
+    /* Sidebar styles */
+    .sidebar {
+      position: fixed;
+      left: -200px;
+      width: 200px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar li { margin-bottom: 0.5rem; }
+    .sidebar a { color: var(--sidebar-text); text-decoration: none; display: block; padding: 0.5rem; border-radius: 0.25rem; }
+    .sidebar a:hover { background: rgba(255,255,255,0.1); }
+    /* Lab Values sidebar */
+    .lab-sidebar {
+      position: fixed;
+      right: -600px;
+      width: 600px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .lab-sidebar.open { right: 0; }
+    /* Quiz container */
+    .question-container {
+      background-color: var(--card-bg);
+      border: 2px solid var(--primary-color);
+      border-radius: 0.5rem;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+    }
+    .options-list { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    .option-label { padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px; border: 1px solid transparent; display: flex; align-items: center; }
+    .options-list input { margin-right: 0.5rem; accent-color: var(--primary-color); }
+    .correct-answer { background-color: #d4edda; border-color: #28a745; }
+    .wrong-answer { background-color: #f8d7da; border-color: #dc3545; }
+    .submit-btn, #prev-btn, #next-btn, #end-btn {
+      margin-top: 0.5rem;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    .submit-btn:disabled, #prev-btn:disabled, #next-btn:disabled { opacity: 0.6; cursor: default; }
+    .submit-btn:hover:not(:disabled), #prev-btn:hover:not(:disabled), #next-btn:hover:not(:disabled), #end-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+    .explanation {
+      margin-top: 1rem;
+      background-color: #e8f5e9;
+      border-left: 4px solid var(--primary-color);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      white-space: pre-wrap;
+    }
+    .results-summary {
+      margin-top: 1rem;
+      background-color: #fff3cd;
+      border-left: 4px solid #ffeeba;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="top-nav">
+    <div class="menu-icon">&#9776;</div>
+    <div id="question-counter">Question 1 of 1</div>
+    <div class="nav-actions">
+      <button id="prev-btn" disabled>&lt; Previous</button>
+      <button id="next-btn" disabled>Next &gt;</button>
+      <button id="fullscreen-btn">Full Screen</button>
+      <button id="labvals-btn">Lab Values</button>
+      <button id="highlight-btn">Highlight</button>
+      <button id="end-btn">End Exam</button>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <ul id="sidebar-list"></ul>
+  </div>
+  <!-- Lab Values Sidebar -->
+  <div id="lab-sidebar" class="lab-sidebar">
+    <img src="images/Blood.jpg" alt="Blood Values" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Blood 2.jpg" alt="Blood Plasma Serum" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Hematological.jpg" alt="Hematologic Values" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Sweat, Urine, BMI.jpg" alt="Sweat, Urine, BMI" style="width:100%; margin-bottom:1rem;">
+    <img src="images/CSF.jpg" alt="Cerebrospinal Fluid" style="width:100%;">
+  </div>
+
+  <main>
+    <section class="question-container">
+      <div id="question-text"></div>
+      <form id="options-list" class="options-list"></form>
+      <button id="submit-btn" class="submit-btn">Submit Answer</button>
+      <div id="explanation" class="explanation"></div>
+      <div id="results-summary" class="results-summary" style="display:none;"></div>
+    </section>
+  </main>
+
+  <!-- Embedded JS -->
+  <script>
+    // Sidebar toggle & positioning
+    const menuIcon   = document.querySelector('.menu-icon');
+    const sidebar    = document.getElementById('sidebar');
+    const labSidebar = document.getElementById('lab-sidebar');
+    const nav        = document.querySelector('.top-nav');
+    const navHeight  = nav.offsetHeight;
+    [sidebar, labSidebar].forEach(sb => {
+      sb.style.top    = navHeight + 'px';
+      sb.style.height = `calc(100% - ${navHeight}px)`;
+    });
+    menuIcon.addEventListener('click', () => sidebar.classList.toggle('open'));
+    document.getElementById('labvals-btn')
+      .addEventListener('click', () => labSidebar.classList.toggle('open'));
+
+    // Highlight mode toggle + handler
+    const highlightBtn = document.getElementById('highlight-btn');
+    let highlightMode = false;
+
+    // turn highlight‐mode on/off
+    highlightBtn.addEventListener('click', () => {
+      highlightMode = !highlightMode;
+      highlightBtn.classList.toggle('active', highlightMode);
+    });
+
+    // whenever you select text and release the mouse…
+    document.addEventListener('mouseup', () => {
+      if (!highlightMode) return;                // only when mode is on
+      const selection = window.getSelection();
+      if (selection.rangeCount === 0 || selection.isCollapsed) return;
+
+      const range = selection.getRangeAt(0);
+      try {
+        // wrap the chosen text in our yellow‐bg span
+        const span = document.createElement('span');
+        span.className = 'highlighted-text';
+        range.surroundContents(span);
+      } catch (e) {
+        // fallback for older browsers
+        document.execCommand('hiliteColor', false, 'yellow');
+      }
+      selection.removeAllRanges();
+    });
+
+    // ========== New helper function to convert **bold** to <strong>bold</strong> ==========
+    function convertMarkdownBold(text) {
+      return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    // Quiz data and logic
+    const questions = [
+      {
+  "text": "A 15-day-old girl is brought to the emergency department by her parents because of one day of fussiness and not nursing well and a rectal temperature of 38.4 °C (101.1 °F). The patient was born at 38 weeks' gestation without complications. The pregnancy was unremarkable. Maternal prenatal labs (including group B streptococcus carriage) were negative. There have been no known sick exposures. Until this illness, the patient has been breastfeeding well with appropriate weight gain. Parents deny upper respiratory or gastrointestinal symptoms. Temperature is 38.6°C (101.5°F), pulse is 180/min, respirations are 44/min, blood pressure is 74/48 mmHg, and oxygen saturation is 99% on room air. On physical examination, the patient appears alert and fussy in parent's arms. The anterior fontanelle is open and flat. There is <2 second capillary refill and 2+ peripheral pulses. The patient is tachypneic without increased work of breathing. Cardiopulmonary and abdominal examinations are within normal limits. There is no rash. Lab work is obtained and includes complete blood count (CBC), inflammatory markers, blood culture, urinalysis, urine culture, cerebrospinal fluid (CSF) studies and culture, and respiratory viral panel (RVP). Results are pending. Which of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Discharge home on Amoxicillin" },
+    { "label": "B", "text": "Admit and start empiric intravenous Ampicillin and Ceftazidime" },
+    { "label": "C", "text": "Admit and start empiric intravenous Ampicillin and Acyclovir" },
+    { "label": "D", "text": "Discharge home and defer antibiotics while awaiting culture results" },
+    { "label": "E", "text": "Admit for observation and defer antibiotics while awaiting culture results" }
+  ],
+  "correct": "B",
+  "explanation": "**Major takeaway:**\n**Infants less than 21 days old who develop a fever require hospitalization and empiric treatment with intravenous antibacterials (and antivirals) until a source is identified.**\n\n**Main explanation:**\nThis previously healthy **15-day-old girl** presents to the emergency department with **fever and fussiness for <24 hours**. Given this patient's **age**, the recommendation is to **admit her for empiric intravenous (IV) antibiotics** while awaiting laboratory testing results. **Empiric treatment for a patient this age includes intravenous Ampicillin and Ceftazidime (+/- Acyclovir if the infant is at risk for or shows signs of herpes simplex virus).**\n\n**Patients 60 days or younger with a fever are at a higher risk of invasive bacterial infections than older infants.** The initial step in management is **Airway, Breathing, Circulation, Disability, and Exposure (ABCDE)** assessment to ensure the patient is stable. Patients with a fever at this age require **IV access with vital sign monitoring**. They may also require **supplemental oxygen and vasopressors**.\n\nThe fever can be treated with **acetaminophen**. Additional treatment and disposition depend on the patient's specific age and on an identified source. **Patients 0–21 days old with fever should always be admitted to the hospital and started on empiric broad-spectrum antibiotics until a source is identified and treatment narrowed.**\n\nInfants **22–60 days old** with a fever should be admitted and started on empiric antibiotics **if inflammatory markers are abnormal**. If inflammatory markers are normal in this age group, **hospital admission and empiric antibiotics depend on the patient’s clinical status, lab results, and physician preference.**\n\nOnce a source is identified, **treatment is narrowed** to treat the specific infection. For **bacterial infections**, antibiotic treatment is determined based on **culture results**, if available. For **viral etiologies**, antivirals may be necessary, or the patient may solely need **supportive care such as oxygen support**."
+},
+{
+  "text": "A 2-day old neonate is evaluated in the newborn nursery. He was born to a 24-year-old woman, gravida 2, para 2, at 34 weeks gestation. After multiple hours of active labor, the fetus developed bradycardia, and the decision was made to proceed with operative vaginal delivery using forceps. The mother has a history of hypothyroidism, for which she takes levothyroxine. Vitals are within normal limits. Physical examination of the neonate shows asymmetry of the face upon crying, with incomplete closure of the left eye. Upon feeding, he starts drooling from the left side of the mouth. Which of the following is the most likely cause of this neonate’s examination findings?",
+  "options": [
+    { "label": "A", "text": "Viral-associated ischemic demyelination" },
+    { "label": "B", "text": "Upper motor neuron lesion" },
+    { "label": "C", "text": "Trauma during forceps delivery" },
+    { "label": "D", "text": "Maternal hypothyroidism" },
+    { "label": "E", "text": "Preterm birth" }
+  ],
+  "correct": "C",
+  "explanation": "**Major takeaway:**\n**Congenital traumatic facial nerve palsy** presents with **facial asymmetry, difficulty feeding, and incomplete eye closure**. It **usually resolves spontaneously**. **Risk factors** include **forceps-assisted delivery, prolonged labor, and primiparity**.\n\n**Main explanation:**\nThis neonate with **facial asymmetry and drooling** from one side of the mouth has likely suffered **trauma to the facial nerve during forceps-assisted delivery**, leading to **paralysis of the facial muscles**.\n\n**Congenital traumatic facial nerve paralysis** is the **loss of controllable (voluntary) muscle movement** in an infant's face due to **pressure on the facial nerve just before or at the time of birth**. **Risk factors** include **primiparity**, **birth weight > 3.5 kilograms**, **prolonged labor**, and **forceps-assisted delivery**. Patients usually present with **asymmetric facial expressions, difficulty feeding, and incomplete eye closure**. Associated findings include **ecchymosis, hemotympanum, facial swelling**, and **head molding**. \n\n**Traumatic congenital facial nerve paralysis usually resolves spontaneously** and does not require intervention. If the patient’s eye does not close all the way, an **eye pad and eye drops** are used to prevent **corneal damage**.\n\nThere is **no guaranteed way to prevent pressure injuries** during vaginal delivery. The **proper use of forceps** and **improved childbirth methods** have reduced the rate of **congenital traumatic facial nerve palsy**."
+},
+{
+  "text": "A three-day-old newborn girl is being evaluated for a rash that suddenly appeared on her trunk. Her parents brought her immediately to the emergency department where she was triaged. She was born at 37-weeks of gestation via an uncomplicated vaginal delivery without peripartum complications. Weight is 85th percentile, length is 80th percentile, and head circumference is 85th percentile. Rectal temperature is 37°C (98.7°F), heart rate is 185/min, and blood pressure is 70/47 mmHg. The patient is sleeping in the mother’s arms but is arousable and moves all four extremities equally. Physical examination reveals an erythematous rash with clear demarcation along the midline on the trunk as seen in the image below. The hands and feet are warm and pink. Which of the following is the most likely diagnosis?",
+  "image_url": "https://www.pediatriconcall.com/spot-diagnosis/color-change/186",
+  "options": [
+    { "label": "A", "text": "Cutis marmorata" },
+    { "label": "B", "text": "Acrocyanosis" },
+    { "label": "C", "text": "Congenital dermal melanocytosis" },
+    { "label": "D", "text": "Physiologic desquamation" },
+    { "label": "E", "text": "Harlequin color change" }
+  ],
+  "correct": "E",
+  "explanation": "**Major takeaway:**\n**Harlequin color change** refers to a **unilateral erythematous rash on the trunk with clear demarcation along the midline** that can be seen in **newborns < one week of age**. The rash is **benign, self-limited**, and **spontaneously resolves within 20 minutes**.\n\n**Main explanation:**\nThis three-day-old newborn girl presents with **sudden onset of an erythematous rash on the trunk with a clear demarcation along the midline** consistent with **Harlequin color change**. This benign condition is characterized by **unilateral transient color change**.    \n\nPatients with Harlequin color change have **sudden onset of unilateral redness** that typically **resolves within 20 minutes**. On physical examination, when the infant is placed on their side, **unilateral erythema is seen on the dependent side with a clear demarcation along the midline**. **Blanching** can be observed on the nondependent side. While the color change may appear dramatic, this phenomenon is **benign, self-limited, and does not require intervention**.\n\nThe cause of Harlequin color change is **unknown**, but it may be related to **immaturity of autonomic regulation** of cutaneous blood vessel tone. It is more commonly seen in **preterm infants** vs. term infants and typically appears **before one week of age**. It typically **resolves on its own after 20 minutes**."
+},
+{
+  "text": "A previously healthy 24-day-old boy is brought to the emergency department for new-onset fever over the last 24 hours. Parents report that the prior evening the patient was experiencing poor feeding and lethargy. He normally wakes every 3 hours to feed, but last night he slept for a 7-hour interval. The patient has a 2-year-old brother who is in daycare. Temperature is 38.6°C (101.5°F), pulse is 180/min, respirations are 38/min, blood pressure is 85/50 mmHg, and oxygen saturation is 99% on room air. On physical examination, the infant appears fussy but consolable. The anterior fontanelle is open and flat. Cardiopulmonary examination is normal. Laboratory results are shown below. The culture results are pending.\n\nLaboratory value | Result\n--- | ---\nHemoglobin | 13.9 g/dL\nHematocrit | 40.9%\nLeukocyte count | 21,200/mm3\nPlatelet count | 370,000/mm3\nNeutrophils | 45%\nEosinophils | 3%\nBasophils | 0%\nLymphocytes | 46%\nMonocytes | 7%\n\n**Urinalysis:**\nLeukocyte esterase: Negative\nNitrite: Negative\npH: 6.8\nProtein: Negative\nBlood: Negative\nSpecific gravity: 1.010\nKetones: Negative\nGlucose: Negative\nBilirubin: Negative\n\n**Inflammatory markers:**\nC-reactive protein (CRP): 7 mg/dL\nProcalcitonin (PCT): 1.1 ng/mL\n\nWhich of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Perform a drug screen" },
+    { "label": "B", "text": "Perform a lumbar puncture" },
+    { "label": "C", "text": "Obtain a respiratory viral panel" },
+    { "label": "D", "text": "Obtain a stool culture" },
+    { "label": "E", "text": "Obtain a chest x-ray" }
+  ],
+  "correct": "B",
+  "explanation": "**Major takeaway:**\n**Initial evaluation of infants 0-60 days old with fever includes complete blood count, inflammatory markers, blood culture, and urinalysis.** Whether **lumbar puncture and cerebrospinal fluid analysis** should be performed will depend on the **age of the patient and inflammatory marker results.**\n\n**Main explanation:**\nThis **24-day-old boy** has a **fever without an obvious source**. Lab work shows **leukocytosis, abnormal inflammatory markers, and a normal urinalysis**. The current recommendation for **patients who are 22-28 days old with a fever and abnormal inflammatory markers** is to **perform a lumbar puncture** to obtain **cerebrospinal fluid (CSF) studies** and to **start empiric antibiotics**.\n\nThe initial work-up for infants **0-60 days old** who present with a fever includes obtaining a **complete blood count (CBC), inflammatory markers (CRP and PCT), blood cultures, and urinalysis**.\n\nInfants **less than 21 days old** also need a **urine culture and lumbar puncture** for CSF studies. If the infant is at increased risk for **herpes simplex virus (HSV)** infection, such as when there is **maternal history of genital HSV** or the infant presents with **seizures or vesicles**, they should also be tested for HSV.\n\n**Additional evaluation of infants 22-60 days old with fever depends on urinalysis and inflammatory markers.** If **inflammatory markers are abnormal**, **CSF studies** (and a urine culture if urinalysis is abnormal) should be **obtained in infants 22–28 days** and **considered in infants 29–60 days**. If both are normal, CSF studies may be deferred.\n\nThe evaluation helps diagnose **bacteremia, UTIs, and meningitis/encephalitis**. Depending on symptoms, **viral panels, chest x-ray**, or **stool culture** may be considered, but these are **not first-line** for an afebrile infant with elevated inflammatory markers."
+},
+{
+  "text": "A 16-year-old girl gave presents to the pediatrician for abdominal pain. The patient reports bloating, increased burping, and burning epigastric pain. The symptoms worsen when the patient is hungry and improves after eating. The patient denies blood or mucus in the stools, mouth sores, rashes, or joint pain. She has experienced a 5 lb. weight loss over the last few months, that is unintentional. The patient does not have systemic symptoms. There is no significant family history of gastrointestinal disorders. Temperature is 37°C (98.6°F), pulse is 92/min, blood pressure is 111/66 mm Hg, respirations are 14/min, and oxygen saturation is 99% on room air. On physical examination, the patient appears well. Cardiopulmonary examinations are normal. The abdomen is soft and nondistended with normoactive bowel sounds. There is tenderness to palpation in the epigastrium. Without rebound or guarding. No hepatosplenomegaly is appreciated. Which of the following additional factors would be expected given the most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Obesity" },
+    { "label": "B", "text": "Abdominal pain that is worse after eating fatty foods" },
+    { "label": "C", "text": "Recurrent use of nonsteroidal anti-inflammatory drug (NSAID)" },
+    { "label": "D", "text": "Stooling once per week" },
+    { "label": "E", "text": "Recent travel" }
+  ],
+  "correct": "C",
+  "explanation": "**Major takeaway:**\nPatients with **peptic ulcer disease** can present with **abdominal pain that improves after eating** and **tenderness in the epigastric region**. It can be caused by **nonsteroidal anti-inflammatory drug (NSAID) use**, **steroid use**, **trauma**, or **stress**.\n\n**Main explanation:**\nThis **16-year-old girl** presents with **new onset epigastric pain** that **worsens when she has not eaten** and **improves after eating**. On physical exam, the **abdomen is soft and nondistended** with **normoactive bowel sounds**, and there is **tenderness to palpation in the epigastrium**. These findings are concerning for **peptic ulcer disease (PUD)**.\n\nCauses of PUD include **NSAID use**, **steroid use**, **trauma**, **stress**, and a **family history** of PUD.\n\nPatients with **acute abdominal pain** should be questioned about their **stooling pattern** to help determine the underlying etiology. \n- **Infectious gastroenteritis**: Increased stool frequency and diarrhea\n- **Constipation**: Decreased stool frequency\n\n**Abdominal pain related to eating**:\n- **Peptic ulcer disease**: Improves after eating\n- **Pancreatitis/cholecystitis**: Worsens after eating\n- **Genitourinary illnesses** (e.g., UTI, ovarian cysts): Not affected by eating and unrelated to stooling habits. These often present with **dysuria**, **costovertebral tenderness**, or **unilateral lower abdominal pain**."
+},
+{
+  "text": "A 13-year-old boy presents to the clinic for evaluation of worsening sore throat for one week. He was diagnosed with strep throat one week ago and has been compliant with the prescribed amoxicillin; however, he has had progressive worsening of the sore throat and developed pain with swallowing and a hoarse voice two days ago. He has no significant past medical history and is up-to-date on immunizations. Temperature is 38.4°C (101°F), blood pressure is 110/67 mmHg, pulse is 111/min, respiratory rate is 20/min, and oxygen saturation is 98% on room air. The patient is seated comfortably. Mucous membranes are moist. Examination of the posterior pharynx reveals erythema with significant swelling of the right tonsil with uvular deviation to the left. There is full range of motion of the neck with minimal bilateral cervical lymphadenopathy. Cardiopulmonary and abdominal examinations are within normal limits. Which of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Administer dexamethasone and discharge home" },
+    { "label": "B", "text": "Administer amoxicillin-clavulanic acid and discharge home" },
+    { "label": "C", "text": "Obtain computed tomography of the neck" },
+    { "label": "D", "text": "Consult the surgical team for needle aspiration" },
+    { "label": "E", "text": "Intubate in the operating room" }
+  ],
+  "correct": "D",
+  "explanation": "**Major takeaway:**\nPatients with a **peritonsillar abscess** can typically be **diagnosed clinically** and treated with **drainage (needle aspiration or incision and drainage)** in addition to **broad-spectrum antibiotics** that can be tailored to culture results.\n\n**Main explanation:**\nThis patient presents with **worsening sore throat, odynophagia (pain with swallowing), and hoarse voice** after a recent **strep pharyngitis** diagnosis. On exam, he has **fever, unilateral tonsillar swelling, and uvular deviation**, consistent with a **peritonsillar abscess**.\n\nDiagnosis is **clinical**. Acute management involves **needle aspiration** (or incision and drainage) of the abscess and **broad-spectrum antibiotics**.\n\nPharyngitis can be caused by **non-infectious**, **viral**, or **bacterial** agents. Though commonly benign, complications like **peritonsillar or retropharyngeal abscess** can occur.\n\nInitial management starts with **airway assessment**. Signs of **impending respiratory failure** include **tripod position, drooling, trismus, stridor, or increased work of breathing**. These require **airway support or intubation**.\n\nIn stable patients, if symptoms and signs are consistent with **peritonsillar abscess**, the next step is **drainage and antibiotics**. If **retropharyngeal abscess** is suspected, **CT imaging** of the neck is indicated prior to surgical evaluation."
+},
+{
+  "text": "A 13-month-old girl presents to the emergency department in respiratory distress. The parents report that she was eating a carrot when she started coughing and then developed difficulty breathing. Parents report no fever or vomiting. Past medical and surgical histories are non-contributory. Temperature is 37 °C (98.6 °F), pulse is 140/min, respirations are 65/min, blood pressure is 90/50 mm Hg, and oxygen saturation is 70% on room air. On exam, severe work of breathing is noted with intercostal retractions and tracheal tugging. On pulmonary exam, wheezing and decreased air entry is heard over the right lower lung. Heart sounds are normal. The exam is otherwise unremarkable. Blood gas is shown below:\n\nLaboratory value | Results\n--- | ---\npH | 7.29\nPaO₂ | 58 mmHg\nPaCO₂ | 60 mmHg\nSerum bicarbonate | 24 mEq/L\n\nWhich of the following is the most appropriate next step in management?",
+  "options": [
+    { "label": "A", "text": "Bronchoscopy" },
+    { "label": "B", "text": "Naloxone" },
+    { "label": "C", "text": "Computed tomography (CT) scan of the chest" },
+    { "label": "D", "text": "Albuterol" },
+    { "label": "E", "text": "Endotracheal intubation" }
+  ],
+  "correct": "E",
+  "explanation": "**Major takeaway:**\nIn a pediatric patient presenting with **respiratory distress**, an **ABCDE assessment** should be performed. **Endotracheal intubation is necessary for unstable patients with signs of respiratory failure.**\n\n**Main explanation:**\nThis infant presents with **coughing and respiratory failure** that developed during **witnessed ingestion of a carrot**. The most likely diagnosis is **foreign body aspiration**. Physical exam reveals **tachypnea, unilateral wheezing, decreased air entry**, and **decreased oxygen saturation**. Lab work confirms **hypoxemic and hypercapnic respiratory failure**, requiring **endotracheal intubation for stabilization**.\n\nWhen a pediatric patient presents with **respiratory failure**, an **ABCDE assessment** should be performed immediately. The goal is to **stabilize the airway, breathing, and circulation**, including **intubation and mechanical ventilation** when necessary.\n\n**Respiratory failure** occurs when the respiratory system cannot adequately **oxygenate the blood and/or remove carbon dioxide**. It is **life-threatening** and requires **rapid recognition and intervention**.\n\nCommon causes include:\n- **Airway obstruction**: foreign body, bronchiolitis, asthma\n- **Parenchymal lung disease**: pneumonia, aspiration, cystic fibrosis\n- **Neuromuscular or central control issues**\n\nThese lead to **V/Q mismatch**, **impaired gas exchange**, and ultimately **respiratory failure**, which in this case necessitates **immediate intubation**."
+},
+{
+  "text": "A newborn girl is born at 40.4 weeks gestation via spontaneous vaginal delivery complicated by prolonged labor and vacuum extraction. The pregnancy was complicated by diet-controlled gestational diabetes in the mother. Following delivery, the infant appears vigorous and Apgars are 8 and 9. After spending time with the mother, the newborn is brought to the nursery for evaluation by the pediatrician. Temperature is 36.8°C (98.2°F), pulse is 148/min, respirations are 42/min, and oxygen saturation is 98% on room air. Birth weight is 4400 grams. On physical examination, the infant appears slightly fussy. The anterior fontanelle is open and flat. Cardiopulmonary examination is normal. The upper right arm is adducted and internally rotated and the forearm is extended with the elbow pronated and the wrist flexed. Pulses are 2+ and capillary refill is < 2 seconds. No crepitus is appreciated over the clavicles. Radiographs are obtained, and no obvious deformity is noted. Which of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Consult social work due to concern for non-accidental trauma" },
+    { "label": "B", "text": "Order magnetic resonance imaging (MRI) of the cervical spine" },
+    { "label": "C", "text": "No intervention is necessary" },
+    { "label": "D", "text": "Consult physical therapy" },
+    { "label": "E", "text": "Splint the right arm" }
+  ],
+  "correct": "D",
+  "explanation": "**Major takeaway:**\n**Brachial plexus palsy (Erb palsy)** is associated with **increased birth weight**, **maternal diabetes**, and **prolonged labor**. Patients with Erb palsy should be initially treated with **physical and occupational therapy**.\n\n**Main explanation:**\nThis infant who is **large for gestational age** and born via **delivery complicated by prolonged labor and vacuum extraction** is noted to have the **right upper arm adducted and internally rotated** and the **forearm extended with the elbow pronated and the wrist flexed**. These findings are consistent with **Erb palsy**, a type of **brachial plexus injury** from traumatic delivery.\n\nRisk factors include **high birth weight**, **maternal diabetes**, and **operative or prolonged labor**. Once **fracture** is ruled out, the first step in management is to start **physical therapy**.\n\nInfants born after **complicated deliveries** should be evaluated for **birth injuries**. While some, like **cephalohematomas** and **clavicle fractures**, resolve with supportive care, **brachial plexus injuries** like Erb palsy are best managed initially with **conservative treatment (physical and occupational therapy)**. Severe or persistent cases may later require **surgical intervention**."
+},
+{
+  "text": "A 9-year-old girl with Down syndrome is brought to the clinic by her parent who noticed that she has had abnormal gait for one week. Her parents also report new onset urinary incontinence. She has no history of trauma, fever, headache, abnormal movements, or focal neurological symptoms. She has a past medical history of bronchial asthma that is well controlled with bronchodilators, and immunizations are up-to-date. Temperature is 37°C (98.6°F), pulse is 98/min, respirations are 21/min, blood pressure is 99/60 mmHg, and oxygen saturation is 98% on room air. On physical exam, ataxic gait is noted with increased muscle tone and increased deep tendon reflexes in the extremities. Cardiopulmonary and abdominal examinations are normal. Which of the following is the most appropriate next step in management?",
+  "options": [
+    { "label": "A", "text": "Complete blood count (CBC)" },
+    { "label": "B", "text": "Cervical spine X-ray" },
+    { "label": "C", "text": "1 month follow-up visit" },
+    { "label": "D", "text": "Sleep study" },
+    { "label": "E", "text": "Neurosurgery consult" }
+  ],
+  "correct": "B",
+  "explanation": "**Major takeaway:**\nPatients with **Down syndrome** who have **atlantoaxial instability** may present with **neck pain, abnormal gait, and urinary or bowel incontinence**. **Cervical spine X-rays** are used to **confirm the diagnosis**.\n\n**Main explanation:**\nThis **9-year-old girl** with Down syndrome presents with **abnormal gait and urinary incontinence**, signs that are concerning for **atlantoaxial instability (AAI)**. Patients with Down syndrome are at **increased risk for AAI** due to **ligamentous laxity** and **low muscle tone**. The best next step in management is to obtain a **cervical spine X-ray** to assess for dislocation of the **atlas (C1) relative to the axis (C2)**.\n\n**Atlantoaxial dislocation** results in **abnormal articulation** between the **C1 and C2 vertebrae**, and can cause **spinal cord injury**, especially during **hyperextension or hyperflexion** of the neck. This is why **activities like trampolines or contact sports** should be avoided in these patients.\n\nSymptoms may include:\n- **New onset neck pain**\n- **Weakness or spasticity**\n- **Hyperreflexia or increased tone**\n- **Abnormal gait**\n- **Changes in bowel or bladder function**\n\nThe **diagnostic test of choice** is a **cervical spine X-ray**, which can demonstrate **displacement of the atlas**. Confirmation of AAI may necessitate **neurosurgical consultation** and **activity modification**."
+},
+{
+  "text": "An 8-year-old boy presents to the clinic with a 4-week history of intermittent fevers and a 3-week history of joint pain affecting both knees. The fevers come and go daily and when they are present, they are associated with an evanescent, macular, salmon-colored rash. The parents report that the child has been unwell with fatigue and reduced appetite over the past 4 weeks. They live near a wooded area and mention that the child had a tick bite several months ago. The child has had multiple visits to urgent care. He was prescribed a course of amoxicillin and laboratory studies were sent, which can be seen below. Vital signs are within normal limits. On examination, no rashes are currently present. Both knees are swollen, tender, and painful with passive and active range of motion. Generalized lymphadenopathy is noted.\n\nLaboratory study | Result\n--- | ---\nWhite blood cells (WBC) | 22,000/m3\nErythrocyte sedimentation rate (ESR) | 88 mm/hr\nAntinuclear antibodies (ANA) | Negative\nRheumatoid factor | Negative\nFerritin | >1200 ng/mL\nLyme ELISA | Equivocal\nLyme IgM Western blot | 24 kDa band present\nLyme IgG Western blot | 18 and 21 kDa bands present\n\nWhich of the following is the most appropriate next step in management?",
+  "options": [
+    { "label": "A", "text": "Strict bed rest" },
+    { "label": "B", "text": "Serology for Epstein-Barr virus" },
+    { "label": "C", "text": "Rheumatology referral for immunosuppressive therapy" },
+    { "label": "D", "text": "Course of doxycycline" },
+    { "label": "E", "text": "Acetaminophen and observation" }
+  ],
+  "correct": "C",
+  "explanation": "**Major takeaway:**\nPatients with **systemic juvenile idiopathic arthritis (JIA)** present with **arthritis**, **spiking fevers** associated with a **characteristic salmon-colored rash**, and other **systemic symptoms**. Management focuses on **controlling inflammation** and includes **NSAIDs, glucocorticoids**, and **biologic agents**.\n\n**Main explanation:**\nThis patient’s **systemic symptoms**—**fever, salmon-colored rash, and arthritis**—are classic for **systemic JIA**. Other features include **fatigue**, **reduced appetite**, **lymphadenopathy**, and **elevated inflammatory markers** (e.g., **ESR**, **ferritin**, **WBC count**). Despite the tick bite history, **Lyme disease is unlikely**, as the **Western blot findings do not meet diagnostic criteria**, and the systemic presentation is more consistent with JIA.\n\nSystemic JIA can be misdiagnosed early on, delaying therapy. **Treatment** depends on disease severity:\n- **Mild**: **NSAIDs**, **glucocorticoids**\n- **Moderate-to-severe**: **Biologic agents** (e.g., **IL-1 or IL-6 inhibitors**)\n\nThe correct next step is **referral to rheumatology for immunosuppressive therapy** to prevent joint damage and control systemic inflammation."
+},
+{
+  "text": "A 7-year-old boy is brought to the emergency department for evaluation of left eye pain and swelling for five days. The patient has no significant medical history and is otherwise healthy. Temperature is 38.3 °C (101 °F), blood pressure is 111/72 mmHg, pulse is 125/min, respiratory rate is 20/min, and oxygen saturation is 99% on room air. On physical examination, the patient is oriented to person, place, and time and answers questions appropriately. There is soft tissue swelling and erythema around the left orbit with associated proptosis and chemosis. The patient has evidence of decreased visual acuity and ophthalmoplegia. The rest of the neurological exam is nonfocal. The patient is started on ceftriaxone and vancomycin. Ophthalmology is consulted. Which of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Surgical consultation" },
+    { "label": "B", "text": "Switch vancomycin to linezolid" },
+    { "label": "C", "text": "Lumbar puncture" },
+    { "label": "D", "text": "Computed tomography (CT) sinus and orbit with contrast" },
+    { "label": "E", "text": "Apply warm compresses and discharge home" }
+  ],
+  "correct": "D",
+  "explanation": "**Major takeaway:**\nPatients with **orbital cellulitis with deteriorating visual acuity, proptosis, ophthalmoplegia**, and/or **central nervous system involvement** are considered to have **severe or complicated orbital cellulitis** and should undergo **CT sinus and orbit with contrast** to evaluate for **deep space infection**, including **abscess formation**.\n\n**Main explanation:**\nThis patient presents with **orbital cellulitis** and signs of complications, including **proptosis**, **ophthalmoplegia**, and **reduced visual acuity**. These findings suggest **increased orbital pressure** and possible **deep space infection**. The appropriate next step is **CT imaging of the sinus and orbit with contrast** to assess for an **orbital or subperiosteal abscess**.\n\n**Periorbital cellulitis** involves infection **around the orbit**, while **orbital cellulitis** involves infection **within the orbit**. Red flag symptoms like **blurred vision**, **ophthalmoplegia**, and **chemosis** help distinguish orbital cellulitis from milder periorbital disease.\n\nIf imaging reveals an abscess, **surgical drainage** may be indicated. Antibiotics (e.g., **vancomycin and ceftriaxone**) are appropriate empiric treatment while awaiting imaging and further evaluation."
+},
+{
+  "text": "A 10-year-old girl presents to the pediatric clinic for evaluation of fever and joint pain involving her knees and elbows. Her mother mentions the patient had a sore throat with fever 3 weeks ago, which resolved without any treatment after about a week. Temperature is 38.3°C (101°F), pulse is 115/min, respiratory rate is 16/min, blood pressure is 114/74 mm Hg, and oxygen saturation is 99% on room air. Skin examination reveals blanching erythematous macules on the trunk and extremities. Multiple small firm nodules are palpated over the bilateral elbows. Cardiac exam reveals a 2/3 systolic murmur heard at the apex and radiating to the left axilla. There is tenderness to palpation and pain with range of motion and swelling over the knees, elbows and wrists bilaterally. Rapid strep antigen testing is negative.\n\nLaboratory value | Result\n--- | ---\nSodium | 144 mEq/L\nPotassium | 4.2 mEq/L\nChloride | 95 mEq/L\nCreatinine | 0.9 mg/dL\nErythrocyte sedimentation rate (ESR) | 55 mm/hr\nC-reactive protein (CRP) | 25 mg/L\nAnti-streptolysin O (ASO) | Positive\n\nWhich of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Throat culture" },
+    { "label": "B", "text": "Antibiotic treatment for GAS pharyngitis" },
+    { "label": "C", "text": "Antibiotics for GAS pharyngitis and long-term prophylactic antibiotics" },
+    { "label": "D", "text": "Antipyretics and NSAIDs" },
+    { "label": "E", "text": "Oseltamivir" }
+  ],
+  "correct": "C",
+  "explanation": "**Major takeaway:**\nChildren presenting with **acute rheumatic fever (ARF)** (e.g., **preceding pharyngitis with subsequent development of arthritis, subcutaneous nodules, carditis, etc.**) require **antibiotic treatment for eradication of group A Streptococcus (GAS)**, as well as **long-term prophylactic antibiotics** to prevent recurrent infections.\n\n**Main explanation:**\nThis patient meets **Jones criteria** for **acute rheumatic fever**, with evidence of:\n- **Carditis** (systolic murmur radiating to axilla)\n- **Arthritis** (multiple joints involved)\n- **Subcutaneous nodules**\n- **Erythema marginatum-like rash**\n\nShe also has laboratory support for recent **GAS infection** (positive **ASO titer**, elevated **ESR** and **CRP**).\n\nTreatment should include:\n- **Antibiotics** to eradicate **GAS** (typically **penicillin**) even if the initial pharyngitis resolved\n- **Long-term prophylactic antibiotics** (e.g., **monthly benzathine penicillin G** or **daily oral penicillin**) to prevent recurrence and **rheumatic heart disease**\n\n**Supportive treatment** (e.g., **NSAIDs**) may also be used for symptom relief, but **definitive therapy must include antibiotics**.\n\n**Throat culture** is not needed, as **serologic evidence of prior GAS infection** (ASO) is already present. Oseltamivir is inappropriate in this non-viral case."
+},
+{
+  "text": "A 3-day-old newborn female in the Neonatal Intensive Care Unit (NICU) is being evaluated for hypotonia and decreased spontaneous movements. She was born at 28 weeks' gestation via spontaneous vaginal delivery for preterm labor and required immediate resuscitation and intubation. There was no history of maternal fever, and maternal labs are within normal limits. There has been no fever, vomiting, or bloody stools. Temperature is 36.8°C (98.2°F) and stable, pulse is 168/min, respirations are 38/min, blood pressure is 52/28 mm Hg, and oxygen saturation is 98%. On physical exam, the patient is intubated, hypotonic and has decreased spontaneous movements. The anterior fontanelle is open and flat. Heart sounds are normal, and there is no murmur. Lungs are clear with equal air entry bilaterally. Abdominal exam is unremarkable. Nasogastric tube and umbilical lines are in place. The newborn is tolerating appropriate volumes of nasogastric and parenteral nutrition.\n\nLaboratory value | Results\n--- | ---\nHemoglobin | 12 g/dL\nHematocrit | 36%\nWhite blood cells | 8,000 /mm³\nPlatelets | 130,000/mm³\nSodium | 136 mEq/L\nPotassium | 4.8 mEq/L\npH | 7.35\nPCO₂ | 39 mmHg\nBicarbonate (HCO₃) | 22 mEq/L\n\nWhich of the following findings would confirm the most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Portal venous gas on abdominal radiograph" },
+    { "label": "B", "text": "Positive blood culture" },
+    { "label": "C", "text": "Low blood glucose" },
+    { "label": "D", "text": "Abnormal electroencephalogram (EEG)" },
+    { "label": "E", "text": "Blood in the germinal matrix on cranial ultrasound" }
+  ],
+  "correct": "E",
+  "explanation": "**Major takeaway:**\n**Intraventricular hemorrhage (IVH)** is a known complication in **premature infants**. Diagnosis is confirmed by **cranial ultrasound showing germinal matrix bleeding**, with or without **extension to the ventricles**.\n\n**Main explanation:**\nThis **preterm neonate** (28 weeks gestation) is **hypotonic** with **decreased spontaneous movements**, occurring several days after delivery and in the context of **mechanical ventilation** and **resuscitation**. These features are consistent with **intraventricular hemorrhage (IVH)**.\n\n**IVH** is common in preterm and extremely low birth weight infants due to **fragile blood vessels** in the **germinal matrix** and **cerebral blood flow instability**. Risk factors include **prematurity**, **mechanical ventilation**, **resuscitation**, and **neonatal transport**.\n\nAlthough **most infants with IVH are asymptomatic**, some may show signs such as **apnea, flaccid weakness, seizures, decreased alertness**, or a **bulging fontanelle**.\n\n**Diagnosis** is made with **cranial ultrasound**, recommended **between days 7–14 of life** for infants <30 weeks gestation.\n\n**Management** focuses on **stabilizing the infant**, **treating seizures**, **supporting circulation**, and **monitoring for complications** like **hydrocephalus** or **posthemorrhagic ventricular dilatation**."
+},
+{
+  "text": "A 13-year-old boy comes to the clinic for a routine annual health check-up. His past medical history includes asthma and allergic rhinitis. The patient uses an albuterol inhaler, a corticosteroid inhaler, and oral corticosteroids. He has not traveled out of the country recently. Family history is noncontributory. The patient’s temperature is 37.0°C (98.6°F), pulse is 80/min, respirations are 20/min, and blood pressure is 135/85 mmHg. Oral examination reveals white lesions on the tongue and posterior pharynx. These lesions bleed after scraping them with a tongue depressor. An antifungal agent is initiated that binds to ergosterol in fungal cell walls to create micropores. Which of the following is the most likely pharmacological agent used in the treatment of this patient?",
+  "options": [
+    { "label": "A", "text": "Caspofungin" },
+    { "label": "B", "text": "Amphotericin B" },
+    { "label": "C", "text": "Nystatin" },
+    { "label": "D", "text": "Ketoconazole" },
+    { "label": "E", "text": "Griseofulvin" }
+  ],
+  "correct": "C",
+  "explanation": "**Major takeaway:**\n**Nystatin** is a **polyene antifungal** that **binds to ergosterol** in the **fungal cell membrane** and **alters membrane permeability**, causing cell death. It is indicated in the treatment of **oropharyngeal, vulvovaginal, cutaneous, corneal**, and **conjunctival candidiasis**.\n\n**Main explanation:**\nThis patient presents with **white plaques in the oropharynx that bleed when scraped**, which is classic for **oropharyngeal candidiasis**. Use of **corticosteroid inhalers** significantly increases the risk of **oral candidal infections**. Other risk groups include **immunocompromised patients**, **infants**, **dentures users**, and those treated with **radiation or chemotherapy**.\n\n**Nystatin** is the preferred treatment for **oropharyngeal candidiasis** and is typically used in **swish and swallow** oral preparations. Topical nystatin is also effective for **vulvovaginal and cutaneous infections**.\n\nSide effects are generally mild and include **nausea, abdominal pain, vomiting, and diarrhea**.\n\nOther agents listed are less appropriate:\n- **Caspofungin**: Used for invasive candidiasis\n- **Amphotericin B**: Reserved for severe systemic infections\n- **Ketoconazole**: Rarely used due to liver toxicity\n- **Griseofulvin**: Used for dermatophyte infections (not Candida)"
+},
+{
+  "text": "An 8-year-old boy presents to a pulmonologist for evaluation of a chronic productive cough, congestion, recurrent respiratory infections, and recurrent otitis media. Parents report the patient has been sick much more often than his peers. He was born full-term but did spend time in the NICU for respiratory distress. He is up to date on all vaccinations including influenza, COVID-19, and pneumococcal 13-valent conjugate vaccine (PCV13). He is at the 23rd percentile for height and the 12th percentile for weight. Temperature is 37.3°C (99.1°F), pulse is 104/min, respirations are 22/min, blood pressure is 106/68 mmHg, and oxygen saturation is 98%. Head and neck examination shows bilateral middle ear effusions, nasal congestion, and polyps. Heart rate is regular, and no murmur is appreciated. Diffuse rhonchi are heard without increased work of breathing. The patient undergoes a full work-up. Nitrous oxide is found to be very low, and a genetic pulmonary disease is confirmed. Which of the following interventions is recommended?",
+  "options": [
+    { "label": "A", "text": "Pneumococcal polysaccharide vaccine (PPSV23)" },
+    { "label": "B", "text": "Yearly surveillance of liver function tests (LFTs)" },
+    { "label": "C", "text": "Prophylactic Amoxicillin" },
+    { "label": "D", "text": "Biannual chest computed tomography (CT)" },
+    { "label": "E", "text": "Vitamin A, D, E, K supplementation" }
+  ],
+  "correct": "A",
+  "explanation": "**Major takeaway:**\nManagement of patients with **primary ciliary dyskinesia (PCD)** and **cystic fibrosis (CF)** focuses on **maintaining airway clearance** and **preventing and treating respiratory infections**. Immunizations including **PCV20 or PPSV23** are essential in patients who have received only PCV13.\n\n**Main explanation:**\nThis patient presents with findings consistent with **primary ciliary dyskinesia (PCD)** — **chronic cough**, **recurrent infections**, **middle ear effusions**, and **low nitric oxide levels**. He has a confirmed **genetic pulmonary disorder**, and has only received the **PCV13** vaccine.\n\n**Pneumococcal polysaccharide vaccine (PPSV23)** or **PCV20** should be administered next to enhance protection against pneumococcal disease.\n\nPCD shares management principles with CF:\n- **Airway clearance** with chest physiotherapy\n- **Infection prevention** (e.g., immunizations, prompt antibiotics)\n- **Surveillance imaging** (CT chest for PCD; CXR for CF)\n- **ENT involvement** for chronic ear/nasal issues\n\nOther options are incorrect:\n- **LFT monitoring** and **vitamin supplementation** are more relevant for CF.\n- **Prophylactic antibiotics** like azithromycin are sometimes used, but **PPSV23 is higher priority**.\n- **Biannual chest CT** may be done, but not first-line after diagnosis."
+},
+{
+  "text": "A 24-month-old boy is brought to the clinic for a well child visit. The parents report he is unsteady while walking and trips frequently. He is unable to run and prefers to crawl up and down stairs. He knows about 20 individual words that he uses singly without stringing words together; he can only occasionally point in books at words that are said by his parents; and he can stack three blocks together. He does not help with dressing himself. Birth and past medical histories are unremarkable. Family history is pertinent for an uncle who had delayed development. Temperature is 37.0 °C (98.6 °F), pulse is 114/min, respirations are 24/min, blood pressure is 96/50 mm Hg and oxygen saturation is 98% on room air. On examination, the patient does not want to separate from his parents and tries to get attention by pointing to his cup. Neurological exams are normal. Cardiopulmonary and abdominal exams are normal. Genetic testing shows mutations in the FMR1 gene. Which of the following physical exam findings would be expected in this patient?",
+  "options": [
+    { "label": "A", "text": "Large protruding ears" },
+    { "label": "B", "text": "Spastic lower extremities" },
+    { "label": "C", "text": "Organomegaly" },
+    { "label": "D", "text": "Cleft palate" },
+    { "label": "E", "text": "Calf hypertrophy" }
+  ],
+  "correct": "A",
+  "explanation": "Major takeaway\nFragile X syndrome is the most common inherited cause of global developmental delays. Characteristic physical exam findings include a long and narrow face, prominent jaw and forehead, hyperflexible fingers, and large protruding ears.\n\nMain explanation  \nThe patient exhibits global developmental delays in language and speech, social-emotional, and motor skills with positive genetic screening for fragile X syndrome. Fragile X syndrome is the most common inherited cause of global developmental delay. Patients often have characteristic physical features, including a long narrow face and large protruding ears.\n\nGlobal developmental delay is present when there are delays in two or more of the major categories of development (motor, language/speech, cognitive and social/emotional).\n\nWhen assessing pediatric developmental milestones, the first step is obtaining a focused history and physical exam. Understanding normal developmental milestones based on age can help physicians and caregivers recognize when a child is at risk for developmental delay and would benefit from detailed evaluation and early intervention. Reviewing birth history is important since both prematurity and low birth weight are associated with developmental delays. Interval history is useful to determine new skills learned or if there is any regression in development. Family history can reveal genetic causes of developmental delay. Genetic conditions associated with developmental delays include fragile X syndrome, Down syndrome (trisomy 21), tuberous sclerosis, neurofibromatosis, and autism spectrum disorder.\n\nWhen performing the physical exam, reflexes, muscle tone, and balance should be checked. The child's behavior and social interactions should be observed. Patients with fragile X syndrome can exhibit autistic behaviors, symptoms of attention-deficit/hyperactivity disorder, aggression, and poor eye contact. Patients with developmental delays should also be assessed for characteristic physical features.  Physical features associated with fragile X syndrome include a long, narrow face, prominent jaw, and forehead, hyperflexible fingers, and large protruding ears."
+},
+{
+  "text": "An 8-month-old girl presents to the pediatrician with her parent for evaluation of a rash and fever. The parent reports that the rash has been present for the past 2–3 days and appears to be in “different stages of healing.” He reports associated tactile fevers at home, as well as diarrhea. The patient was born full-term, is otherwise healthy, and does not take any daily medication. Vaccinations are up-to-date, and the patient has not had any recent sick contacts. Temperature is 37.6°C (99.7°F), blood pressure is 97/54 mm Hg, pulse is 110/min, respiratory rate is 30/min, and oxygen saturation is 99% on room air. The patient is in the 50th percentile for length, weight, and head circumference. She is well-appearing and in no acute distress. Skin examination demonstrates flaccid bullae over the trunk with surrounding areas of ruptured bullae forming thin, brown crusts. Nikolsky sign is negative. There is no mucous membrane involvement. Cardiopulmonary examination is within normal limits. Which of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Intravenous nafcillin" },
+    { "label": "B", "text": "Topical retapamulin" },
+    { "label": "C", "text": "Topical mupirocin" },
+    { "label": "D", "text": "Discharge home with dermatology follow-up" },
+    { "label": "E", "text": "Oral cephalexin" }
+  ],
+  "correct": "E",
+  "explanation": "Major takeaway\nTreatment of bullous impetigo involves administration of a first-generation cephalosporin, like cephalexin, or a beta-lactamase-resistant antibiotic, like amoxicillin-clavulate.\n\nMain explanation\nThis infant presents for evaluation of bullous lesions over the trunk with associated constitutional symptoms, consistent with bullous impetigo. Bullous lesions with a surrounding area of coalesced lesions with a thin brown crust and a negative Nikolsky sign are consistent with this condition. Primary treatment for bullous impetigo involves administration of an oral first-generation cephalosporin, dicloxacillin, or amoxicillin-clavulanic acid. Coverage for methicillin-resistant S. aureus (MRSA) should be considered if there are high rates of local prevalence.\n\nStaphylococcal scalded skin syndrome (SSSS) and impetigo are common pediatric skin infections that are most often caused by Staphylococcus aureus. Exam findings and historical elements can typically be used to distinguish between these diseases. Treatment is tailored to the underlying condition, as detailed in the chart above."
+},
+{
+  "text": "A 12-year-old boy presents to the clinic with 2 days of fatigue, malaise, arthralgias, and headache. The symptoms have progressively worsened. Ten days ago, the patient was hiking where he lives in northern Connecticut. The rash is not painful or pruritic. The patient has not had a sore throat, and there is no history of sick contacts. Past medical, family, and surgical histories are non-contributory. Temperature is 38°C (100.4°F), pulse is 115/min, respirations are 19/min, blood pressure is 119/76 mm Hg, and oxygen saturation is 97% on room air. On physical exam, there is a rash present on the right thigh as shown in the picture below. Cardiopulmonary and abdominal examinations are unremarkable. The patient has full range of motion of the neck without stiffness. There is no swelling of the joints, and the patient has full range of motion of the joints with some pain associated with movement. Which of the following laboratory tests is needed to confirm the diagnosis before starting treatment?",
+  "options": [
+    { "label": "A", "text": "No testing is required" },
+    { "label": "B", "text": "Throat culture" },
+    { "label": "C", "text": "Skin biopsy" },
+    { "label": "D", "text": "Polymerase chain reaction (PCR)" },
+    { "label": "E", "text": "Enzyme-linked immunosorbent assays (ELISA)" }
+  ],
+  "correct": "A",
+  "explanation": "Major takeaway\nPatients with early localized Lyme disease can present with a bull’s eye rash (known as erythema migrans). A presumptive diagnosis of early localized Lyme disease can be made in patients with the classic rash who have been to or live in a Lyme endemic area. Treatment can be initiated without the need for laboratory confirmation.\n\nMain explanation\nThis 12-year-old boy who lives in Connecticut and was recently hiking presents with fatigue, malaise, arthralgias, headache, and a bull's eye rash consistent with erythema migrans (EM). The presence of EM rash indicates early localized Lyme disease. Treatment should be started immediately in early localized Lyme disease as no testing is needed to confirm the diagnosis before initiating treatment.\n\nPatients with Lyme disease may report a tick bite or travel to a Lyme-endemic area. Erythema migrans appear with early localized Lyme disease within days to two weeks after an infected tick bite. The skin lesion begins as a red or purple-colored macule or papule and expands with enhanced central erythema. It may appear as a bull’s eye lesion, as in this case. The Rash is often non-painful and non-pruritic and may be accompanied by systemic symptoms, such as fever, malaise, headache, stiff neck, myalgias, and arthralgias. Carditis with a prolonged PR interval on electrocardiography is a manifestation of early disseminated lyme disease. The most common manifestation of late Lyme disease, which occurs weeks to months after the initial infection, is arthritis, which is typically monoarticular, and affects the large joints, particularly the knee.\n\nThe diagnostic evaluation of children who present with fever and rash involves narrowing down the most likely etiology based on history and physical exam including rash morphology. If the characteristic erythema migrans (bull’s eye lesion) rash is seen, and the patient lives in or has been to a lyme endemic area, and there are no signs or symptoms of early disseminated or late disease, then no further work-up is required before treatment. If the patient has signs and symptoms of early disseminated or late Lyme disease, serology testing for Borrelia burgdorferi with an enzyme-linked immunosorbent assay (ELISA) with reflex to Western immunoblot should be performed. Positive serology confirms a diagnosis of Lyme disease. Repeat testing is recommended several weeks later if initial testing is negative due to low sensitivity of serologic testing in early disease."
+},
+{
+  "text": "An 8-month-old boy is brought to the emergency department by his parents for evaluation of a fever and rash. The parents report that the patient developed a rash covering his body and has been increasingly fussy and difficult to console for the past four days. He has had a fever of 38.3°C (101°F). The parents became concerned today because the skin began to slough off. The patient was born full-term and has not had any significant medical issues since birth. Vaccinations are up-to-date. Temperature is 38°C (100.4°F), blood pressure is 90/67mm Hg, pulse is 155/min, respiratory rate is 25/min, and oxygen saturation is 98% on room air. The patient is crying in his mother’s arms and is difficult to console. Skin examination reveals moist, erythematous, denuded skin, as well as perioral and perinasal crusting. There is no mucous membrane involvement. Cardiopulmonary and abdominal examinations are within normal limits. Which of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Intravenous nafcillin" },
+    { "label": "B", "text": "Intravenous clindamycin" },
+    { "label": "C", "text": "Topical mupirocin" },
+    { "label": "D", "text": "Oral clindamycin" },
+    { "label": "E", "text": "Intravenous ciprofloxacin" }
+  ],
+  "correct": "A",
+  "explanation": "Major takeaway\nPatients with staphylococcal scalded skin syndrome (SSSS) present with a characteristic desquamating rash, fever, and irritability. Acute management involves fluid resuscitation and administration of intravenous antibiotics with appropriate coverage against Staphylococcus species (including S. aureus).  \n\nMain explanation\nThis patient presents with findings consistent with Staphylococcal scalded skin syndrome (SSSS), including a characteristic desquamating rash (without mucous membrane involvement), fever, and irritability. Most cases occur before the age of 6 years. Acute management of this condition includes administration of an intravenous antibiotic with appropriate coverage against Staphylococcus species, such as nafcillin or oxacillin.  \n\nSSSS and impetigo are common pediatric skin infections that are most often caused by Staphylococcus aureus. While impetigo usually results from direct bacterial invasion of the skin or minor skin trauma, SSSS is caused by the hematogenous spread of staphylococcal exotoxins from colonized areas to distal sites. Exam findings can be used to distinguish mild staphylococcal infections, such as impetigo, from more severe infections, like SSSS.  \n\nAcute management of each condition differs significantly. Patients with SSSS are much more likely to present with critical illness, superimposed sepsis, and significant fluid loss from desquamated skin and temperature dysregulation. Therefore, these patients require special attention to airway, breathing, and circulation before further management. Once stabilized, patients with SSSS should be admitted to the hospital and receive intravenous fluids and antibiotic therapy targeted at Staphylococcus species. Since most strains of S. aureus produce penicillinase, a penicillinase-resistant antibiotic, such as nafcillin or oxacillin, is preferred. If risk factors are present for methicillin-resistant S. aureus (MRSA) or if the local prevalence of MRSA is high, vancomycin should be considered. Additional management includes application of mupirocin to the nares if S. aureus colonization is suspected, as well as pain control and wound management."
+},
+{
+  "text": "An 11-day-old boy is being evaluated in the neonatal intensive care unit (NICU) and is found to have hyperextension of the neck and irritability. The patient was born by vaginal delivery at 30 weeks' gestation. Immediately after birth, the patient developed respiratory distress syndrome. He was placed on mechanical ventilation and in a radiant warmer. He is receiving parenteral nutrition and caffeine. There is no vomiting, diarrhea, or temperature instability. Temperature is 36.8°C (98.2°F), pulse is 200/min, respirations are 30/min, blood pressure is 70/38 mm Hg, and oxygen saturation is 94% on FiO2 60% on mechanical ventilator. Birth weight was 3.4 kg and current weight is 3.2 kg. Urine output is 0.6 ml/kg/hr. Physical examination reveals a lethargic infant with capillary refill time > 3 seconds who is arching his neck and back backwards consistent with opisthotonus posturing from muscle spasms, and he has brisk reflexes. Cardiopulmonary exam is unremarkable. Lab results are shown below. Which of the following is the most likely cause of hypernatremia in this patient?\n\nLaboratory value | Results\n--- | ---\nHemoglobin | 21 g/dL\nLeukocytes | 19,600 /μL\nPlatelets | 160,000/μL\nRandom blood glucose | 70 mg/dL\nSerum sodium | 151 mEq/L\nSerum potassium | 3.7 mEq/L\nBlood urea nitrogen | 19 mg/dL\nCreatinine | 0.7 mg/dL\nSerum osmolality | 285 mOsm/kg\nUrine osmolality | 870 mOsm/kg\nFractional excretion of sodium (FENa) | 0.8%",
+  "options": [
+    { "label": "A", "text": "Insensible fluid loss" },
+    { "label": "B", "text": "Excessive salt load" },
+    { "label": "C", "text": "Diabetes insipidus" },
+    { "label": "D", "text": "Gastrointestinal fluid loss" },
+    { "label": "E", "text": "Intrinsic kidney disease" }
+  ],
+  "correct": "A",
+  "explanation": "Major takeaway\nHypovolemic hypernatremia can result in hospitalized children from insensible fluid loss caused by mechanical ventilation, radiant warmer use, or phototherapy. Physical exam findings may include dry mucous membranes, tachycardia, and delayed capillary refill, in addition to low urine output and urine osmolality > 750 mOsm/kg.\n\nMain explanation\nThis patient in the neonatal intensive care unit (NICU) on mechanical ventilation and in a radiant warmer has hyperextension of the neck consistent with opisthotonus posturing from muscle spasms, irritability, tachycardia, delayed capillary refill, and decreased urine output. These findings, along with the laboratory results showing hypernatremia and urine osmolality > 750 mOsm/kg, are consistent with hypovolemic hypernatremia secondary to insensible fluid loss likely from mechanical ventilation and radiant warmer.\n\nWhen evaluating hypernatremia in a patient, it is important to assess the volume status to determine if the patient is hypovolemic, euvolemic, or hypervolemic. In the setting of hypovolemic hypernatremia, the history in addition to measuring urine output and urine osmolality will help determine the etiology.\n\nLow urine output and urine osmolality > 750 mOsm/kg suggest extrarenal fluid loss. If the patient is on mechanical ventilation or a radiant warmer, such as in this case, the underlying cause of hyponatremia is likely insensible fluid loss. Extensive burns, excessive sweating, fever, and phototherapy also increase insensible fluid loss.\n\nInadequate intake and inability to communicate thirst or impaired thirst mechanism may also result in hypovolemic hypernatremia. Patients with gastroenteritis, on nasogastric tube with suction and using osmotic cathartics such as lactulose can develop hypovolemic hypernatremia secondary to gastrointestinal fluid loss. Physical exam findings often include tachycardia, dry mucous membranes, delayed capillary refill time, and decreased skin turgor. High urine output > 4 ml/kg/hr and urine osmolality < 750 mOsm/kg suggest renal fluid losses as seen in patients using diuretics or mannitol, post-obstructive diuresis, or acute tubular necrosis with polyuria."
+},
+{
+  "text": "A newborn girl is delivered by vaginal birth at 38 weeks of gestation. The parent is a healthy 27-year-old woman without significant past medical history. The pregnancy was complicated by polyhydramnios that was diagnosed on prenatal ultrasound. GBS was negative. Rupture of membranes was 2 hours before birth and was clear. There were no complications during the delivery. The patient develops respiratory distress shortly after delivery. Temperature is 36.6°C (97.9°F ), pulse is 145 beats/minute, and respiratory rate is 68/minute with SpO2 90% at 40% FiO2. In the NICU, physical examination reveals tachypnea, grunting, and mucous bubbling from the nose and the mouth. An orogastric tube coils back on insertion. Which of the following physical examination findings would be expected in this patient given the most likely cause of her respiratory distress?",
+  "options": [
+    { "label": "A", "text": "Bounding peripheral pulses" },
+    { "label": "B", "text": "Scaphoid abdomen" },
+    { "label": "C", "text": "Focal crackles on lung examination" },
+    { "label": "D", "text": "Meconium stained skin" },
+    { "label": "E", "text": "Absent thumb" }
+  ],
+  "correct": "E",
+  "explanation": "Major takeaway\nPhysical examination in newborns with respiratory distress should focus on chest examination, skin color (cyanosis or meconium stained), heart murmurs, peripheral pulses, and associated anomalies such as VACTREL features (vertebral, anorectal, cardiac, tracheal, esophageal, renal, and limb abnormalities).\n\nMain explanation\nThis newborn who presents with respiratory distress, mucosal bubbling from the nose and mouth, and an orogastric tube that coils back with insertion most likely has a tracheoesophageal fistula with esophageal atresia. Tracheoesophageal fistula is most commonly associated with other congenital anomalies such as VACTERL associations, which include vertebral, anorectal, cardiac, tracheal, esophageal, renal, and limb abnormalities like absent thumbs and are usually classified according to their anatomic configuration. In Type C tracheoesophageal fistula, which is the most common type, patients have a proximal esophageal pouch and a distal tracheoesophageal fistula.\n\nWhen assessing newborn patients with respiratory distress the ABCDE assessment should be performed. If patients are stable, then the focus should be on identifying the etiology of respiratory distress. Focused history, physical exam, and pulse oximetry should be checked. In this patient, history reveals polyhydramnios on the prenatal ultrasound. The physical exam reveals tachypnea, grunting, and mucous bubbling from the nose and the mouth. Gastric distention and feeding difficulties are other signs of tracheoesophageal fistula with esophageal atresia. Physical examination of a newborn with respiratory distress should focus on assessing chest and lung examination, skin color (cyanosis or meconium stained), heart murmurs, peripheral pulses, and associated anomalies such as VACTREL features (vertebral, anorectal, cardiac, tracheal, esophageal, renal, and limb abnormalities). Congenital anomalies consistent with VACTERL include a single artery in the umbilical cord, anal atresia, and absent thumbs.\n\nIn newborn patients with early-onset respiratory distress, the inability to pass a nasogastric or orogastric tube suggests esophageal atresia. The absence of the fetal stomach bubble and maternal polyhydramnios are common prenatal ultrasound findings. Chest x-ray at birth may show a coiled tube within the esophagus and an air-distended stomach, indicating an associated tracheoesophageal fistula."
+},
+{
+  "text": "A 5-year-old boy is brought to the office for evaluation of dark profuse pubic hair and an increase in penile length that has occurred over the past two months. The parents report that he has not had convulsions, visual disturbance, vomiting, headaches, fever, fatigue, or intolerance to cold. Parents report he takes nighttime lavender oil baths to help him sleep. He has no significant past medical history, perinatal history, or family history. He is meeting all appropriate developmental milestones. Temperature is 37°C (98.6°F), pulse is 95/min, respirations are 20/min, and blood pressure is 100/64 mm Hg. Height and weight are at the 60th and 65th percentile, respectively. On genital examination, pubic hair is dark and thick at the base of the penis, stretched penile length is 9 cm, and testicular volume is > 4 mL. There are no testicular masses on palpation. The patient does not have acne, axillary body hair, or café-au-lait spots. Abdomen is soft and non-tender without palpable masses. X-ray of the left hand shows bone age consistent with 9 years of age. Which of the following should be ordered next to help make the diagnosis?",
+  "options": [
+    { "label": "A", "text": "X-ray of the femur" },
+    { "label": "B", "text": "Brain magnetic resonance imaging (MRI)" },
+    { "label": "C", "text": "Luteinizing hormone (LH), follicle stimulating hormone (FSH), and testosterone levels" },
+    { "label": "D", "text": "Pelvic ultrasound" },
+    { "label": "E", "text": "Human chorionic gonadotrophin (hCG) level" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\nIn patients who are found to have precocious puberty, the initial evaluation involves bloodwork to differentiate central from peripheral precocious puberty. Luteinizing hormone (LH), follicle stimulating hormone (FSH), and testosterone or estradiol levels should be checked.\n\nMain explanation\nThis 5-year-old boy with gonadarche, adrenarche, and advanced bone age on X-ray has precocious puberty. The best next step is to obtain luteinizing hormone (LH), follicle-stimulating hormone (FSH), and testosterone levels to help differentiate central from peripheral precocious puberty.\n\nIn biological males who present with testicular enlargement > 3 mL before the age of 9 years, axillary hair, or apocrine odor on physical exam and tanner stage II or higher testicular and pubic hair development (gonadarche and adrenarche), bone age and height velocity should be determined. Bone age is determined by X-ray imaging of the left hand and wrist. If bone age is ≥ 2 standard deviations above the child’s chronological age, as in this case, precocious puberty can be diagnosed, and labs should be obtained to determine if the child has central or peripheral precocious puberty.\n\nTo help differentiate central from peripheral precocious puberty, LH, FSH, and testosterone levels should be checked. If pubertal levels are noted, central precocious puberty can be diagnosed, and thyroid levels and brain magnetic resonance imaging (MRI) should be checked to determine the etiology. If prepubertal levels of LH, FSH, and testosterone (low LH and FSH and elevated testosterone) are noted, peripheral precocious puberty can be diagnosed. Exogenous steroid exposure from use of oral contraceptives, testosterone transdermal patches, and (occasionally) tea tree oil and lavender can lead to peripheral precocious puberty. If there is no exogenous exposure to steroids, endogenous causes of peripheral precocious puberty should be considered, such as McCune Albright syndrome, testicular tumors, adrenal tumors, and non-classical congenital adrenal hyperplasia."
+},
+{
+  "text": "A 3-year-old boy is brought to the emergency department after his caregiver found him playing near an open bottle of prescription medication on the kitchen table. On arrival, he is lethargic, disoriented, and difficult to arouse. His temperature is 36.8°C (98.2°F), heart rate is 60/min, respiratory rate is 8 breaths/min, blood pressure is 70/40 mmHg, and oxygen saturation is 85% on room air. Based on these initial findings, which of the following is the most appropriate immediate step of management?",
+  "options": [
+    { "label": "A", "text": "Activated charcoal" },
+    { "label": "B", "text": "Urine drug screen, serum acetaminophen, and salicylate levels" },
+    { "label": "C", "text": "ABCDE assessment" },
+    { "label": "D", "text": "Gastric lavage" },
+    { "label": "E", "text": "Electrocardiogram (ECG)" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\nIn pediatric patients with suspected medication ingestion, immediate ABCDE assessment and stabilization are critical to address airway compromise, respiratory depression, or circulatory failure, followed by continuous vital sign monitoring, supplemental oxygen as needed, IV access, and administration of specific antidotes (e.g. naloxone for opioids).\n\nMain explanation\nThis 3-year-old child’s vital signs indicate he is unstable: he has bradycardia, bradypnea, hypotension, and hypoxia. In any pediatric patient with a suspected medication exposure, the first and most critical step is to perform an ABCDE assessment (Airway, Breathing, Circulation, Disability, Exposure) to ensure stabilization.\n\nThis approach ensures that life-threatening issues, such as airway compromise, inadequate breathing, and poor circulation, are addressed immediately. Subsequently, it is important to obtain IV access, provide supplemental oxygen as needed, place the child on continuous vital sign monitoring, measure a blood glucose level, and perform an ECG. Antidotes like naloxone (for suspected opioid ingestion) should be administered when indicated.\n\nIn contrast, stable patients undergo a more focused evaluation to determine the specific toxidrome, exposure history, and diagnostic workup needed (for example, confirming whether the ingestion was witnessed or if a medication bottle was present). If the child presents within one hour of ingestion, activated charcoal may be considered to reduce gastric absorption of the medication. Laboratory studies, including a urine drug screen, serum acetaminophen level, serum salicylate level, venous blood gas (VBG), and a metabolic panel, should also be obtained."
+},
+{
+  "text": "A newborn boy born at 39 weeks gestation who is 7 hours old is in the neonatal intensive care unit with persistent respiratory distress that started 1 hour after delivery. He was delivered by cesarean delivery for fetal macrosomia. Maternal history is positive for gestational diabetes with normal prenatal ultrasound. There was no history of maternal fever and GBS was negative. Amniotic fluid was clear and there were no complications at delivery. Apgar scores are 6 and 8 at 1 and 5 minutes, respectively. Temperature is 37°C (98.6°F), pulse is 165 beats/minute, respiratory rate is 84/minute, and Oxygen saturation is 91% on continuous positive airway pressure (CPAP) with 50% FiO2. Physical examination reveals tachypnea, subcostal retractions with nasal flaring, and diffuse crackles in both lung fields. No heart murmur is heard. The patient has normal pulses bilaterally. Abdominal exam is normal. Initial lab results are shown below. Which of the following findings would confirm the most likely diagnosis?\n\nLaboratory value | Result\n--- | ---\nHemoglobin | 18 g/dL\nHematocrit | 48 %\nLeukocyte count | 9,800/mm3\nPlatelet count | 280,000/mm3\nPH | 7.30\nPCO2 | 52 mmHg\nPO2 | 80 mmHg\nBicarbonate (HCO3) | 21 mEq/L\nBase deficit | -3",
+  "options": [
+    { "label": "A", "text": "Left to right shunt on echocardiogram" },
+    { "label": "B", "text": "Bowel loops in left hemithorax on chest x-ray" },
+    { "label": "C", "text": "Positive blood cultures" },
+    { "label": "D", "text": "Fluid in the horizontal fissures of the lungs on chest x-ray" },
+    { "label": "E", "text": "Compact B-lines on lung ultrasound" }
+  ],
+  "correct": "D",
+  "explanation": "Major takeaway\nPatients with transient tachypnea of the newborn (TTN) can present with respiratory distress lasting beyond 6 hours of life with chest x-ray evidence of pulmonary edema. Chest x-ray should be obtained to confirm the diagnosis and rule out other causes of respiratory distress.\n\nMain explanation\nThis newborn with a maternal history of gestational diabetes who was delivered by cesarean section presents with respiratory distress beyond 6 hours of life. This is consistent with transient tachypnea of the newborn (TTN), which can be confirmed by obtaining a chest x-ray that shows fluid in the horizontal fissures of the lungs.\n\nTTN is caused by delayed clearance of fetal lung fluid after birth, which leads to ineffective gas exchange and respiratory distress. Risk factors for TTN include cesarean delivery, precipitous delivery, and maternal diabetes. TTN typically presents shortly after birth with respiratory distress and persists beyond 6 hours of life. If symptoms resolve within the first 6 hours of life, then it is classified as delayed transition of the newborn. Typical physical exam findings include tachypnea, grunting, retractions, hypoxia requiring oxygen supplementation, and diffuse crackles in bilateral lung fields.\n\nThe diagnostic workup for an infant with respiratory distress should include obtaining labs such as a complete blood count (CBC) and blood gas. A CBC may help rule out anemia and infections such as neonatal sepsis and neonatal pneumonia. In this newborn, the CBC shows no evidence of anemia or leukocytosis. Blood gas is obtained to evaluate gas exchange and acid-base balance. The blood gas in this patient shows mild respiratory acidosis which is expected with transient tachypnea of the newborn.\n\nChest x-ray is essential to exclude other causes of respiratory distress in the newborn such as respiratory distress syndrome, meconium aspiration syndrome, and pneumothorax. Typical chest x-ray findings of TTN include the presence of pulmonary edema, with diffuse increased interstitial lung markings, perihilar streaking, and fluid in the horizontal fissures of the lungs. A lung ultrasound will demonstrate double lung points. An echocardiogram should be obtained if the newborn experiences persistent respiratory distress despite adequate treatment to rule out persistent pulmonary hypertension of the newborn (PPHN)."
+},
+{
+  "text": "A 3-year-old girl presents to the primary care office accompanied by her parent because of two weeks of frequent, greasy, foul-smelling diarrhea. Her parent reports she has not been as active as usual and occasionally reports abdominal pain. She has had frequent flatulence but no vomiting. The family vacationed in Vermont, United States last month where the child was swimming in a freshwater lake daily. Nobody else around her has been sick. Past medical history is unremarkable, and she does not take any medications. Temperature is 37.0°C (98.6°F), pulse is 138/min, respiratory rate is 22/min, and blood pressure is 94/52 mmHg. On examination, the child appears tired but is alert and oriented. Mucus membranes are dry. Cardiopulmonary examination is within normal limits except for mild tachycardia. The abdomen is soft and non-tender with hyperactive bowel sounds. Microscopic examination of the stool reveals the organism pictured below. Which of the following organisms is the most likely cause of diarrhea in this patient?",
+  "options": [
+    { "label": "A", "text": "Campylobacter jejuni" },
+    { "label": "B", "text": "Toxoplasma gondii" },
+    { "label": "C", "text": "Giardia duodenalis" },
+    { "label": "D", "text": "Salmonella typhi" },
+    { "label": "E", "text": "Norovirus" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\nPatients with diarrhea caused by the parasite Giardia may present with watery, greasy, and foul-smelling diarrhea; malaise; flatulence; and abdominal cramping. Infection commonly occurs from drinking water from a contaminated water source or during recreational activities in a contaminated body of water.\n\nMain explanation\nThis child is presenting with classic symptoms of parasitic gastroenteritis, including frequent, greasy, and foul-smelling diarrhea (i.e. steatorrhea); malaise; flatulence; and abdominal cramps. This child likely acquired the infection from accidental water ingestion while swimming in a freshwater lake in the northern United States. The flagellated, pear-shaped protozoa seen on stool microscopy confirms the diagnosis of Giardia duodenalis.\n\nA thorough history and physical examination can provide key details in the evaluation of diarrhea in children. Acute diarrhea is usually caused by an infectious etiology, either viral (most common), bacterial, or parasitic. Diarrhea caused by a virus is usually watery in nature and without red flags (i.e. blood or mucus in stool, severe abdominal pain or dehydration, and high fevers). It is most often caused by norovirus in countries where rotavirus vaccination is routine. Norovirus is highly contagious and spreads through close contact with infected individuals through a fecal-oral route. Day care centers, schools, healthcare facilities, and cruise ships are known to be associated with outbreaks.\n\nBacterial gastroenteritis is often associated with acute bloody diarrhea or other red flags and may be caused by Salmonella, Shigella, Campylobacter, or Escherichia coli. These infections may be associated with foodborne transmission from undercooked or cross-contaminated meat. In addition to food sources, Salmonella is known for transmission from handling reptiles, rodents, and other animals.\n\nParasitic gastroenteritis can lead to either acute or chronic diarrhea and is most often caused by Giardia or Cryptosporidium. The diarrhea is usually non-bloody, watery, and it can be associated with steatorrhea. Transmission of parasitic disease primarily occurs through water, either from drinking contaminated water or during recreational activities in a contaminated body of water, such as a stream or lake."
+},
+{
+  "text": "A 3-year-old boy is brought to the emergency department with fever and lethargy. His parents report that he has been refusing to walk for the past two days and has become increasingly irritable. He has no significant past medical history. His temperature is 39.2°C (102.6°F), blood pressure is 85/50 mmHg, heart rate is 145 beats per minute, respiratory rate is 30 breaths per minute, and oxygen saturation is 97% on room air. On examination, he appears ill and lethargic. The right thigh is swollen, warm, and tender to palpation. Laboratory results are displayed below, and blood cultures are pending. Radiographs of the femur reveal soft tissue swelling but no fracture or lytic lesions. Which of the following is the best next step in management?\n\nLaboratory Test | Result\n--- | ---\nWhite blood cell count | 18,500/mm³\nHemoglobin | 11.8 g/dL\nPlatelets | 420,000/mm³\nC-reactive protein (CRP) | 12.5 mg/dL\nErythrocyte sedimentation rate (ESR) | 65 mm/hr",
+  "options": [
+    { "label": "A", "text": "Needle aspiration and culture" },
+    { "label": "B", "text": "Contact child protective services" },
+    { "label": "C", "text": "Intravenous antibiotics" },
+    { "label": "D", "text": "Oral antibiotics with close outpatient follow-up" },
+    { "label": "E", "text": "Magnetic resonance imaging (MRI) of the right leg" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\nFor a pediatric patient with suspected osteomyelitis and a worsening clinical picture, the recommendation is to promptly initiate parenteral antibiotics, rather than delay treatment for further evaluation.\n\nMain explanation\nThis 3-year-old boy presents with fever, lethargy, worsening irritability, refusal to bear weight, and right thigh swelling, warmth, and tenderness—findings that are concerning for acute hematogenous osteomyelitis. Given the high clinical suspicion and the presence of systemic symptoms indicating potential deterioration, the best next step is to initiate empiric intravenous (IV) antibiotics.\n\nThe acute management of osteomyelitis in pediatric patients depends on the patient's clinical stability. Unstable patients showing signs of sepsis require immediate IV fluid resuscitation and prompt administration of empiric IV antibiotics that target Staphylococcus aureus and other gram-positive organisms, followed by surgical consultation. For stable patients, the initial evaluation consists of laboratory tests (e.g., complete blood count, CRP, ESR, blood cultures) and imaging (e.g., radiographs, MRI). Depending on the evaluation results, treatment may involve starting IV antibiotics immediately, or if a surgical intervention is warranted, surgical consultation for aspirate or biopsy may be performed before initiating antibiotics."
+},
+{
+  "text": "A 13-month-old infant is rushed to the emergency department by his parents due to sudden, abnormal shaking. The parents describe these episodes as brief, symmetric contractions of the upper and lower extremities. There is no history of fever, recent illness, or neck rigidity. The patient’s older brother has autism. The patient's temperature is 37°C (98.6°F), pulse is 99/min, respirations are 23/min, blood pressure is 90/46 mmHg, and oxygen saturation is 97% on room air. Skin examination with a Wood’s lamp reveals hypopigmented macules on the patient’s back. Cardiopulmonary and abdominal examinations are unremarkable. During the examination, the infant experiences a brief episode of jerking followed by relaxation. Laboratory studies are unremarkable. An electroencephalogram (EEG) shows hypsarrhythmia. Which of the following findings is most likely to be seen on ocular examination?",
+  "options": [
+    { "label": "A", "text": "Lisch nodules" },
+    { "label": "B", "text": "Glaucoma" },
+    { "label": "C", "text": "Retinal hamartomas" },
+    { "label": "D", "text": "Optic gliomas" },
+    { "label": "E", "text": "Oculomotor apraxia" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\nTuberous sclerosis complex (TSC) is a neurocutaneous syndrome characterized by ash-leaf spots, Shagreen patches, facial angiofibromas, and periungual fibromas. Neurological and ophthalmological exams should be performed, and the presence of retinal hamartomas is highly suggestive of TSC.\n\nMain explanation\nThis 13-month-old infant presents with infantile spasms, a positive family history of autism, and ash-leaf spots on skin examination; these findings are consistent with tuberous sclerosis complex (TSC). Retinal hamartomas may be seen on ocular exam in patients with tuberous sclerosis.\n\nTSC is an autosomal dominant neurocutaneous disorder resulting from mutations in the TSC1 and TSC2 genes. Although cases of TSC can be due to de novo mutations, a positive family history can be present. Affected children often have intellectual disabilities or autism spectrum disorder (ASD), and many infants with TSC present with intractable seizures and infantile spasms.\n\nPatients with neurocutaneous syndromes should be evaluated based on the morphology of their skin lesions. TSC is diagnosed in a patient who exhibits characteristic ash-leaf spots (hypomelanotic macules best visualized under a Wood’s lamp) and Shagreen patches (raised lesions with an orange-peel texture, typically seen in the lumbosacral region). Some children develop facial angiofibromas on the nose and cheeks and periungual fibromas (small skin nodules under the nails). Other classic skin findings in neurocutaneous syndromes include the cafe-au-lait spots (hyperpigmented macules) seen in neurofibromatosis and the port-wine stains seen in Sturge-Weber syndrome.\n\nTo help differentiate the etiology of neurocutaneous syndromes, both neurological and ophthalmological examinations should be performed. If retinal hamartomas are identified, a diagnosis of TSC is likely. When physical examination findings are highly suggestive of TSC, magnetic resonance imaging (MRI) of the brain, along with cardiac and renal ultrasounds, should be ordered to evaluate for non-cutaneous manifestations of TSC."
+},
+{
+  "text": "A three-year-old girl presents to her primary care provider for re-evaluation of a chronic cough. Since infancy, the girl has had numerous respiratory infections. She also has been experiencing large foul-smelling stools, and poor weight gain since infancy. She is currently 3rd percentile for weight and 15th percentile for height. Temperature is 37.3°C (99°F), pulse is 115/min, respiratory rate is 28/min, blood pressure is 100/55, and oxygen saturation is 97%. On physical exam, the patient is thin-appearing. She appears comfortable and has no increased work of breathing. Diffuse rhonchi are heard throughout the lungs bilaterally. Which of the following additional physical findings would be expected on examination?",
+  "options": [
+    { "label": "A", "text": "Nasal polyps" },
+    { "label": "B", "text": "Facial swelling" },
+    { "label": "C", "text": "Jaundice" },
+    { "label": "D", "text": "Middle ear effusions" },
+    { "label": "E", "text": "Heart sounds on right side of chest" }
+  ],
+  "correct": "A",
+  "explanation": "Major takeaway\nChronic lung diseases that can cause lower respiratory obstruction in children include cystic fibrosis, primary ciliary dyskinesia, tracheobronchomalacia, and asthma.\n\nMain explanation\nThis patient’s history of chronic cough, poor weight gain, recurrent upper respiratory infections, and large foul smelling stools since infancy is consistent with cystic fibrosis. Nasal polyps are often seen in patients with cystic fibrosis secondary to chronic rhinosinusitis.\n\nWhen evaluating children who present with signs and symptoms of lower airway obstruction, it is important to assess the onset of pulmonary symptoms, specifically determining if symptoms have been present since birth and, if not, determining if they have acute onset, subacute onset, or gradual chronic onset. Causes of lower respiratory obstruction that have acute onset include anaphylaxis and bronchiolitis. Chronic diseases that present in childhood with lower airway obstruction and gradual onset of symptoms include cystic fibrosis, primary ciliary dyskinesia, tracheobronchomalacia, and asthma. These may be further differentiated by their triggers. For example, position changes, specifically the supine position, triggers stridor and monophonic wheezing associated with tracheobronchomalacia; and environmental changes, such as cold air and pollen, can trigger wheezing associated with asthma.\n\nOn physical exam, patients with suspected lower airway obstruction should be assessed for signs of increased work of breathing and impending respiratory distress. Respiratory rate and oxygen saturation should be monitored, and patients should be assessed for wheezing, crackles, and rhonchi on lung auscultation.\n\nPatients with cystic fibrosis typically have a history of chronic cough and symptoms consistent with recurrent respiratory infections, including rhinosinusitis and pneumonia. They may have poor weight gain/failure to thrive due to pancreatic insufficiency, preventing the digestion of food. As a result, on physical examination, they often have nasal polyps from recurrent sinopulmonary infections; wheezing, crackles, or rhonchi on lung exam; digital clubbing if hypoxia is present; and abdominal distension."
+},
+{
+  "text": "A 4-year-old boy is brought to the pediatrician by his parents due to developmental concerns. He uses fewer words than his siblings at the same age, and non-family members find it difficult to understand him when he speaks. Vocabulary includes less than 50 words, and he does not know the names of colors or body parts. The child plays appropriately and makes good eye contact. Parents report he can catch a ball, walk down the stairs alone and can draw a square. He can dress himself. He was born 39 weeks after an uncomplicated pregnancy. However, at 10 days of life, he was admitted to the intensive care unit for a fever and was treated with amoxicillin and gentamycin for three weeks. Vital signs are within normal limits. On physical examination, no dysmorphic facial features are noted. He does not look at objects or people named by the examiner. The bilateral ear canals and tympanic membranes are normal. Cardiopulmonary and abdominal exams are normal. A hearing test reveals bilateral sensorineural hearing loss. Which of the following is the best next step in management?",
+  "options": [
+    { "label": "A", "text": "Follow up in one month" },
+    { "label": "B", "text": "Order brain magnetic resonance imaging (MRI)" },
+    { "label": "C", "text": "Refer to genetics" },
+    { "label": "D", "text": "Refer to audiology" },
+    { "label": "E", "text": "Recommend hearing aids" }
+  ],
+  "correct": "D",
+  "explanation": "Major takeaway\nIsolated speech and language delay is diagnosed when a child exhibit delays in speech development but maintains normal comprehension, intelligence, and social-emotional skills. If hearing loss is diagnosed, referral to audiology for further evaluation is warranted.\n\nMain explanation\nThis 4-year-old child has delays in speech and language secondary to hearing loss with normal motor, cognitive, and social milestones. At 4 years old, a child should be able to define five words, name four colors, and all speech should be understood by strangers. Children with hearing loss should be referred to audiology for further evaluation.\n\nSpeech and language delay is defined as children falling behind recognized milestones for age. There are multiple causes of speech delay, which can be classified into neurologic, otologic and psychologic. Neurologic factors that may cause speech delay include TORCH intrauterine infections (toxoplasmosis, rubella, cytomegalovirus, and herpes simplex), maternal drug exposure, prematurity, hypoxia, birth trauma, neonatal jaundice, meningitis, head trauma, and seizures. Otologic causes may include recurrent otitis media, and exposure to ototoxic drugs, such as gentamycin in this patient. Family history of hearing loss and speech delay indicate metabolic or recessive inherited conditions. Autism spectrum disorders are associated with speech and language delay, impaired social interactions, and repetitive behaviors.\n\nPatients with speech and language delay should be evaluated with a focus on birth history, family history and developmental milestones. Physical examination should include behavioral assessment, neurological and otoscopic evaluations. Isolated speech and language delay is diagnosed when a child exhibits a significant delay in speech development, but maintains normal comprehension, intelligence, and social-emotional skills. To help differentiate the causes of speech delay without other developmental delays, a hearing test should initially be performed. If hearing loss is diagnosed, the next step is referral to audiology for further evaluation and implementation of interventional programs."
+},
+{
+  "text": "A 16-year-old boy presents to his primary care provider’s office for his annual physical examination. The patient is doing well in 10th grade and is on his high school’s baseball team. Past medical history is significant for a tonsillectomy due to recurrent illnesses and episodes of pharyngitis when he was younger. Temperature is 37°C (98.6°F), blood pressure is 117/68 mmHg, pulse is 116/min, respiratory rate is 22/min, and oxygen saturation is 98% on room air. Physical examination demonstrates a new 2/6 holosystolic murmur best heard at the apex. Pulmonary examination is normal. Lower extremity exam is within normal limits. The patient is referred to cardiology and a transthoracic echocardiogram which demonstrates pathologic mitral regurgitation along with chordal thickening and restricted leaflet motion. There is no pericardial effusion. Ejection fraction is estimated to be 65%. Which of the following is the best next step in treatment?",
+  "options": [
+    { "label": "A", "text": "Monthly intramuscular (IM) Penicillin" },
+    { "label": "B", "text": "Furosemide" },
+    { "label": "C", "text": "Cardiac window" },
+    { "label": "D", "text": "Milrinone" },
+    { "label": "E", "text": "Valve replacement" }
+  ],
+  "correct": "A",
+  "explanation": "Major takeaway\nTreatment of rheumatic heart disease includes symptomatic management and antibiotic prophylaxis. In contrast, patients with acute rheumatic fever should receive treatment with antibiotics (both acute and long-term prophylaxis) and anti-inflammatory medications as needed.\n\nMain explanation\nThis patient presents with a history of recurrent pharyngitis and new-onset mitral valve regurgitation. Rheumatic heart disease is confirmed by the transthoracic echocardiogram finding of pathologic mitral regurgitation, chordal thickening, and restricted leaflet motion. The patient is currently asymptomatic, so no symptomatic therapy is indicated. Monthly intramuscular Penicillin is indicated to prevent additional episodes of acute rheumatic fever and worsening of rheumatic heart disease.\n\nWhen a formal diagnosis of acute rheumatic fever is confirmed based on the Jones criteria, treatment is multimodal. Penicillin serves as the mainstay of antibiotic treatment. In addition, these patients require secondary antibiotic prophylaxis, to reduce the risk of new group A streptococcus infections. Subsequent episodes of acute rheumatic fever can lead to valvular disease and rheumatic heart disease which is a late sequela of acute rheumatic fever. Acute rheumatic fever also often requires anti-inflammatory medications to treat symptoms like arthritis.\n\nRheumatic heart disease typically presents years after the initial illness. When confirmed via transthoracic echocardiogram, treatment involves symptomatic therapy with diuretics and beta blockers, as well as secondary antibiotic prophylaxis. Patients with progressive disease or those with significant symptoms should be considered for surgical valve replacement."
+},
+{
+  "text": "A 7-year-old boy is brought to an immediate care center for evaluation of ear pain. The parent reports that yesterday the patient returned home from his third week of weekly swimming lessons complaining of left ear fullness and pain. They noticed clear drainage from the ear. He does not have rhinorrhea or nasal congestion. The patient has otherwise been healthy recently and does not take any regular medication. Temperature is 37.44°C (99.4°F), blood pressure is 102/62 mmHg, pulse is 96/min, respiratory rate is 16/min, and oxygen saturation is 97% on room air. Physical examination demonstrates edema and otorrhea of the left ear canal. Culture of the fluid is positive for Pseudomonas aeruginosa. Which of the following additional physical examination findings would be consistent with the likely underlying condition?",
+  "options": [
+    { "label": "A", "text": "Swollen nasal turbinates" },
+    { "label": "B", "text": "Bulging tympanic membrane" },
+    { "label": "C", "text": "Impaired mobility of the tympanic membrane" },
+    { "label": "D", "text": "Air-fluid level along the tympanic membrane" },
+    { "label": "E", "text": "Pain with manipulation of the pinna" }
+  ],
+  "correct": "E",
+  "explanation": "Major takeaway\nPain elicited with manipulation of the pinna is a common physical examination finding in patients with otitis externa.\n\nMain explanation\nThis pediatric patient who swims frequently presents with acute ear pain with associated edema and otorrhea of the ear canal which is consistent with acute otitis externa. A common physical examination finding associated with this diagnosis is pain with manipulation of the pinna.\n\nOtitis, or inflammation of the ear, is commonly caused by bacterial infections and is most often seen in children, but it can occur at any age. Pediatric patients typically present with either acute otitis media, which is an infection of the middle ear most commonly caused by Moraxella catarrhalis, Streptococcus pneumoniae, or Haemophilus influenzae; or acute otitis externa, which is an infection of the outer ear canal that is usually caused by Pseudomonas aeruginosa or Staphylococcus aureus.\n\nHistorical findings associated with otitis media include increased fussiness, appetite changes, trouble sleeping, as well as tugging, rubbing or holding the affected ear in non-verbal patients. Verbal patients will report new onset ear pain (otalgia) with or without ear drainage, fever, as well as preceding symptoms of an upper respiratory tract infection (e.g. rhinorrhea, congestion, cough). Physical examination findings specific to this diagnosis include an erythematous, bulging tympanic membrane with impaired mobility. Purulent drainage may occur if the tympanic membrane has ruptured.\n\nIn contrast, historical findings associated with otitis externa include new onset ear pain with a sense of “fullness” and decreased hearing, with or without otorrhea. Patients will often report a history of recent swimming, or manipulation of the ear canal (e.g. use of Q-tips or instrumentation). Physical examination will reveal pain with manipulation of the pinna, which is not typically observed in patients with otitis media. In addition, patients typically have edema, erythema, otorrhea, and associated debris from the ear canal."
+},
+{
+  "text": "A 2-year-old boy with Down syndrome is brought to the clinic for a well child visit. His parents report frequent diarrhea and bloating for one month. Symptoms worsen when the patient eats white bread and wheat products. He has no history of choking, problems sleeping, constipation, neck pain, or neurological symptoms. He has no significant past medical history. Growth charts show weight dropped from 25th percentile to 10th percentile since the last visit. Height is at the 20th percentile and head circumference is at the 25th percentile. Temperature is 37°C (98.6°F), pulse is 110/min, respirations are 25/min, blood pressure is 96/53 mmHg, and oxygen saturation is 99% on room air. On physical exam, the abdomen is soft, slightly distended, and non-tender. Cardiopulmonary and neurological examinations are unremarkable. There is a vesicular rash with excoriations on the back and the buttocks. Which of the following tests should be performed next to confirm the diagnosis?",
+  "options": [
+    { "label": "A", "text": "Complete blood count (CBC)" },
+    { "label": "B", "text": "Echocardiogram" },
+    { "label": "C", "text": "Swallow study" },
+    { "label": "D", "text": "Thyroid panel" },
+    { "label": "E", "text": "Tissue transglutaminase immunoglobulin A (TTG IgA)" }
+  ],
+  "correct": "E",
+  "explanation": "Major takeaway\nChildren with Down syndrome are at increased risk for autoimmune diseases such as celiac disease. If chronic diarrhea, poor growth, and extraintestinal manifestations of celiac disease are found, tissue transglutaminase immunoglobulin A (TTG IgA) should be obtained. If positive, then endoscopy can be performed to confirm the diagnosis of celiac disease.\n\nMain explanation\nThis 2-year-old boy with Down syndrome presents with new onset diarrhea and bloating after eating wheat and poor growth. His physical examination is significant for abdominal distention and dermatitis herpetiformis. The most likely diagnosis is celiac disease. Patients with Down syndrome are at increased risk for celiac disease and tissue transglutaminase immunoglobulin A (TTG IgA) can be used to detect celiac disease.\n\nPatients with Down syndrome are at increased risk for autoimmune diseases such as celiac disease, diabetes mellitus, and hypothyroidism. Celiac disease is an immune-mediated systemic disorder that results in inflammation and damage to the small intestine caused by gluten-containing food such as wheat, rye, and barley. Patients with celiac disease typically present with chronic diarrhea, growth faltering, and abdominal pain or bloating. Patients may also have extraintestinal manifestations such as dermatitis herpetiformis (itchy papulovesicular rash on buttocks, back, scalp and extremities).\n\nTo diagnose celiac disease, TTG IgA and quantitative IgA levels should be obtained. If the TTG IgA is positive, and the quantitative IgA is normal, the patient most likely has celiac disease. An endoscopy with biopsies can confirm the diagnosis."
+},
+{
+  "text": "A 4-year-old girl presents to her pediatrician’s office for a well-child examination. She has a history of meconium ileus at birth and has had chronic constipation in addition to recurrent sinus and pulmonary infections. Her mother has a niece and grandfather who both had chronic pulmonary conditions diagnosed when they were young children. The patient is at the 28th percentile for height and the 6th percentile for weight. Temperature is 37.4°C (99 F), pulse is 102/min, respirations are 26/min, blood pressure is 104/68 mmHg, and oxygen saturation is 97%. On physical examination, she appears thin and in no acute distress. Nasal polyps are visualized. Tympanic membranes are within normal limits bilaterally. Pulmonary exam reveals diffuse rhonchi without increased work of breathing. Heart rate is regular with no murmur appreciated. Which of the following additional findings would be expected given the most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Situs inversus" },
+    { "label": "B", "text": "Absent thymus" },
+    { "label": "C", "text": "Bulky, foul-smelling stools" },
+    { "label": "D", "text": "Sweat chloride < 30 mmol/L" },
+    { "label": "E", "text": "Glomerulonephritis" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\nCystic fibrosis and pulmonary ciliary dyskinesia are associated with recurrent respiratory and sinus infections that present at a young age, and infertility. Patients with cystic fibrosis also may exhibit findings associated with pancreatic insufficiency.\n\nMain explanation\nThis patient has a history of meconium ileus, chronic constipation, and recurrent sinus and pulmonary infections. On physical examination nasal polyps and rhonchi are present. These findings along with a family history of pulmonary disease make cystic fibrosis the most likely diagnosis. Cystic fibrosis (CF) can also cause pancreatic insufficiency which can lead to bulky, foul-smelling stools (steatorrhea).\n\nCystic fibrosis is caused by a mutation in the CF transmembrane conductance regulator (CFTR) gene resulting in a defect in chloride channels affecting organs with secretory functions like the lungs and pancreas. Due to the defect in chloride channels, abnormally viscous secretions that are thick and sticky are produced. This primarily impairs airway clearance and increases the risk of respiratory infection. It often results in pancreatic insufficiency leading to steatorrhea characterized by frequent, bulky, foul-smelling stools that may be oily, and failure to thrive or poor weight gain due to malabsorption of fat and protein. Patients may also experience acute or recurrent pancreatitis and focal biliary cirrhosis. Newborns with CF may present with meconium ileus or prolonged jaundice. On physical examination, patients with CF can have evidence of nasal polyps, digital clubbing, rales or rhonchi on lung exam, and hepatomegaly. Patients may also have rectal prolapse. Chest x-ray may show bronchiectasis.\n\nPatients with primary ciliary dyskinesia (PCD) also present with recurrent sinopulmonary infections. These patients are also prone to recurrent otitis media with or without hearing loss and may have situs inversus. PCD is associated with abnormal ciliary movement. Newborns with primary ciliary dyskinesia often have mild respiratory distress and may require supplemental oxygen for a few hours to days after birth. On physical examination, patients can have nasal polyps, digital clubbing, and middle ear effusions. Chest x-ray can show bronchiectasis.\n\nBoth CF and PCD are associated with infertility. Infertility in males with CF is due to the congenital absence of the vas deferens. Women with CF can develop secondary amenorrhea and hyperviscous reproductive tract mucus which impairs fertility. Patients with PCD can develop infertility due to the immotility of sperm and abnormal ciliary motion within the fallopian tubes and endometrium."
+},
+{
+  "text": "A 15-year-old boy is brought to the office by his parents for evaluation of fever, cough, and weakness for the past month. Past medical history is unremarkable. Temperature is 36.6°C (97.9°F), pulse is 90/min, respirations are 18/min, and blood pressure is 100/65 mmHg. Physical examination shows diffuse lymph node enlargement, mild hepatomegaly, and scattered petechiae. Further evaluation confirms the diagnosis of diffuse large B-cell lymphoma. The patient is started on the appropriate chemotherapeutic agent that causes lysis of neoplastic cells. He also receives therapy with rasburicase. Rasbricase will most likely reduce the risk of which of the following in this patient?",
+  "options": [
+    { "label": "A", "text": "Malignancy-related anorexia" },
+    { "label": "B", "text": "Malignancy-related hypercalcemia" },
+    { "label": "C", "text": "Tumor-lysis induced renal failure" },
+    { "label": "D", "text": "Chemotherapy-induced nausea" },
+    { "label": "E", "text": "Opioid-induced constipation" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\nRecombinant urate oxidases such as pegloticase and rasburicase oxidize uric acid to allantoin, which is more soluble and easier to excrete. Pegloticase can treat chronic refractory gout whereas rasburicase can prevent and treat tumor lysis syndrome. Side effects include anaphylaxis, methemoglobinemia, and hemolysis.  \nMain explanation\nRecombinant urate oxidases include pegloticase and rasburicase. These medications help oxidize uric acid to allantoin, which is a more soluble and easier to excrete molecule.  \n\nIn terms of medicine-specific indications, pegloticase is used to treat chronic refractory gout. Rasburicase is used for the prevention and treatment of tumor lysis syndrome in patients with lymphoma or leukemia who are receiving anticancer therapy. Common side effects include anaphylaxis, methemoglobinemia, and hemolysis in individuals with glucose-6-phosphate dehydrogenase (G6PD) deficiency."
+},
+{
+  "text": "An 8-year-old boy is brought by his parent to the pediatrician for evaluation of poor school performance and disruptive behavior over the past year. His parent reports that he frequently fidgets, interrupts others, and blurts out answers during class. He has difficulty completing homework and chores, often leaving tasks unfinished. His classmates have teased him about these behaviors. He does not have any recent emotional or physical stressors, and he is otherwise healthy. The patient has no specific complaints and simply says he “wants to play video games.” Vital signs are within normal limits, and the physical examination is unremarkable. Which of the following historical findings is most strongly associated with this patient’s likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Brother with a history of depression" },
+    { "label": "B", "text": "History of prematurity" },
+    { "label": "C", "text": "History of recurrent streptococcal pharyngitis" },
+    { "label": "D", "text": "Mother with a history of smoking cigarettes" },
+    { "label": "E", "text": "Biological father with history of alcohol-use disorder" }
+  ],
+  "correct": "B",
+  "explanation": "Major takeaway\nHistorical factors for a diagnosis of attention deficit hyperactivity disorder (ADHD) typically include a history of hyperactivity, impulsivity, and inattention, along with associated risk factors such as prematurity.\n\nMain explanation\nThis 8-year-old patient presents with a one-year history of hyperactivity/impulsivity and inattention, which strongly supports a diagnosis of attention deficit hyperactivity disorder (ADHD). A known risk factor for developing this condition is a history of prematurity.\n\nADHD is a common neurodevelopmental disorder characterized by a history of excessive levels of inattention, hyperactivity, and impulsivity. As a result, children with ADHD often experience impaired social, emotional, and academic functioning, and many exhibit poor impulse control. The patient’s history may reveal several risk factors including prematurity, low birth weight, adverse childhood experiences, a family history of ADHD, or syndromes such as fetal alcohol syndrome (FAS) or fragile X syndrome. Physical examination is typically unremarkable."
+},
+{
+  "text": "A 5-year-old boy with a past medical history of asthma presents to the emergency department for evaluation of shortness of breath. He was playing at a party and started wheezing. The family recently moved to town and has not refilled his asthma medication. The patient has not had fever, congestion, or rhinorrhea. He has no surgical history, and family history is positive for asthma. Temperature is 37° C (98.6° F), pulse is 120/min, respirations are 45/min, blood pressure is 92/53 mm Hg, and oxygen saturation is 80% on room air. Subcostal retractions are noted with diffuse expiratory wheezing. Heart sounds are normal. Chest X-ray shows hyperinflation. Which of the following diagnostic studies should be obtained next?",
+  "options": [
+    { "label": "A", "text": "Blood culture" },
+    { "label": "B", "text": "Pulmonary function test" },
+    { "label": "C", "text": "Arterial blood gas" },
+    { "label": "D", "text": "Sweat chloride test" },
+    { "label": "E", "text": "Bronchoscopy" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\nIn a patient with respiratory failure, arterial blood gas analysis is the initial diagnostic test of choice to assess acid-base balance, oxygenation, and carbon dioxide retention to guide management.\n\nMain explanation\nThis child presents with signs of acute respiratory distress secondary to acute asthma exacerbation. Obtaining an arterial blood gas analysis is the most appropriate next step to assess the severity of respiratory compromise and degree of compensation which can guide further management.\n\nRespiratory failure can be classified as hypoxemic respiratory failure, (e.g. lung failure), and hypercapnic respiratory failure, (respiratory pump failure). In a patient with suspected respiratory failure, an arterial blood gas analysis (ABG) is the initial diagnostic test of choice to assess acid-base balance, oxygenation, and carbon dioxide retention.\n\nIf the ABG reveals an arterial partial pressure of oxygen (PaO2) < 60 mmHg, the patient has hypoxemic respiratory failure. This often results from a mismatch in alveolar ventilation and perfusion (V/Q mismatch) such as in patients with asthma, interstitial edema or fibrosis, atelectasis, and pneumonia. If the ABG reveals an arterial partial pressure of carbon dioxide (PaCO2) > 50 mmHg, this indicates hypercapnic respiratory failure. This condition is characterized by inadequate ventilation and carbon dioxide retention. Hypoxemic and hypercapnic respiratory failure often occur together as many disease processes induce physiologic changes that impair both oxygenation and ventilation. In these cases, the ABG will demonstrate both decreased PaO2 and increased PaCO2."
+},
+{
+  "text": "A 15-year-old boy presents to the clinic due to concerns regarding the lack of facial hair and pubic hair. There is no history of seizures, headaches, or exposure to radiation. Family history and birth history are unremarkable. Temperature is 37°C (98.6°F), pulse is 80/min, respirations are 17/min, and blood pressure is 115/75 mm Hg. On physical examination, the patient has no facial hair, no pubic hair, and small testes. Cardiopulmonary and abdominal exams are normal. Luteinizing hormones, follicle stimulating hormones and testosterone levels are low. Genetic testing is positive for ANOS1 gene mutation. Which of the following additional findings would be expected?",
+  "options": [
+    { "label": "A", "text": "Visual field defects" },
+    { "label": "B", "text": "Anosmia" },
+    { "label": "C", "text": "Excessive exercising" },
+    { "label": "D", "text": "Gynecomastia" },
+    { "label": "E", "text": "Elevated TSH and low free T4" }
+  ],
+  "correct": "B",
+  "explanation": "Major takeaway\nPatients who present with delayed puberty and are found to have hypogonadotropic hypogonadism and anosmia should have genetic testing for Kallman syndrome.\n\nMain explanation\nThis 15-year-old boy who presents with delayed puberty is found to have hypogonadotropic hypogonadism and a positive ANOS1 gene mutation confirming the diagnosis of Kallman syndrome. **Anosmia** (i.e., impaired or absent sense of smell) is a characteristic clinical feature of Kallman syndrome.\n\nKallman syndrome is an inherited disorder with a genetic mutation of anosmin-1 (ANOS1), formerly called the KAL1 gene. Patients with Kallman syndrome can have a combination of delayed puberty, anosmia, and midline defects, such as a cleft lip or palate and gonadotropin deficiency. Patients may also have color blindness, atrial septal defects, and renal structural anomalies. Some patients present with bimanual synkinesia, also known as mirror movement, where voluntary movement of one hand results in involuntary movement of the other hand.\n\nPhysical examination may show lack of hair and small testes. Patients will have low levels of luteinizing hormone, follicle-stimulating hormone, and testosterone, indicating **congenital hypogonadotropic hypogonadism**. Left-hand X-ray should be obtained and may reveal delayed bone age. A scratch-and-sniff smell test should be ordered to test for anosmia when Kallman syndrome is suspected. Genetic testing can confirm the diagnosis with presence of ANOS1 (KAL1) gene mutation."
+},
+{
+  "text": "A 6-year-old girl presents to the pediatrician for evaluation of recurrent sinusitis and pulmonary infections. She has been frequently sick and missing school, and the parents are concerned. She has a history of chronic constipation, and her parents report she has large stools that float in the toilet. She is at the 14th percentile for height and the 4th percentile for weight. Temperature is 37.1°C (98.8 F), pulse is 106/min, respirations are 24/min, blood pressure is 110/72 mmHg, and oxygen saturation is 99%. On physical examination, the patient appears thin but is otherwise interactive and playful. Pulmonary exam reveals mild diffuse rhonchi without increased work of breathing. Heart rate is regular with no murmur appreciated. The patient is referred for a sweat test which reveals a sweat chloride level of 68 mmol/L. Which of the following should be ordered next to confirm the diagnosis?",
+  "options": [
+    { "label": "A", "text": "Nasal nitric oxide (NO) level" },
+    { "label": "B", "text": "Biopsy of nasal mucosa" },
+    { "label": "C", "text": "Repeat sweat chloride test" },
+    { "label": "D", "text": "Genetic testing" },
+    { "label": "E", "text": "Chest computed tomography (CT)" }
+  ],
+  "correct": "C",
+  "explanation": "Major takeaway\n**Cystic fibrosis** is diagnosed via **sweat chloride testing**. Inconclusive/intermediate sweat tests require **genetic testing** for diagnosis. Nasal nitric oxide testing can rule out **primary ciliary dyskinesia**, but the diagnosis is confirmed with electron/video microscopy or genetic testing.\n\nMain explanation\nThis patient presents with a history of recurrent sinusitis, pulmonary infections, constipation, and **steatorrhea**. Initial work-up reveals a **sweat chloride level of 68 mmol/L**. This abnormal test should be confirmed with a **repeat sweat chloride test**. **Two positive sweat chloride results** confirm a diagnosis of **cystic fibrosis (CF)**.\n\nWhen cystic fibrosis is suspected, the **first step** is to obtain a sweat chloride test:\n- A level **<30 mmol/L** is **negative**, suggesting alternative diagnoses.\n- A level of **30–59 mmol/L** is **intermediate**, requiring **repeat testing and genetic testing**.\n- A level **≥60 mmol/L** is **positive**. Two such results are needed to confirm the diagnosis.\n\n**Primary ciliary dyskinesia (PCD)** presents similarly to CF. If PCD is suspected, **nasal nitric oxide (NO)** testing is an initial screen, followed by confirmatory **electron/video microscopy** or **genetic testing** for PCD-specific gene mutations."
+}
+
+      
+    ];
+
+    // Populate left sidebar with question numbers
+    const sidebarList = document.getElementById('sidebar-list');
+    questions.forEach((_, i) => {
+      const li = document.createElement('li');
+      const a  = document.createElement('a');
+      a.href        = '#';
+      a.textContent = i + 1;
+      a.addEventListener('click', () => {
+        current = i;
+        renderQ(i);
+        sidebar.classList.remove('open');
+      });
+      li.appendChild(a);
+      sidebarList.appendChild(li);
+    });
+
+    let startTime = Date.now(), current = 0, results = [];
+    const qText      = document.getElementById('question-text');
+    const optsList   = document.getElementById('options-list');
+    const explDiv    = document.getElementById('explanation');
+    const sumDiv     = document.getElementById('results-summary');
+    const counterDiv = document.getElementById('question-counter');
+    const prevBtn    = document.getElementById('prev-btn');
+    const nextBtn    = document.getElementById('next-btn');
+    const submitBtn  = document.getElementById('submit-btn');
+    const endBtn     = document.getElementById('end-btn');
+
+    function renderQ(i) {
+      const q = questions[i];
+      counterDiv.textContent = `Question ${i+1} of ${questions.length}`;
+      qText.innerHTML        = q.text.replace(/\n/g, '<br>');
+      optsList.innerHTML     = '';
+      q.options.forEach(o => {
+        const lbl       = document.createElement('label');
+        lbl.className   = 'option-label';
+        lbl.innerHTML   = `<input type="radio" name="answer" value="${o.label}"> ${o.label}. ${o.text}`;
+        optsList.appendChild(lbl);
+      });
+      explDiv.innerHTML      = '';       // clear explanation area
+      sumDiv.style.display   = 'none';
+      prevBtn.disabled       = i === 0;
+      nextBtn.disabled       = true;
+      submitBtn.disabled     = false;
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="answer"]:checked'); 
+      if (!sel) return;
+      const val  = sel.value;
+      const corr = questions[current].correct;
+      const ok   = val === corr;
+      results[current] = ok;
+
+      document.querySelectorAll('.option-label').forEach(lbl => {
+        const inp = lbl.querySelector('input');
+        lbl.classList.remove('correct-answer','wrong-answer');
+        if (inp.value === corr) lbl.classList.add('correct-answer');
+        if (inp.checked && !ok) lbl.classList.add('wrong-answer');
+        inp.disabled = true;
+      });
+
+      // Convert **bold** to <strong> and preserve line breaks
+      const rawExplanation = questions[current].explanation;
+      const htmlified = convertMarkdownBold(rawExplanation).replace(/\n/g, '<br>');
+      explDiv.innerHTML = htmlified;
+
+      submitBtn.disabled = true;
+      nextBtn.disabled   = false;
+    });
+
+    prevBtn.addEventListener('click', () => {
+      if (current > 0) {
+        current--;
+        renderQ(current);
+      }
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (current < questions.length - 1) {
+        current++;
+        renderQ(current);
+      }
+    });
+
+    endBtn.addEventListener('click', () => {
+      const score    = results.filter(r => r).length;
+      const total    = questions.length;
+      const duration = Math.floor((Date.now() - startTime) / 1000);
+      sumDiv.style.display = 'block';
+      sumDiv.innerHTML = `<strong>Score: ${score}/${total} (${Math.round(score/total*100)}%)</strong><br>` +
+                          `Time: ${Math.floor(duration/60)}m ${duration%60}s<br>` +
+                          `<button onclick="location.href='index.html'">Back to Home</button>`;
+    });
+
+    // Render the first question on load
+    renderQ(0);
+  </script>
+</body>
+</html>

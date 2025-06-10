@@ -3,10 +3,42 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gastroenterology Quiz</title>
+  <title>Paediatrics Final</title>
+  
   
   <!-- Embedded CSS -->
   <style>
+
+    /* Modal styles */
+#welcome-modal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+}
+#welcome-modal .modal-content {
+  background: white;
+  padding: 2rem;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 90%;
+  text-align: center;
+}
+#welcome-modal button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1.2rem;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+
     :root {
       --primary-color: #2a9d8f;
       --primary-hover: #21867a;
@@ -110,10 +142,22 @@
   </style>
 </head>
 <body>
+<!-- Welcome Modal -->
+<div id="welcome-modal">
+  <div class="modal-content">
+    <h2>Welcome to the Paediatrics Final for NVU Quiz</h2>
+    <p id="custom-message">I added prob 90% of the diseases, so worry not my children. You can choose to randomize the questions below.</p>
+    <label>
+      <input type="checkbox" id="randomize-checkbox"> Randomize Questions
+    </label>
+    <br>
+    <button id="start-btn">Start Quiz</button>
+  </div>
+</div>
 
   <nav class="top-nav">
     <div class="menu-icon">&#9776;</div>
-    <div id="question-counter">Question 1 of 6</div>
+    <div id="question-counter">Question 1 of 1</div>
     <div class="nav-actions">
       <button id="prev-btn" disabled>&lt; Previous</button>
       <button id="next-btn" disabled>Next &gt;</button>
@@ -1475,7 +1519,25 @@
     });
 
     // Render the first question on load
-    renderQ(0);
+    // Modal functionality
+const modal = document.getElementById('welcome-modal');
+const startBtn = document.getElementById('start-btn');
+const randomizeCheckbox = document.getElementById('randomize-checkbox');
+
+// Shuffle helper
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+startBtn.addEventListener('click', () => {
+  if (randomizeCheckbox.checked) shuffle(questions);
+  modal.style.display = 'none';
+  renderQ(0);
+});
+
   </script>
 </body>
 </html>
