@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Oncology Plab</title>
+  
+  <!-- Embedded CSS -->
+  <style>
+    /* Modal styles */
+    #welcome-modal {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 9999;
+    }
+    #welcome-modal .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+    }
+    #welcome-modal button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.5rem 1.2rem;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+
+    :root {
+      --primary-color: #452a9d;
+      --primary-hover: #21867a;
+      --bg-color: #f4f4f4;
+      --card-bg: #ffffff;
+      --text-color: #333333;
+      --sidebar-bg: #264653;
+      --sidebar-text: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Roboto', sans-serif; background-color: var(--bg-color); color: var(--text-color); }
+    .top-nav {
+      position: relative;
+      z-index: 1001;
+      display: flex; justify-content: space-between; align-items: center;
+      background-color: var(--primary-color); color: #ffffff; padding: 0.75rem 1rem;
+    }
+    .top-nav .nav-actions button { background: none; border: none; color: #ffffff; margin-left: 0.5rem; cursor: pointer; }
+    .top-nav .nav-actions #highlight-btn.active { background-color: var(--primary-hover); }
+
+    .highlighted-text { background-color: yellow; }
+    .menu-icon { cursor: pointer; font-size: 1.5rem; }
+
+    .sidebar {
+      position: fixed;
+      left: -75px;
+      width: 75px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: left 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .sidebar.open { left: 0; }
+    .sidebar ul { list-style: none; padding: 0; margin: 0; }
+    .sidebar li { margin-bottom: 0.5rem; }
+    .sidebar a { color: var(--sidebar-text); text-decoration: none; display: block; padding: 0.5rem; border-radius: 0.25rem; }
+    .sidebar a:hover { background: rgba(255,255,255,0.1); }
+
+    .lab-sidebar {
+      position: fixed;
+      right: -600px;
+      width: 600px;
+      background-color: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      padding: 1rem;
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .lab-sidebar.open { right: 0; }
+
+    .question-container {
+      background-color: var(--card-bg);
+      border: 2px solid var(--primary-color);
+      border-radius: 0.5rem;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 1.5rem;
+    }
+    .options-list { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    .option-label { padding: 0.5rem; margin-bottom: 0.5rem; border-radius: 4px; border: 1px solid transparent; display: flex; align-items: center; }
+    .options-list input { margin-right: 0.5rem; accent-color: var(--primary-color); }
+    .correct-answer { background-color: #d4edda; border-color: #28a745; }
+    .wrong-answer { background-color: #f8d7da; border-color: #dc3545; }
+    .submit-btn, #prev-btn, #next-btn, #end-btn {
+      margin-top: 0.5rem;
+      background-color: var(--primary-color);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: pointer;
+    }
+    .submit-btn:disabled, #prev-btn:disabled, #next-btn:disabled { opacity: 0.6; cursor: default; }
+    .submit-btn:hover:not(:disabled), #prev-btn:hover:not(:disabled), #next-btn:hover:not(:disabled), #end-btn:hover:not(:disabled) { background-color: var(--primary-hover); }
+
+    .explanation {
+      margin-top: 1rem;
+      background-color: #e8f5e9;
+      border-left: 4px solid var(--primary-color);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      white-space: pre-wrap;
+    }
+    .results-summary {
+      margin-top: 1rem;
+      background-color: #fff3cd;
+      border-left: 4px solid #ffeeba;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Welcome Modal -->
+  <div id="welcome-modal">
+    <div class="modal-content">
+      <h2>Welcome to the Question Bank for Oncology</h2>
+      <p id="custom-message">There are not many questions for this subject</p>
+      <label>
+        <input type="checkbox" id="randomize-checkbox"> Randomize Questions
+      </label>
+      <br>
+      <button id="start-btn">Start Quiz</button>
+    </div>
+  </div>
+
+  <nav class="top-nav">
+    <div class="menu-icon">&#9776;</div>
+    <div id="question-counter">Question 1 of 1</div>
+    <div class="nav-actions">
+      <button id="prev-btn" disabled>&lt; Previous</button>
+      <button id="next-btn" disabled>Next &gt;</button>
+      <button id="fullscreen-btn">Full Screen</button>
+      <button id="labvals-btn">Lab Values</button>
+      <button id="highlight-btn">Highlight</button>
+      <button id="end-btn">End Exam</button>
+    </div>
+  </nav>
+
+  <!-- Left Sidebar -->
+  <div id="sidebar" class="sidebar">
+    <ul id="sidebar-list"></ul>
+  </div>
+  <!-- Lab Values Sidebar -->
+  <div id="lab-sidebar" class="lab-sidebar">
+    <img src="images/Blood.jpg" alt="Blood Values" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Blood 2.jpg" alt="Blood Plasma Serum" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Hematological.jpg" alt="Hematologic Values" style="width:100%; margin-bottom:1rem;">
+    <img src="images/Sweat, Urine, BMI.jpg" alt="Sweat, Urine, BMI" style="width:100%; margin-bottom:1rem;">
+    <img src="images/CSF.jpg" alt="Cerebrospinal Fluid" style="width:100%;">
+  </div>
+
+  <main>
+    <section class="question-container">
+      <div id="question-text"></div>
+      <form id="options-list" class="options-list"></form>
+      <button id="submit-btn" class="submit-btn">Submit Answer</button>
+      <div id="explanation" class="explanation"></div>
+      <div id="results-summary" class="results-summary" style="display:none;"></div>
+    </section>
+  </main>
+
+  <!-- Embedded JS -->
+  <script>
+    // Sidebar toggle & positioning
+    const menuIcon = document.querySelector('.menu-icon');
+    const sidebar = document.getElementById('sidebar');
+    const labSidebar = document.getElementById('lab-sidebar');
+    const nav = document.querySelector('.top-nav');
+    const navHeight = nav.offsetHeight;
+    [sidebar, labSidebar].forEach(sb => {
+      sb.style.top = navHeight + 'px';
+      sb.style.height = `calc(100% - ${navHeight}px)`;
+    });
+    menuIcon.addEventListener('click', () => sidebar.classList.toggle('open'));
+    document.getElementById('labvals-btn')
+      .addEventListener('click', () => labSidebar.classList.toggle('open'));
+
+    // Highlight mode toggle + handler
+    const highlightBtn = document.getElementById('highlight-btn');
+    let highlightMode = false;
+    highlightBtn.addEventListener('click', () => {
+      highlightMode = !highlightMode;
+      highlightBtn.classList.toggle('active', highlightMode);
+    });
+    document.addEventListener('mouseup', () => {
+      if (!highlightMode) return;
+      const selection = window.getSelection();
+      if (selection.rangeCount === 0 || selection.isCollapsed) return;
+      const range = selection.getRangeAt(0);
+      try {
+        const span = document.createElement('span');
+        span.className = 'highlighted-text';
+        range.surroundContents(span);
+      } catch (e) {
+        document.execCommand('hiliteColor', false, 'yellow');
+      }
+      selection.removeAllRanges();
+    });
+
+    // Markdown bold to <strong>
+    function convertMarkdownBold(text) {
+      return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    }
+
+    // Quiz data and logic
+    const questions = [
+      {
+        "id": "ON-001",
+        "text": "A 41-year-old man presents to his GP with a three-week history of a painless, mobile 2 × 2 cm lump in the right submandibular region. He is otherwise well, denies tobacco or alcohol use, and reports no systemic symptoms. Vital signs are normal and there are no overlying skin changes. What is the most appropriate initial investigation?",
+        "options": [
+          { "label": "A", "text": "Fine-needle aspiration cytology (FNAC)" },
+          { "label": "B", "text": "CT scan of the neck" },
+          { "label": "C", "text": "MRI of the head and neck" },
+          { "label": "D", "text": "X-ray of the neck" },
+          { "label": "E", "text": "Sialography" }
+        ],
+        "correct": "A",
+        "correct": "A",
+  "explanation": "**Correct Answer: A. Fine-needle aspiration cytology (FNAC)**\n\n**Why it's correct:**\nThe first priority in a new neck mass—particularly in patients over 40—is to distinguish benign from malignant pathology. Although high-resolution ultrasound best characterizes size, shape, consistency, and vascularity, when ultrasound-guided sampling is not explicitly listed, FNAC offers a minimally invasive, rapid way to obtain cytology using a fine gauge needle under imaging guidance.\n\n---\n\n**Why the other options are incorrect:**\n\n**B. CT scan of the neck** – Although CT is valuable after cytological diagnosis to assess tumour bulk, local invasion, and nodal spread, it is not the first test for obtaining tissue.\n\n**C. MRI of the head and neck** – MRI provides superior soft-tissue detail for surgical planning but is not indicated before confirming pathology via cytology.\n\n**D. X-ray of the neck** – Plain films lack sensitivity for soft-tissue masses and offer little diagnostic value in this setting.\n\n**E. Sialography** – This technique outlines the salivary ductal system to detect stones or ductal inflammation. In an asymptomatic patient with a submandibular lump, duct obstruction or sialadenitis is unlikely, so sialography is unnecessary.\n\n---\n\n**Diagnostic Approach:**\n\n- **Step 1: Ultrasound** to characterize the lesion’s size, borders, consistency, vascularity, and relation to surrounding structures.\n- **Step 2: Ultrasound-guided FNAC** for cytological analysis. Under local anesthesia, a 22–25 gauge needle is inserted into the mass multiple times to aspirate cellular material, minimizing patient discomfort and reducing bleeding risk.\n- **Step 3: Cross-sectional imaging (CT/MRI)** only after FNAC confirms pathology, to evaluate tumour extent, local invasion, and regional lymphadenopathy.\n\n---\n\n**Additional Considerations:**\n\nFNAC has a sensitivity of approximately 80–90% and specificity over 90% for detecting malignancy in head and neck masses. If cytology is nondiagnostic or suggests lymphoma, core‐needle biopsy or excisional biopsy may be required for immunohistochemical studies and flow cytometry. Complications are rare but include hematoma, infection, and very small risk of tumor seeding along the needle tract.\n\nPatient preparation is minimal: coagulation status should be checked in anticoagulated individuals, and the procedure is performed in the outpatient setting. Results are typically available within 48–72 hours, allowing prompt planning for further imaging or referral to ENT/head-and-neck surgery.\n\nFollow-up of indeterminate or suspicious FNAC findings involves multidisciplinary discussion. Correlation with clinical examination, imaging, and, if needed, repeat biopsy ensures accurate diagnosis. Once malignancy is confirmed, CT or MRI guides staging and surgical planning, and PET–CT may be added for distant metastasis evaluation.\n\n---\n\n**Summary:**\nIn adult patients with a new, painless neck mass, after initial ultrasound assessment, ultrasound-guided FNAC is the preferred first investigation to establish a tissue diagnosis with minimal morbidity. Subsequent CT or MRI is reserved for preoperative staging once cytology results are known.\n\n---\n\n",
+        "image": "images/oncologypics/FNAC.png"
+      },
+      {
+  "id": "ON-002",
+  "text": "A 59-year-old man presents to his GP with extreme fatigue over the past three months, accompanied by increased thirst, polyuria, and significant unintentional weight loss. His only regular medication is a multivitamin taken four times daily. Laboratory results reveal:\n\n• Sodium 139 mmol/L (135–145)\n• Potassium 3.8 mmol/L (3.5–5)\n• Creatinine 89 µmol/L (70–150)\n• eGFR > 90 mL/min\n• TSH 5.0 mU/L (0.5–5.7)\n• Corrected calcium 3.0 mmol/L (2.1–2.6)\n• ALT 30 U/L (5–35)\n• AST 32 U/L (5–35)\n• ALP 210 U/L (30–150)\n• GGT 58 U/L (8–60)\n• PTH 0.7 pmol/L (0.8–8.5)\n\nWhat is the single most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Vitamin D excess" },
+    { "label": "B", "text": "Multiple myeloma" },
+    { "label": "C", "text": "Sarcoidosis" },
+    { "label": "D", "text": "Metastatic bone cancer" },
+    { "label": "E", "text": "Primary hyperparathyroidism" }
+  ],
+  "correct": "D",
+  "explanation": "**Correct Answer: D. Metastatic bone cancer**\n\n**Why it's correct:**\nThis patient’s marked hypercalcemia with suppressed PTH and elevated alkaline phosphatase points to a PTH-independent cause of calcium elevation with increased bone turnover. Metastatic lesions—particularly from breast, prostate, or lung primaries—often produce local osteolysis and release calcium and ALP into the circulation. Tumour infiltration and bone destruction drive the high ALP, while PTH is appropriately suppressed in response to the elevated calcium.\n\n**Why the other options are incorrect:**\n\n**A. Vitamin D excess** – Excess vitamin D raises both calcium and phosphate and typically causes a **high or normal PTH** picture is suppressed, but ALP remains normal unless there is coexisting bone disease. Our patient’s raised ALP reflects bone destruction rather than vitamin D–mediated increased gut absorption alone.\n\n**B. Multiple myeloma** – While myeloma can cause hypercalcemia, it usually presents with **normal or slightly elevated ALP** (unless fractures are present) and accompanied by anemia, renal dysfunction, or monoclonal protein on serum electrophoresis, none of which are seen here.\n\n**C. Sarcoidosis** – Granulomatous disease can raise calcium via increased 1α-hydroxylase activity in macrophages, but ALP is generally normal and PTH is low. There would also be other systemic signs such as pulmonary symptoms, lymphadenopathy, or uveitis.\n\n**E. Primary hyperparathyroidism** – Characterized by elevated PTH with hypercalcemia; here PTH is suppressed, excluding a parathyroid-driven process.\n\n**Further evaluation and management:**\nOnce PTH-independent hypercalcemia is identified, measure PTHrP and perform targeted imaging (X-ray, CT or bone scan) to localize potential malignancy. Serum protein electrophoresis and light-chain assays help exclude myeloma if clinical suspicion remains. Management focuses on volume repletion, bisphosphonates or denosumab to inhibit bone resorption, and treating the underlying malignancy.\n\n**Key teaching point:**\nIn hypercalcemia with **low PTH**, look for PTHrP-secreting tumours or osteolytic metastases. Elevated ALP suggests active bone turnover, favoring metastatic bone disease over vitamin D excess or granulomatous causes."
+},
+{
+  "id": "ON-003",
+  "text": "A 48-year-old woman presents to the Emergency Department with a 48-hour history of profuse diarrhea and generalized abdominal discomfort. She completed her most recent cycle of chemotherapy for small cell lung cancer 12 days ago and was treated with antibiotics for a lower urinary tract infection three days ago. On examination, she is febrile at 39.5 °C, heart rate 95 bpm, blood pressure 110/70 mmHg, respiratory rate 25/min, and oxygen saturation 97% on room air. Blood tests have been drawn but results are not yet available. What is the single most appropriate next action?",
+  "options": [
+    { "label": "A", "text": "Abdominal X-ray" },
+    { "label": "B", "text": "Wait for the results of the full blood count to determine further management" },
+    { "label": "C", "text": "Stool culture for Clostridioides difficile" },
+    { "label": "D", "text": "Start broad-spectrum IV antibiotics" },
+    { "label": "E", "text": "Administer granulocyte colony-stimulating factor" }
+  ],
+  "correct": "D",
+  "explanation": "**Correct Answer: D. Start broad-spectrum IV antibiotics**\n\n**Why it's correct:**\nIn a chemotherapy patient roughly two weeks post-treatment, diarrhea and fever strongly suggest neutropenic enterocolitis or early neutropenic sepsis—even before the absolute neutrophil count is known. Delaying treatment while awaiting lab results can be fatal. Empiric, broad-spectrum IV antibiotics that cover Gram-negative rods and anaerobes (e.g., piperacillin-tazobactam) should be initiated immediately to reduce morbidity and mortality.\n\n---\n\n**Why the other options are incorrect:**\n\n**A. Abdominal X-ray** – Reserved for suspected complications such as bowel perforation or obstruction. The priority here is infection control, not imaging.\n\n**B. Wait for the results of the full blood count** – Neutropenic patients may not mount a typical leukocytosis. Management of febrile neutropenia must begin empirically.\n\n**C. Stool culture for Clostridioides difficile** – While C. difficile testing is reasonable, results take time and should not delay empiric therapy in a high-risk, febrile neutropenic host.\n\n**E. Administer granulocyte colony-stimulating factor** – G-CSF can help shorten the duration of neutropenia but is not first-line for acute febrile neutropenia and does nothing immediately to control infection.\n\n---\n\n**Further Diagnostic and Management Considerations:**\n\n1. **Blood and stool cultures** should be obtained prior to antibiotic administration but should not delay treatment.  \n2. **IV fluid resuscitation** and close monitoring of vital signs and organ function are essential.  \n3. **Add antifungal therapy** if fever persists beyond 4–7 days despite broad-spectrum antibiotics, or if imaging suggests fungal involvement.  \n4. **Consider CT abdomen** only if there is worsening pain, signs of perforation, or lack of response to antibiotics after 48 hours.\n\n---\n\n**Key Teaching Point:**\nAny febrile patient within 7–14 days post-chemotherapy presenting with systemic symptoms—regardless of initial blood counts—should be presumed neutropenic and treated emergently with broad-spectrum IV antibiotics to cover Pseudomonas and other opportunistic pathogens."
+},
+{
+  "id": "ON-004",
+  "text": "A 59-year-old man with a history of small cell lung cancer is followed by his oncology team. Over the past few weeks he has experienced persistent headaches, daily nausea, loss of appetite, and for the last two days has vomited several times per day. His most recent neuroimaging shows brain metastases with substantial surrounding vasogenic oedema. He is currently taking cyclizine for nausea. What is the single most appropriate medication to prescribe?",
+  "options": [
+    { "label": "A", "text": "Haloperidol" },
+    { "label": "B", "text": "Dexamethasone" },
+    { "label": "C", "text": "Hydrocortisone" },
+    { "label": "D", "text": "Metoclopramide" },
+    { "label": "E", "text": "Prednisolone" }
+  ],
+  "correct": "B",
+  "explanation": "**Correct Answer: B. Dexamethasone**\n\nDexamethasone is the glucocorticoid of choice for symptomatic cerebral oedema caused by brain metastases. Its high potency, long half-life, and minimal mineralocorticoid activity rapidly reduce vasogenic swelling, relieve raised intracranial pressure, and improve headache, nausea, and other neurological symptoms.\n\n**Why the other options are incorrect:**\n\n- **A. Haloperidol** – An antipsychotic with no role in reducing intracranial pressure or tumour-related oedema.\n- **C. Hydrocortisone** – A physiologic steroid preparation that lacks sufficient anti-inflammatory potency and has greater mineralocorticoid effects, making it suboptimal for cerebral oedema.\n- **D. Metoclopramide** – Although an antiemetic, it does not address the underlying intracranial hypertension and may worsen extrapyramidal side effects when used with steroids.\n- **E. Prednisolone** – While a systemic steroid, it is less potent and has more mineralocorticoid activity than dexamethasone, resulting in slower symptom relief and greater fluid retention.\n\n**Clinical Notes:**\n- Typical starting dose is 8 mg IV once, followed by 4 mg IV every 6 hours (or equivalent oral dosing) with gradual taper over 1–2 weeks as symptoms improve.\n- Monitor blood glucose, appetite, mood changes, and signs of infection during steroid therapy.\n\n**Key Point:**\nIn patients with symptomatic brain metastases and vasogenic oedema, prompt initiation of dexamethasone is essential to relieve raised intracranial pressure and improve quality of life."
+},
+{
+  "id": "ON-005",
+  "text": "A 51-year-old man with metastatic colorectal cancer diagnosed two years ago is admitted with three days of severe colicky abdominal pain and two days of constant vomiting of fecal material. He has marked abdominal distension and high-pitched bowel sounds on examination. His oncologist and he opted out of further chemotherapy two months ago, and his recent CT scan shows diffuse intra-abdominal disease with ascites. What is the most appropriate next management?",
+  "options": [
+    { "label": "A", "text": "Nasogastric tube" },
+    { "label": "B", "text": "Intravenous fluids" },
+    { "label": "C", "text": "Subcutaneous hyoscine butylbromide" },
+    { "label": "D", "text": "Oral cyclizine" },
+    { "label": "E", "text": "Palliative stoma" }
+  ],
+  "correct": "A",
+  "explanation": "**Correct Answer: A. Nasogastric tube**\n\nIn malignant bowel obstruction with intractable vomiting of fecal contents and marked distension, decompression via an indwelling nasogastric tube provides rapid symptomatic relief by evacuating secretions and gas, reducing vomiting, and improving patient comfort. Although sometimes considered undignified in palliative care, it is the most effective measure when surgical options are contraindicated by diffuse disease and ascites.\n\n---\n\n**Why the other options are incorrect:**\n\n- **B. Intravenous fluids** – Essential for hydration and electrolyte correction, but does not relieve mechanical obstruction or stop feculent vomiting.\n- **C. Subcutaneous hyoscine butylbromide** – An antispasmodic that can reduce colicky pain but will not decompress the gut or prevent ongoing vomiting of fecal material.\n- **D. Oral cyclizine** – An antiemetic that requires absorption beyond the obstruction; ineffective when oral intake is impossible and vomiting persists.\n- **E. Palliative stoma** – Surgical stoma formation may palliate single‐level obstruction, but is high risk in diffuse peritoneal disease with ascites and poor performance status.\n\n---\n\n**Further Management Considerations:**\n\n- **Medication adjuncts:** After decompression, symptom control includes continuous subcutaneous infusion of hyoscine butylbromide (80–120 mg/24 h) for spasms, subcutaneous cyclizine for nausea, and opioids (e.g., diamorphine) for pain.\n- **Fluid and electrolyte monitoring:** Carefully balance IV fluids to maintain hydration without worsening ascites.\n- **Multidisciplinary approach:** Engage palliative care, dietetics, and nursing to optimize comfort, address oral secretion management, and discuss goals of care.\n\n---\n\n**Key Teaching Point:**\nIn advanced malignant bowel obstruction with feculent vomiting and contraindications to surgery, nasogastric decompression is the cornerstone of palliative management, complemented by parenteral antispasmodics, antiemetics, and analgesia to maximize patient comfort."
+},
+{
+  "id": "ON-006",
+  "text": "A 57-year-old woman with metastatic breast cancer on maintenance taxane therapy for three years presents with a 24-hour history of progressive lower limb weakness and acute urinary retention. She denies trauma. On exam, she has symmetric proximal lower limb weakness (4/5), diminished reflexes, and a sensory level at the umbilicus. Which of the following is the most appropriate initial imaging investigation?",
+  "options": [
+    { "label": "A", "text": "Spinal computed tomography (CT) with contrast" },
+    { "label": "B", "text": "Dual-energy X-ray absorptiometry (DEXA) scan" },
+    { "label": "C", "text": "Bone scintigraphy (isotope scan)" },
+    { "label": "D", "text": "Magnetic resonance imaging (MRI) of the whole spine" },
+    { "label": "E", "text": "Ultrasound of the abdomen and pelvis" }
+  ],
+  "correct": "D",
+  "explanation": "**Correct Answer: D. Magnetic resonance imaging (MRI) of the whole spine**\n\n**Why it's correct:**\nThis presentation of rapidly progressive bilateral lower limb weakness, sensory level, and urinary retention in a patient with known metastatic cancer is highly suggestive of spinal cord compression or cauda equina syndrome. MRI of the entire spine is the most sensitive and specific modality to identify the level, extent, and nature of cord or root compression, and to guide urgent neurosurgical or radiation therapy planning.\n\n---\n\n**Why the other options are incorrect:**\n\n- **A. Spinal CT with contrast** – CT may demonstrate bony metastases but lacks the soft-tissue resolution needed to visualise epidural tumour, cord oedema, or nerve root involvement.\n- **B. DEXA scan** – Evaluates bone mineral density for osteoporosis; it provides no information about acute neural compression or metastatic deposits causing cord compromise.\n- **C. Bone scintigraphy** – Detects areas of increased osteoblastic activity throughout the skeleton, but cannot localise epidural masses or assess the spinal cord and nerve roots in real time.\n- **E. Ultrasound of the abdomen and pelvis** – Useful for visceral or pelvic pathology, but irrelevant for evaluating spinal pathology or neurological deficits.\n\n---\n\n**Diagnostic and Therapeutic Approach:**\n1. **Urgent MRI** allows precise mapping of metastatic epidural disease, spinal canal compromise, and planning for decompression or radiotherapy.\n2. **High-dose corticosteroids** (e.g., dexamethasone 16 mg IV bolus followed by 4 mg IV q6h) should be administered immediately to reduce vasogenic oedema and preserve neurological function.\n3. **Neurosurgical and radiation oncology consultation** must occur emergently; decompressive laminectomy or targeted radiotherapy can be delivered based on MRI findings.\n\n---\n\n**Key Teaching Point:**\nIn any cancer patient with signs of acute myelopathy or cauda equina syndrome, do not delay—obtain an MRI of the whole spine immediately, start high-dose steroids, and arrange definitive oncologic management without awaiting other imaging or blood tests."
+},
+{
+  "id": "ON-007",
+  "text": "A 33-year-old man with suspected testicular carcinoma attends clinic for his histopathology results. Gross examination shows greasy, sebaceous material containing hair. Microscopically, there are well-differentiated hyaline cartilage and mature squamous epithelium with keratinisation. What is the most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Seminoma" },
+    { "label": "B", "text": "Embryonal cell carcinoma" },
+    { "label": "C", "text": "Choriocarcinoma" },
+    { "label": "D", "text": "Teratoma" },
+    { "label": "E", "text": "Lymphoma" }
+  ],
+  "correct": "D",
+  "explanation": "**Correct Answer: D. Teratoma**\n\n**Why it's correct:**\nTeratomas are germ cell tumours containing elements from at least two embryonic layers. In this case, the presence of mesodermal cartilage and ectodermal structures (hair, keratinising squamous epithelium) confirms a mature teratoma. In adult males, testicular teratomas are considered malignant due to their potential for metastasis, even when composed of well-differentiated tissues.\n\n---\n\n**Why the other options are incorrect:**\n\n**A. Seminoma** – Composed of uniform cells with clear cytoplasm and central nuclei resembling spermatogonia; does not contain cartilage or hair.\n\n**B. Embryonal cell carcinoma** – Consists of primitive, undifferentiated cells often forming gland-like structures and areas of necrosis; lacks mature tissue elements.\n\n**C. Choriocarcinoma** – Mimics placental trophoblasts with syncytiotrophoblast and cytotrophoblast layers, often haemorrhagic and necrotic; no cartilage or keratinous material.\n\n**E. Lymphoma** – Typically presents as sheets of large lymphoid cells, especially in men over 60; uncommon in this age group and does not produce hair or cartilage.\n\n---\n\n**Key Teaching Point:**\nIn testicular masses, the identification of multiple well-differentiated tissues such as cartilage, epithelium, and hair on histology is diagnostic of a teratoma, distinguishing it from seminoma, choriocarcinoma, embryonal carcinoma, and lymphoma."
+},
+{
+  "id": "ON-008",
+  "text": "A 66-year-old man presents with a one-week history of pins and needles and numbness in his hands and feet, accompanied by a sense of heaviness. His history is significant for Hodgkin’s lymphoma treated with vincristine for the past six months, type 2 diabetes managed with metformin (last HbA₁c 51 mmol/mol), and moderate alcohol intake (nine units per week). On examination, pain and temperature sensation are reduced in a stocking–glove distribution, and deep tendon reflexes are diminished throughout. What is the single most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Vitamin B₁₂ deficiency" },
+    { "label": "B", "text": "Alcohol misuse" },
+    { "label": "C", "text": "Chemotherapy-induced peripheral neuropathy" },
+    { "label": "D", "text": "Diabetes-induced peripheral neuropathy" },
+    { "label": "E", "text": "Hypocalcaemia" }
+  ],
+  "correct": "C",
+  "explanation": "**Correct Answer: C. Chemotherapy-induced peripheral neuropathy**\n\n**Why it's correct:**\nVincristine, a vinca alkaloid commonly used in lymphoma regimens, disrupts microtubule assembly in peripheral nerves, leading to a length-dependent, sensorimotor neuropathy. Patients typically develop symmetric sensory loss (pain, temperature) and diminished reflexes in a stocking–glove distribution after weeks to months of therapy. The acute onset of neuropathic symptoms in this patient, coupled with his vincristine exposure, makes chemotherapy-induced neuropathy the most likely cause.\n\n---\n\n**Why the other options are incorrect:**\n\n**A. Vitamin B₁₂ deficiency** – Causes dorsal column dysfunction (proprioception and vibration loss), often with ataxia and macrocytic anaemia. Pain/temperature pathways are usually preserved until late, and onset is more gradual.\n\n**B. Alcohol misuse** – Chronic alcoholic neuropathy arises after years of heavy drinking (> 20–30 units/week) and nutritional deficiency; nine units/week is unlikely to produce acute neuropathy.\n\n**D. Diabetes-induced peripheral neuropathy** – Diabetic neuropathy is typically a chronic, slowly progressive sensory loss in the feet, developing over years and correlating with poor glycaemic control. This patient’s HbA₁c and timeline argue against an acute diabetic cause.\n\n**E. Hypocalcaemia** – Presents with neuromuscular irritability (tetany, perioral numbness, Chvostek’s sign), not a length-dependent sensory neuropathy with reflex loss.\n\n---\n\n**Key Teaching Point:**\nIn patients receiving neurotoxic chemotherapy, new-onset, symmetric sensory loss with diminished reflexes strongly suggests drug-induced peripheral neuropathy. Early recognition allows dose adjustment or switching regimens to prevent irreversible nerve damage."
+},
+{
+  "id": "ON-009",
+  "text": "A 42-year-old man presents with a three-month history of a painless, progressively enlarging mass in his left testicle. Scrotal ultrasound reveals a heterogeneous intratesticular lesion with both solid and cystic components. Biopsy and histopathology demonstrate pleomorphic cells and areas of cartilage. Which of the following is the most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Embryonal carcinoma" },
+    { "label": "B", "text": "Leydig cell tumour" },
+    { "label": "C", "text": "Seminoma" },
+    { "label": "D", "text": "Teratoma" },
+    { "label": "E", "text": "Yolk sac tumour" }
+  ],
+  "correct": "D",
+  "explanation": "**Correct Answer: D. Teratoma**\n\n**Why it's correct:**\nTeratomas are germ cell tumours containing well-differentiated tissues from two or more embryonic layers. The presence of mesodermal cartilage alongside pleomorphic epithelial elements confirms a mature teratoma. In adult males, testicular teratomas behave aggressively and are managed as malignant lesions.\n\n---\n\n**Why the other options are incorrect:**\n\n**A. Embryonal carcinoma** – Comprised of primitive, undifferentiated cells forming gland-like structures and necrotic areas; lacks mature tissue elements such as cartilage.\n\n**B. Leydig cell tumour** – A sex cord–stromal tumour characterized by uniform polygonal cells, Reinke crystals, and possible hormone production; does not show heterologous tissues like cartilage or squamous epithelium.\n\n**C. Seminoma** – Made up of uniform cells with clear cytoplasm and central nuclei that resemble spermatogonia; homogenous on ultrasound and histology, without solid–cystic areas or mesenchymal differentiation.\n\n**E. Yolk sac tumour** – Displays Schiller–Duval bodies, reticular (microcystic) patterns, and elevated AFP levels; lacks cartilage or keratinised squamous elements.\n\n---\n\n**Further Considerations:**\nManagement of adult testicular teratoma involves radical inguinal orchiectomy with pathological staging. Because these tumours often contain malignant foci, adjuvant chemotherapy or retroperitoneal lymph node dissection may be required based on staging and tumour markers.\n\n**Key Teaching Point:**\nA testicular mass showing multiple mature tissue types—especially cartilage, hair, or squamous epithelium—on histology is diagnostic of teratoma and mandates treatment as a malignant germ cell tumour in adult men."
+},
+{
+  "id": "ON-010",
+  "text": "A 58-year-old woman with a history of breast cancer presents with a two-week history of persistent, dull frontal headache and nausea, worsening over the past few days despite over-the-counter analgesia. She reports occasional vomiting and increasing fatigue but has no focal neurological deficits on exam. Recent imaging confirms cerebral metastases. What is the most appropriate management?",
+  "options": [
+    { "label": "A", "text": "Metoclopramide" },
+    { "label": "B", "text": "Mannitol" },
+    { "label": "C", "text": "Dexamethasone" },
+    { "label": "D", "text": "Cyclizine" },
+    { "label": "E", "text": "Oxycodone" }
+  ],
+  "correct": "C",
+  "explanation": "**Correct Answer: C. Dexamethasone**\n\nDexamethasone is the glucocorticoid of choice for symptomatic vasogenic oedema associated with brain metastases. Its high anti-inflammatory potency and long duration of action rapidly reduce capillary permeability, alleviate raised intracranial pressure, and improve headache and nausea. It can be administered orally or intravenously, with typical dosing of an 8 mg IV/PO loading dose followed by 4 mg every 6 hours, and is tapered over days to weeks as symptoms resolve.\n\nIn contrast, **mannitol** is an osmotic diuretic reserved for acute reductions in intracranial pressure (e.g., imminent herniation) rather than the longer-term control of peritumoural oedema. **Metoclopramide** and **cyclizine** are antiemetics that provide symptomatic relief of nausea but do not address the underlying cerebral swelling. **Oxycodone** is an opioid analgesic that may help pain but has no role in reducing intracranial pressure or treating vasogenic oedema.\n\n**Clinical Notes:**\n- Initiate dexamethasone promptly upon diagnosis of symptomatic cerebral metastases.  \n- Monitor for steroid side effects: hyperglycaemia, immunosuppression, mood changes.  \n- Plan a gradual taper once headache and nausea improve, balancing oedema control against long-term steroid risks.\n\n**Key Teaching Point:**\nIn patients with brain metastases and persistent headache or nausea, first-line therapy is high-dose dexamethasone to reduce vasogenic oedema and improve neurological symptoms."
+},
+{
+  "id": "ON-011",
+  "text": "A 77-year-old man reports a gradually worsening headache over several weeks. He was diagnosed with an inoperable glioblastoma one year ago. He now experiences nausea, and his head pain often rouses him early in the morning. A recent CT scan of the brain demonstrates an enhancing lesion with extensive surrounding oedema. What is the SINGLE most appropriate management?",
+  "options": [
+    { "label": "A", "text": "Mannitol" },
+    { "label": "B", "text": "Dexamethasone" },
+    { "label": "C", "text": "Radiotherapy" },
+    { "label": "D", "text": "Metoclopramide" },
+    { "label": "E", "text": "Chemotherapy" }
+  ],
+  "correct": "B",
+  "explanation": "**Correct Answer: B. Dexamethasone**\n\n**Why it’s correct:**\nIntracranial tumours raise pressure by causing vasogenic oedema around the lesion. In this patient with known glioblastoma, the progressive morning headaches and associated nausea reflect increased intracranial pressure from fluid leaking into the interstitial space. Dexamethasone, a potent glucocorticoid with minimal mineralocorticoid activity, stabilises the blood–brain barrier, reduces capillary permeability, and rapidly shrinks peritumoural swelling. Typical dosing is 4 mg every six hours, orally or intravenously, with clinical improvement often seen within hours.\n\n---\n\n**Why the other options are incorrect:**\n- **A. Mannitol** is an osmotic agent used for acute crises such as impending herniation, but does not provide sustained reduction of tumour-associated oedema and carries risks of rebound intracranial hypertension.  \n- **C. Radiotherapy** can decrease tumour size over days to weeks, but it does not offer the immediate symptomatic relief of raised intracranial pressure that corticosteroids do.  \n- **D. Metoclopramide** treats nausea via dopamine antagonism but does not address the underlying oedema or headache.  \n- **E. Chemotherapy** is ineffective for acute management of vasogenic oedema and has no role in symptom control for inoperable glioblastoma.\n\n---\n\n**Clinical Features Explained:**\n1. **Morning headache** – Overnight recumbency increases cerebral blood volume and oedema, peaking in the early morning.  \n2. **Nausea and vomiting** – Stretching of the dura and activation of the vomiting centre by raised pressure triggers these symptoms.  \n3. **Progressive course** – As oedema accumulates around a growing glioblastoma, intracranial compliance falls, worsening symptoms.\n\n---\n\n**Diagnostics:**\n- **Contrast-enhanced CT/MRI** reveals an enhancing mass with surrounding low-density halo of oedema; MRI is more sensitive but CT is acceptable for urgent evaluation.  \n- **Fundoscopy** may show papilloedema, confirming raised intracranial pressure.  \n- **Neurological exam** assesses for focal deficits that guide further imaging and therapy.\n\n---\n\n**Management:**\n- **First-line:** Dexamethasone 4 mg IV/PO q6h to rapidly reduce vasogenic oedema.  \n- **Monitoring:** Watch for hyperglycaemia, immunosuppression, GI ulceration, mood changes, and muscle weakness during steroid therapy.  \n- **Adjuncts:** Mannitol reserved for acute decompensation; raise head of bed to 30° to promote venous drainage.  \n- **Definitive tumour control:** Radiotherapy ± chemotherapy as tolerated, but both act over weeks rather than hours.\n\n---\n\n**Pathophysiology:**\n- **Vasogenic oedema** arises when glioblastoma disrupts endothelial tight junctions, allowing plasma proteins and fluid to accumulate in extracellular spaces.  \n- **Blood–brain barrier breakdown** increases capillary permeability; dexamethasone restores integrity by downregulating inflammatory mediators and tight junction proteins.  \n- **Raised intracranial pressure** reduces cerebral perfusion, exacerbating headache and risk of herniation if left untreated.\n\n---\n\n**Key High-Yield Points:**\n- Dexamethasone is the steroid of choice for symptomatic peritumoural oedema due to its potency and minimal fluid-retaining effects.  \n- Morning headaches and vomiting in brain tumour patients strongly suggest raised intracranial pressure.  \n- Always combine clinical assessment with imaging; address acute symptoms first before definitive oncologic therapies."
+},
+{
+  "id": "ON-012",
+  "text": "A 68-year-old man with metastatic colorectal cancer is seen in the oncology clinic seven days after beginning capecitabine monotherapy. He has also been taking loperamide for the past few days. He reports severe, persistent diarrhoea—about six watery bowel movements daily—accompanied by nausea, which prevents him from maintaining adequate oral fluid intake. His medication list includes allopurinol as prophylaxis against chemotherapy-induced hyperuricaemia, regular codeine for pain relief, and long-term rivaroxaban for recurrent pulmonary emboli over the last 15 years. Which single medication should be discontinued?",
+  "options": [
+    { "label": "A", "text": "Capecitabine" },
+    { "label": "B", "text": "Loperamide" },
+    { "label": "C", "text": "Allopurinol" },
+    { "label": "D", "text": "Codeine" },
+    { "label": "E", "text": "Rivaroxaban" }
+  ],
+  "correct": "A",
+  "explanation": "**Correct Answer: A. Capecitabine**\n\n**Why it’s correct:**\nCapecitabine is an oral prodrug of 5-fluorouracil widely used in colorectal and breast malignancies, offering the convenience of an oral regimen in place of continuous infusional fluorouracil. It undergoes hepatic conversion to fluorouracil and exerts cytotoxic effects on rapidly dividing gut mucosal cells as well as tumour cells. Diarrhoea is one of its most frequent adverse effects; if not promptly managed, fluid losses can outpace intake and lead to significant dehydration and electrolyte disturbances. When a patient develops intractable, high-volume diarrhoea despite optimal supportive measures—antidiarrhoeals and fluid encouragement—the offending agent must be withheld to prevent further complications.\n\n**Why the other options are incorrect:**\n- **B. Loperamide** is the first-line antidiarrhoeal for chemotherapy-induced diarrhoea; stopping it would remove the primary symptomatic therapy without addressing the underlying cause.\n- **C. Allopurinol** is not typically associated with diarrhoea; in fact, xanthine oxidase inhibition can reduce uric acid burden during tumour lysis and has no role in exacerbating gastrointestinal fluid loss here.\n- **D. Codeine** generally causes constipation via µ-opioid receptor–mediated slowing of intestinal transit, making it an unlikely contributor to diarrhoeal symptoms.\n- **E. Rivaroxaban** has been taken without issue for 15 years and is not known to induce diarrhoea; its discontinuation would risk thromboembolic complications without improving the patient’s gastrointestinal status.\n\n---\n\n**Pathophysiology of Capecitabine-Induced Diarrhoea:**\n1. **Mucosal injury:** Fluorouracil damages rapidly dividing enterocytes, leading to mucosal atrophy, reduced absorption, and secretory diarrhoea.  \n2. **Inflammatory component:** Cytotoxic injury prompts local inflammation, increasing intestinal permeability and fluid exudation.  \n3. **Dose-dependence:** Severity correlates with cumulative exposure and individual variability in dihydropyrimidine dehydrogenase (DPD) activity.\n\n---\n\n**Diagnostics and Grading:**\n- **Clinical assessment:** Quantify stool frequency, volume, and associated symptoms (cramping, urgency).  \n- **Laboratory tests:** Monitor electrolytes, renal function, and complete blood count to detect dehydration and treatment-related cytopenias.  \n- **Grading scales:** Use CTCAE criteria to classify diarrhoea severity (Grade 1–4) and guide therapy modifications.\n\n---\n\n**Management Principles:**\n1. **Fluid and electrolyte replacement:** Encourage oral rehydration; consider IV fluids if intake is insufficient.  \n2. **Antidiarrhoeal therapy:** Loperamide or diphenoxylate-atropine as first-line agents.  \n3. **Dose adjustment or interruption:** For Grade 2–3 diarrhoea persisting > 48 hours, hold capecitabine and resume at a reduced dose once resolved to ≤ Grade 1.  \n4. **Second-line agents:** Octreotide may be used for refractory cases.  \n5. **Monitor for complications:** Watch for acute kidney injury, electrolyte imbalances, and potential sepsis in severe mucosal breakdown.\n\n---\n\n**High-Yield Points:**\n- **Capecitabine** side effects: diarrhoea, hand–foot syndrome, mucositis, myelosuppression.  \n- **DPD deficiency** screening can identify patients at high risk for severe toxicity.  \n- **Drug interactions:** Allopurinol may theoretically alter fluoropyrimidine metabolism; coadministration should be carefully reviewed.  \n- **Supportive care** is critical—early recognition and management of diarrhoea can prevent treatment delays and hospitalisation.\n\n---\n\n**Advanced Insights:**\n- Genetic polymorphisms in DPD (encoded by DPYD) can lead to life-threatening toxicity; pharmacogenomic testing is increasingly advocated before fluoropyrimidine therapy.  \n- Research into microbiome modulation suggests that gut flora composition may influence chemotherapy tolerance and diarrhoeal risk.  \n- Emerging oral fluoropyrimidines and targeted therapies aim to maintain efficacy while reducing gastrointestinal toxicity."
+},
+{
+  "id": "ON-013",
+  "text": "A 59-year-old woman presents with a 24-hour history of progressive lower limb weakness and urinary retention. She has metastatic breast cancer on tamoxifen for the past three years. She describes back pain for several months, initially mild but now constant and worsening. On examination, motor strength in both legs is 3/5 (worse distally), deep tendon reflexes are diminished, and there is a sensory level below the umbilicus. Which of the following is the most appropriate imaging study to order?",
+  "options": [
+    { "label": "A", "text": "CT scan of the spine" },
+    { "label": "B", "text": "Dual-energy X-ray absorptiometry (DEXA) scan" },
+    { "label": "C", "text": "Bone scintigraphy (isotope scan)" },
+    { "label": "D", "text": "PET-CT scan" },
+    { "label": "E", "text": "MRI of the entire spine with contrast" }
+  ],
+  "correct": "E",
+  "explanation": "**Correct Answer: E. MRI of the entire spine with contrast**\n\n**Why it’s correct:**\nIn a patient with known metastatic cancer who develops acute, progressive bilateral leg weakness, sensory level and urinary retention, spinal cord compression is the leading concern. MRI of the entire spine with contrast is the gold standard for detecting epidural metastases, defining the exact level and extent of compression, and assessing cord oedema. Contrast-enhanced sequences highlight tumour versus inflammatory changes, and imaging the whole spine ensures no skip lesions are missed.\n\nEarly MRI guides prompt neurosurgical or radiotherapeutic intervention, which is critical to preserving neurological function and preventing irreversible paralysis or sphincter dysfunction.\n\n---\n\n**Why the other options are incorrect:**\n- **A. CT scan of the spine** – While CT excels at detecting bony destruction, it lacks the soft tissue resolution to visualise epidural tumour or spinal cord oedema.  \n- **B. DEXA scan** – Measures bone mineral density for osteoporosis, with no utility in acute neural compression or metastatic staging.  \n- **C. Bone scintigraphy** – Sensitive for detecting bone metastases systemically but cannot localise epidural involvement or assess spinal cord integrity.  \n- **D. PET-CT scan** – Useful for systemic staging of metastatic disease but too slow, and its spatial resolution is insufficient for emergency spinal cord evaluation.\n\n---\n\n**Clinical Features Explained:**\n1. **Progressive leg weakness** – Compression of descending corticospinal tracts reduces voluntary motor function, often worse distally due to tract somatotopy.  \n2. **Urinary retention** – Involvement of sacral autonomic fibres or conus medullaris interrupts parasympathetic signalling to the bladder.  \n3. **Sensory level below umbilicus** – The dermatome at the umbilicus is T10; a sensory block here localises the lesion to around T9–T10 spinal segments.  \n4. **Back pain** – Early sign of vertebral metastasis irritating periosteum and local nerve roots.\n\n---\n\n**Diagnostics:**\n- **MRI (T1, T2, STIR) with gadolinium**: Identifies epidural mass, cord compression, marrow infiltration, and oedema.  \n- **Neurological examination**: Determines motor, sensory, and reflex changes to correlate with imaging findings.  \n- **Baseline labs**: CBC and coagulation before any invasive procedures; not to delay imaging.\n\n---\n\n**Management:**\n1. **High-dose corticosteroids** (e.g., dexamethasone 16 mg IV bolus, then 4 mg IV q6h) to reduce vasogenic oedema.  \n2. **Urgent neurosurgical consultation** for possible decompressive laminectomy if mechanical relief is indicated.  \n3. **Urgent radiation oncology input** for emergent spinal radiotherapy if surgery is contraindicated.  \n4. **Supportive care**: Maintain head elevation, ensure adequate hydration, and monitor neurological status hourly.\n\n---\n\n**Pathophysiology:**\n- **Metastatic spread**: Breast cancer cells seed vertebral bodies via Batson’s venous plexus, leading to bony destruction and epidural extension.  \n- **Cord compression**: Direct tumour pressure and reactive vasogenic oedema increase intraspinal pressure, impairing blood flow and axonal conduction.  \n- **Neurological deficits**: Result from both mechanical disruption of axons (motor and sensory tracts) and ischaemic injury due to compromised spinal cord perfusion.\n\n---\n\n**High-Yield Points:**\n- **Suspect spinal cord compression** in any cancer patient with new back pain plus motor or bladder/bowel dysfunction.  \n- **MRI of the entire spine** is mandatory before any invasive intervention.  \n- **Start dexamethasone** as soon as compression is suspected—even before MRI—to minimise permanent deficits.  \n- **Time to treatment** is critical; irreversible damage can occur within 24–48 hours of severe compression."
+},
+{
+  "id": "ON-014",
+  "text": "A 58-year-old man is referred to the oncology team with progressive shortness of breath and headaches over several weeks. He reports facial swelling, arm edema, and prominent distension of his neck and chest veins, along with facial plethora. On examination, he has no audible stridor or laryngeal edema. What is the single most appropriate immediate management?",
+  "options": [
+    { "label": "A", "text": "Dexamethasone" },
+    { "label": "B", "text": "Endovascular stenting" },
+    { "label": "C", "text": "Radiotherapy" },
+    { "label": "D", "text": "Chemotherapy" },
+    { "label": "E", "text": "Antihypertensives" }
+  ],
+  "correct": "A",
+  "explanation": "**Correct Answer: A. Dexamethasone**\n\n**Why it’s correct:**\nSuperior vena cava (SVC) obstruction arises when a mediastinal mass impedes venous return from the head, neck, and upper extremities, leading to facial plethora, arm edema, and distended neck and chest wall veins. Patients often develop headaches and may show cyanotic or dusky discoloration over the upper body due to impaired venous outflow. In the absence of acute airway compromise (no stridor or laryngeal edema), the immediate goal is to reduce peritumoural inflammation and edema to restore venous drainage.\n\nDexamethasone is a potent glucocorticoid that stabilizes endothelial tight junctions, decreases capillary permeability, and rapidly diminishes vasogenic edema around the tumour. An initial dose of 8 mg twice daily—administered intravenously or orally—can lead to symptomatic improvement within 24–48 hours, providing relief while further diagnostic and definitive therapies are arranged. Although high-level trial data are limited, steroids remain a cornerstone of SVC syndrome management in clinical practice.\n\nCertain chemosensitive malignancies such as lymphoma may respond dramatically to corticosteroids, but ideally a tissue diagnosis should be obtained before steroid initiation, as dexamethasone can obscure histological features. When immediate biopsy is not feasible due to patient condition or anatomic constraints, empiric steroid therapy is justified to prevent complications.\n\n---\n\n**Why the other options are incorrect:**\n- **B. Endovascular stenting** provides definitive restoration of SVC patency but requires interventional radiology planning and is not the fastest way to relieve acute venous congestion.  \n- **C. Radiotherapy** can shrink radiosensitive tumours over days to weeks, but it does not offer the rapid symptom relief needed in acute SVC syndrome.  \n- **D. Chemotherapy** may be effective against chemosensitive tumours but should follow histological confirmation and does not act quickly enough to alleviate acute obstruction.  \n- **E. Antihypertensives** are irrelevant to the pathophysiology of venous obstruction and will not improve venous return or edema.\n\n---\n\n**High-Yield Points and Key Information:**\n- **Pathophysiology:** Tumour invasion or extrinsic compression of the SVC raises upstream hydrostatic pressure, resulting in fluid transudation into the interstitial tissues (facial and arm edema), cerebral venous congestion (headache), and development of collateral venous pathways via the azygous system over weeks.  \n- **Symptom Mechanisms:** Elevated venous pressure leads to capillary leakage (edema), venous stasis (plethora, cyanosis), and increased intracranial venous pressure (headache).  \n- **Diagnostics:** Contrast-enhanced CT chest is the gold standard to confirm SVC narrowing, visualize collateral veins, and identify the causative mass.  \n- **Immediate Management:** Start high-dose dexamethasone, elevate head of bed, administer supplemental oxygen, and consider mild diuretics for fluid overload.  \n- **Definitive Therapy:** Following stabilization and biopsy, options include endovascular stenting for rapid decompression or targeted chemo-/radiotherapy based on tumour histology.\n\n---\n\n**Diagnostics and Management Details:**\n1. **Imaging:** Urgent CT chest with contrast to assess anatomical extent of obstruction and collateral circulation.  \n2. **Biopsy:** Tissue sampling via fine-needle aspiration or core biopsy to guide specific therapy; steroids may be paused if lymphoma is suspected.  \n3. **Supportive Care:** Head elevation, oxygen supplementation, and close monitoring of airway and neurologic status.  \n4. **Definitive Interventions:** Endovascular stenting offers immediate relief when anatomy permits; radiotherapy or chemotherapy provide longer-term tumour control.\n\n---\n\n**Pathophysiology in Depth:**\n- **Vascular Disruption:** Malignant infiltration disrupts normal SVC flow, increasing venous pressure in the capillary beds of the head and upper extremities.  \n- **Collateral Formation:** The azygous and hemiazygous veins gradually enlarge to bypass the obstruction, but this takes days to weeks and is insufficient in acute presentations.  \n- **Edema Formation:** Sustained hydrostatic pressure causes plasma to leak into the interstitium, producing edema and facial plethora.\n\n---\n\n**Key Teaching Point:**\nIn SVC syndrome without immediate airway compromise, high-dose dexamethasone is the first-line intervention to reduce peritumoural edema and improve venous return, offering rapid symptom relief while definitive imaging and biopsy are completed."
+},
+{
+  "id": "ON-015",
+  "text": "A 57-year-old man with a known diagnosis of bronchial carcinoma presents with a two-week history of progressive facial and arm swelling accompanied by an intense, unremitting headache. He describes a sensation of fullness in his head, particularly when bending forward. On examination, there is marked distension of the neck veins. A chest X-ray reveals a mediastinal mass. What is the single most appropriate initial treatment for this patient?",
+  "options": [
+    { "label": "A", "text": "Midazolam" },
+    { "label": "B", "text": "Furosemide" },
+    { "label": "C", "text": "Diamorphine" },
+    { "label": "D", "text": "Hyoscine butylbromide" },
+    { "label": "E", "text": "Dexamethasone" }
+  ],
+  "correct": "E",
+  "explanation": "**Correct Answer: E. Dexamethasone**\n\n**Why it’s correct:**  \nSuperior vena cava syndrome (SVCS) occurs when a mediastinal mass compresses the SVC, impeding venous return from the head, neck, and upper limbs. The resulting venous congestion produces facial and arm oedema, distended neck veins, and raised intracranial pressure—manifesting as severe, persistent headache and a feeling of fullness, especially on bending forward. Dexamethasone, at 8 mg twice daily orally or IV, rapidly stabilises capillary endothelial tight junctions, reduces vasogenic oedema around the tumour, and relieves venous hypertension, often with noticeable symptom improvement within 24–48 hours.\n\nCorticosteroids are the preferred first‐line intervention in SVCS when there is no imminent airway compromise, because they directly target peritumoural inflammation and swelling. By decreasing capillary permeability, dexamethasone restores venous drainage more quickly than other therapies aimed at altering intravascular volume or providing analgesia.\n\n---\n\n**Why the other options are incorrect:**  \n- **A. Midazolam** – A benzodiazepine sedative with no role in relieving venous obstruction or reducing oedema.  \n- **B. Furosemide** – A loop diuretic that can reduce intravascular volume but does not address the underlying peritumoural swelling and may worsen hypotension.  \n- **C. Diamorphine** – An opioid analgesic that treats pain but has no effect on capillary permeability or venous return.  \n- **D. Hyoscine butylbromide** – An antispasmodic used for visceral cramping; ineffective in reducing mediastinal mass–related oedema or intracranial pressure.\n\n---\n\n**High-Yield Points and Key Information:**  \n- **Presentation:** Progressive facial/arm swelling, headache, and neck‐vein distension in a cancer patient suggest SVCS.  \n- **Immediate therapy:** Start high-dose dexamethasone to reduce peritumoural oedema and relieve symptoms.  \n- **Supportive measures:** Elevate head of bed, administer supplemental oxygen, and monitor airway.  \n- **Definitive treatment:** After stabilisation and tissue diagnosis, consider endovascular stenting or tumour‐directed chemo-/radiotherapy based on histology.\n\n---\n\n**Clinical Features Explained:**  \n1. **Facial and arm oedema:** Raised hydrostatic venous pressure forces fluid into the interstitial space.  \n2. **Distended neck veins:** Impeded SVC flow causes venous engorgement of the jugular system.  \n3. **Headache and fullness on bending:** Increased intracranial venous pressure is exacerbated by forward flexion, worsening headache.\n\n---\n\n**Diagnostics:**  \n- **Chest X-ray:** Initial clue—mediastinal widening and mass.  \n- **Contrast CT chest:** Gold standard to define the location and extent of SVC compression and collateral formation.  \n- **Tissue biopsy:** Required to guide definitive therapy; steroids may be tapered if lymphoma is identified to preserve histological detail.\n\n---\n\n**Pathophysiology:**  \n- **Venous obstruction:** Tumour compresses SVC → increased upstream venous pressure → fluid extravasation in head/arms.  \n- **Collateral circulation:** Azygous and intercostal veins enlarge over weeks, but are insufficient in acute presentations.  \n- **Vasogenic oedema:** Breakdown of endothelial tight junctions around tumour capillaries increases permeability.\n\n---\n\n**Management:**  \n1. **First-line:** Dexamethasone 8 mg IV/PO twice daily to reduce oedema.  \n2. **Supportive care:** Elevate head, oxygen, cautious diuresis if volume overload.  \n3. **Definitive intervention:** Endovascular stent placement for rapid relief or targeted radiotherapy/chemotherapy once tissue diagnosis is established.\n\n---\n\n**Key Takeaway:**  \nIn SVCS without airway compromise, immediate dexamethasone administration is essential to rapidly reduce peritumoural oedema and improve venous return, providing symptomatic relief while planning definitive oncologic treatments."
+},
+{
+  "id": "ON-016",
+  "text": "A 53-year-old man presents to the oncology clinic with complaints of nausea and vomiting following his most recent chemotherapy session for prostate cancer. He appears fatigued and visibly uncomfortable. His nausea began the day after treatment and has been severely impacting his quality of life; he occasionally vomits in the morning. What is the most appropriate management?",
+  "options": [
+    { "label": "A", "text": "Intravenous cyclizine" },
+    { "label": "B", "text": "Oral ondansetron" },
+    { "label": "C", "text": "Subcutaneous hyoscine butylbromide" },
+    { "label": "D", "text": "Intravenous haloperidol" },
+    { "label": "E", "text": "Oral promethazine" }
+  ],
+  "correct": "B",
+  "explanation": "**Correct Answer: B. Oral ondansetron**\n\n**Why it’s correct:**\nChemotherapy-induced nausea and vomiting (CINV) is one of the most distressing side effects of cancer treatment, often driven by serotonin release from damaged enterochromaffin cells in the small intestine. Ondansetron is a selective 5-HT₃ receptor antagonist that blocks serotonin at peripheral vagal nerve terminals and in the central chemoreceptor trigger zone. Oral ondansetron is highly effective for acute CINV, well tolerated, and suitable for outpatient use. If the patient vomits the dose within 30 minutes, guidelines allow a single repeat dose to maintain antiemetic coverage.\n\nIn this scenario, prescribing oral ondansetron prior to chemotherapy and continuing it for at least 24 hours afterwards provides targeted prophylaxis. Its minimal sedative properties and convenient dosing (typically 8 mg PO 30 minutes before chemotherapy) make it the first‐line choice for managing acute emesis without necessitating intravenous access.\n\n---\n\n**Why the other options are incorrect:**\n- **A. Intravenous cyclizine** is an antihistamine with anticholinergic activity used primarily for motion sickness and raised intracranial pressure; it is not recommended as first‐line for CINV.  \n- **C. Subcutaneous hyoscine butylbromide** is an antispasmodic used in bowel colic and palliative obstruction, but lacks evidence in chemotherapy‐related vomiting.  \n- **D. Intravenous haloperidol** can serve as a rescue antiemetic in refractory cases but carries extrapyramidal risks and is not first‐line for acute CINV.  \n- **E. Oral promethazine** is a sedating antihistamine occasionally used off‐label for nausea, but its anticholinergic side effects and drowsiness make it suboptimal for chemotherapy‐induced vomiting.\n\n---\n\n**High-Yield Points and Key Information:**\n- **Classification of CINV:**  \n  - *Acute* (within 24 hours)  \n  - *Delayed* (24–72 hours)  \n  - *Anticipatory* (triggered by previous experiences)  \n  - *Breakthrough* (occurring despite prophylaxis)\n- **First‐line antiemetics:**  \n  - 5-HT₃ antagonists (ondansetron, granisetron) for acute CINV  \n  - NK₁ antagonists (aprepitant) and corticosteroids (dexamethasone) for combined prophylaxis in high‐emetogenic regimens  \n- **Ondansetron dosing:**  \n  - *Prophylaxis:* 8 mg PO 30 minutes before chemotherapy, then every 8 hours for 1–2 days  \n  - *Redosing:* Single repeat if vomited within 30 minutes of administration\n\n---\n\n**Pathophysiology and Mechanism:**\n- **Serotonin release:** Cytotoxic drugs damage enterocytes → 5-HT release → activation of 5-HT₃ receptors on vagal afferents.  \n- **Central integration:** Signals reach the area postrema and nucleus tractus solitarius → trigger emesis reflex.  \n- **Ondansetron action:** Competitively blocks 5-HT₃ receptors peripherally and centrally, interrupting the emetic signaling pathway.\n\n---\n\n**Management Approach:**\n1. **Prophylaxis:** Administer ondansetron before chemotherapy and continue for 24–48 hours.  \n2. **Breakthrough therapy:** Add dexamethasone or NK₁ antagonist if emesis persists.  \n3. **Rescue medications:** Use haloperidol, metoclopramide, or olanzapine if first‐line agents fail.  \n4. **Nonpharmacologic measures:** Small frequent meals, ginger supplements, relaxation techniques.\n\n---\n\n**Additional Insights:**\n- **DPD deficiency:** Patients with dihydropyrimidine dehydrogenase mutations may experience increased toxicity from fluoropyrimidines, occasionally worsening CINV.  \n- **Emerging therapies:** NK₁ receptor antagonists and olanzapine improve control of delayed and breakthrough symptoms in high‐risk regimens."
+},
+{
+  "id": "ON-017",
+  "text": "A 35-year-old woman presents for routine blood tests. She reports fatigue and intermittent palpitations. Three years ago she underwent total thyroidectomy for papillary thyroid carcinoma and is maintained on levothyroxine. Her laboratory results are:\n\n• Corrected calcium: 2.6 mmol/L (2.1–2.6)\n• Free T₃: 5.5 pmol/L (3.5–6.5)\n• Free T₄: 17.2 pmol/L (9–18)\n• TSH: 0.1 mU/L (0.5–5.7)\n• Thyroglobulin (Tg): 5.6 µg/L (1.5–38.5)\n\nWhich of the above laboratory values is of most concern?",
+  "options": [
+    { "label": "A", "text": "Free T₃" },
+    { "label": "B", "text": "Free T₄" },
+    { "label": "C", "text": "TSH" },
+    { "label": "D", "text": "Calcium" },
+    { "label": "E", "text": "Thyroglobulin (Tg)" }
+  ],
+  "correct": "E",
+  "explanation": "**Correct Answer: E. Thyroglobulin (Tg)**\n\n**Why it’s correct:**\nThyroglobulin is produced exclusively by thyroid follicular cells and serves as a sensitive tumour marker after total thyroidectomy for differentiated thyroid cancer. At three years post-surgery, Tg levels should be virtually undetectable. A measurable Tg of 5.6 µg/L strongly suggests residual or recurrent thyroid tissue—most concerning for recurrent or metastatic papillary carcinoma. Since over 90% of recurrences occur within five years, this finding mandates prompt investigation.\n\n---\n\n**Why the other options are incorrect:**\n- **Free T₃** and **Free T₄** are within their reference ranges, indicating euthyroid status on levothyroxine replacement.  \n- **TSH** is appropriately suppressed (0.1 mU/L) in a patient on thyroid hormone suppression therapy to reduce recurrence risk; a low TSH in this context is expected, not pathologic.  \n- **Calcium** at 2.6 mmol/L is at the upper limit of normal and could reflect slight assay variation; it does not carry the same oncologic significance as a rising Tg in a post-thyroidectomy patient.\n\n---\n\n**High-Yield Points:**\n1. **Thyroglobulin monitoring:** After total thyroidectomy and radioiodine ablation, Tg should be < 1 µg/L; rising levels indicate recurrence.  \n2. **TSH suppression therapy:** Maintaining TSH in the lower half of normal reduces the risk of papillary carcinoma relapse.  \n3. **Calcium levels:** Monitor for hypocalcaemia post-thyroidectomy due to possible hypoparathyroidism, but mild elevations are uncommon and of less immediate concern than Tg.\n\n---\n\n**Pathophysiology, Diagnostics & Management:**\n- **Pathophysiology:** Papillary thyroid carcinoma arises from follicular cells that secrete Tg; remnant or metastatic cells continue Tg production after thyroidectomy.  \n- **Diagnostics:** An elevated Tg warrants neck ultrasound to detect cervical recurrence and a diagnostic radioiodine scan to localise distant disease. Anti-thyroglobulin antibody levels should also be measured, as they can interfere with Tg assays.  \n- **Management:** Confirm recurrence with imaging-guided fine-needle aspiration if a suspicious nodule is identified. Treat local recurrence with surgical re-resection or radioiodine therapy; distant metastases may require higher-dose radioiodine, external beam radiation, or tyrosine kinase inhibitors in refractory cases.\n\n---\n\n**Key Takeaway:**\nIn follow-up of differentiated thyroid cancer, Tg is the most sensitive marker for recurrence. Any detectable Tg after total thyroidectomy and ablation warrants thorough evaluation to identify and treat residual or metastatic disease early."
+},
+{
+  "id": "ON-018",
+  "text": "A 35-year-old man presents with a painless swelling of his left testis. Scrotal ultrasound demonstrates a heterogeneous intratesticular lesion with areas of calcification. A biopsy of the mass is performed, and histopathology reveals mature cartilage and epithelial tissue forming glandular structures. Which of the following is the most likely diagnosis?",
+  "options": [
+    { "label": "A", "text": "Leydig cell tumour" },
+    { "label": "B", "text": "Lymphoma" },
+    { "label": "C", "text": "Seminoma" },
+    { "label": "D", "text": "Teratoma" },
+    { "label": "E", "text": "Yolk sac tumour" }
+  ],
+  "correct": "D",
+  "explanation": "**Correct Answer: D. Teratoma**\n\n**Why it’s correct:**  \nTeratomas are derived from pluripotent germ cells that differentiate into multiple tissue types. In this case, the presence of mature cartilage (a mesodermal derivative) alongside well‐formed glandular epithelium (an endodermal derivative) confirms a teratoma. The heterogeneous ultrasound appearance with calcifications further supports this, as mature teratomas often contain bone, teeth or cartilage leading to echogenic foci and shadowing.\n\nIn adult males, testicular teratomas are managed as malignant germ cell tumours, because even well‐differentiated elements can metastasise. Identification of multiple mature tissues on histology distinguishes teratoma from the other, more uniform testicular neoplasms.\n\n---\n\n**Why the other options are incorrect:**  \n- **A. Leydig cell tumour** – A sex cord–stromal neoplasm composed of uniform endocrine cells, often producing androgens; it does not contain heterologous tissues like cartilage or glandular epithelium.  \n- **B. Lymphoma** – Testicular lymphoma consists of sheets of lymphoid cells without differentiation into mesenchymal or epithelial structures; it typically occurs in men over 60.  \n- **C. Seminoma** – Characterised by large uniform cells with clear cytoplasm and central nuclei, seminomas are homogeneous on imaging and lack calcifications or multiple tissue types.  \n- **E. Yolk sac tumour** – Displays a microcystic (reticular) pattern and Schiller–Duval bodies, with elevated alpha-fetoprotein; it does not exhibit cartilage or mature glandular elements.\n\n---\n\n**High-Yield Points:**  \n1. **Teratoma identification:** Multiple mature tissue types (e.g., cartilage, epithelium, neural tissue) in a testicular mass are diagnostic of teratoma.  \n2. **Ultrasound features:** Heterogeneous echotexture with calcifications and cystic areas suggest a mixed germ cell tumour such as teratoma.  \n3. **Tumour markers:** Teratomas often have normal AFP and hCG levels; abnormal markers suggest mixed or other germ cell components.  \n4. **Age consideration:** Unlike prepubertal teratomas (usually benign), adult testicular teratomas are treated as malignant.\n\n---\n\n**Pathophysiology:**  \n- **Origin:** Teratomas arise from totipotent germ cells that escape normal differentiation and form tissues from two or three germ layers.  \n- **Malignant potential:** In adult testes, even mature teratomatous elements can metastasise via lymphatic and hematogenous routes.  \n- **Calcification:** Deposition of calcium in bone or cartilage within the tumour produces the characteristic imaging appearance.\n\n---\n\n**Diagnostics and Management:**  \n- **Imaging:** Scrotal ultrasound is the first‐line modality; heterogeneous lesions with calcifications raise suspicion for teratoma.  \n- **Blood tests:** Measure AFP, β-hCG, and LDH to evaluate for mixed germ cell components.  \n- **Surgery:** Radical inguinal orchiectomy is both diagnostic and therapeutic.  \n- **Staging:** Post‐orchiectomy CT of chest/abdomen/pelvis and tumour markers guide the need for chemotherapy or retroperitoneal lymph node dissection.  \n- **Follow-up:** Regular imaging and marker surveillance to detect recurrence.\n\n---\n\n**Key Takeaway:**  \nA testicular mass containing well‐differentiated cartilage and glandular epithelium is diagnostic of teratoma. In adult patients, radical orchiectomy and staging are essential, as even mature teratomas carry malignant potential."
+},
+{
+  "id": "ON-019",
+  "text": "A 68-year-old woman presents to her GP with a one-month history of persistent “pins and needles” and numbness in both hands and feet. She completed adjuvant chemotherapy for breast cancer three months ago, during which she also experienced severe nausea and vomiting that led to poor oral intake. Over the last few weeks, she has noticed mild unsteadiness when walking. Neurological examination reveals reduced pin-prick and temperature sensation in a stocking–glove distribution and diminished ankle reflexes. What is the most likely cause of her symptoms?",
+  "options": [
+    { "label": "A", "text": "Calcium deficiency" },
+    { "label": "B", "text": "Vitamin B₁₂ deficiency" },
+    { "label": "C", "text": "Chemotherapy-induced peripheral neuropathy" },
+    { "label": "D", "text": "Diabetic neuropathy" },
+    { "label": "E", "text": "Hypothyroidism" }
+  ],
+  "correct": "C",
+  "explanation": "**Correct Answer: C. Chemotherapy-induced peripheral neuropathy**\n\n**Why it’s correct:**  \nNeurotoxic chemotherapeutic agents—especially platinum compounds (e.g., cisplatin, oxaliplatin), taxanes (paclitaxel, docetaxel), and vinca alkaloids (vincristine)—cause a length-dependent, sensorimotor axonopathy. In this patient, the bilateral distal paresthesias, sensory ataxia (unsteadiness), and timing (appearing within weeks to months after chemotherapy) are classic for chemotherapy-induced peripheral neuropathy (CIPN). The stocking–glove distribution and diminished reflexes reflect dorsal root ganglion and peripheral nerve damage.\n\n---\n\n**Why the other options are incorrect:**\n- **A. Calcium deficiency** – Causes muscle cramps, tetany, perioral tingling, and carpopedal spasms rather than a distal symmetric neuropathy.  \n- **B. Vitamin B₁₂ deficiency** – Produces dorsal column signs (vibration/proprioception loss) and develops over years due to large body stores; the acute onset and preserved vibration sense here argue against it.  \n- **D. Diabetic neuropathy** – Presents gradually in the context of long-standing diabetes with poor glycaemic control; no history of diabetes is given.  \n- **E. Hypothyroidism** – May cause generalized myalgias and carpal tunnel syndrome, but not a symmetric, length-dependent sensory loss with gait disturbance.\n\n---\n\n**High-Yield Points:**\n1. CIPN typically presents as a symmetric, length-dependent sensory neuropathy, often with pain, numbness, and paresthesias.  \n2. Onset is usually during treatment or within weeks to months after completion of neurotoxic chemotherapy.  \n3. Early recognition and dose modification can prevent irreversible nerve damage.\n\n---\n\n**Pathophysiology:**\n- Chemotherapeutic agents bind neuronal microtubules and mitochondrial proteins in dorsal root ganglion neurons, disrupting axonal transport and causing “dying-back” degeneration.  \n- The longest nerve fibres (distal limbs) are affected first, leading to a stocking–glove pattern of sensory loss.\n\n**Diagnostics:**\n- **Clinical examination:** Key findings include reduced distal pain/temperature sensation, diminished reflexes, and sensory ataxia.  \n- **Electrophysiology:** Nerve conduction studies show reduced amplitude of sensory action potentials and slowed conduction velocities consistent with axonal neuropathy.\n\n**Management:**\n1. **Preventive:** Adjust chemotherapy dose or schedule; consider less neurotoxic alternatives when possible.  \n2. **Symptomatic:** Duloxetine is first-line for CIPN-related pain; gabapentin, pregabalin, or TCAs may be used.  \n3. **Supportive:** Physical and occupational therapy, assistive devices, fall prevention strategies.  \n4. **Follow-up:** Monitor for progression; neuropathy may improve over months but can become permanent if unaddressed."
+},
+{
+  "id": "ON-020",
+  "text": "A 75-year-old man presents with progressively worsening headaches over the past few weeks. Three months ago he was diagnosed with an inoperable, high-grade glioblastoma. Over the last week he has felt nauseous and vomits daily. His head pain is severe enough to awaken him each morning, and he reports minimal relief from his current oral morphine regimen. A recent non-contrast CT of the brain demonstrates an enhancing mass with extensive surrounding vasogenic oedema. What is the SINGLE most appropriate management?",
+  "options": [
+    { "label": "A", "text": "Mannitol" },
+    { "label": "B", "text": "Dexamethasone" },
+    { "label": "C", "text": "Cyclizine" },
+    { "label": "D", "text": "Prochlorperazine" },
+    { "label": "E", "text": "Oxycodone" }
+  ],
+  "correct": "B",
+  "explanation": "**Correct Answer: B. Dexamethasone**\n\n**Why it’s correct:**\nTumours within the cranial vault often disrupt the blood–brain barrier, causing fluid to leak into the interstitial space and raising intracranial pressure. This increase in pressure stretches pain-sensitive meninges and triggers nausea by stimulating the brainstem vomiting centre. In glioblastoma patients, morning headaches and daily vomiting are classic signs of peritumoural oedema and elevated intracranial pressure.\n\nGlucocorticoids rapidly restore capillary integrity and decrease vasogenic swelling around malignant lesions. Dexamethasone is the preferred agent due to its potent anti-inflammatory properties and negligible mineralocorticoid effect. When given at 4 mg every six hours—either orally or intravenously—patients often report symptom relief within hours as oedema diminishes and intracranial pressure falls.\n\n---\n\n**Why the other options are incorrect:**\n- **A. Mannitol** is an osmotic diuretic used in acute herniation crises; it does not provide sustained control of steroid-responsive vasogenic oedema and carries a risk of rebound intracranial hypertension.  \n- **C. Cyclizine** can alleviate nausea via antihistaminic and anticholinergic effects but does not reduce cerebral swelling or improve headache.  \n- **D. Prochlorperazine** is a dopamine-antagonist antiemetic without any action on intracranial pressure or oedema.  \n- **E. Oxycodone** may address pain but has no impact on vasogenic oedema and can worsen nausea through opioid-induced gastroparesis.\n\n---\n\n**High-Yield Points & Key Information:**\n1. **Raised intracranial pressure** in brain tumour patients presents with morning headache, nausea, and vomiting.  \n2. **Vasogenic oedema** results from tumour-mediated blood–brain barrier disruption, allowing plasma to collect in white matter.  \n3. **Steroid of choice:** Dexamethasone 4 mg IV/PO q6h; taper gradually over days to weeks as symptoms allow.  \n4. **Monitor** for steroid side effects: hyperglycaemia, immunosuppression, mood changes, and muscle weakness.\n\n---\n\n**Pathophysiology, Diagnostics & Management:**\n- **Pathophysiology:** High-grade gliomas secrete VEGF and other mediators that increase capillary permeability. Disruption of endothelial tight junctions leads to vasogenic oedema and raised intracranial pressure, which impairs cerebral perfusion and causes headaches and vomiting.  \n- **Diagnostics:** Contrast-enhanced MRI is ideal to define tumour margins and quantify oedema; CT is acceptable for urgent assessment. Fundoscopy may reveal papilloedema. A detailed neurologic exam localises deficits.  \n- **Management:**  \n  1. **Immediate:** Initiate dexamethasone to reduce oedema and alleviate symptoms. Position head of bed at 30° to promote venous drainage.  \n  2. **Rescue:** Reserve mannitol for acute herniation.  \n  3. **Definitive therapy:** Once stabilised, consider focal radiotherapy or experimental therapies for inoperable glioblastoma, recognizing these work over days to weeks rather than hours.  \n  4. **Supportive care:** Monitor electrolytes, glucose, and signs of infection during prolonged steroid use.\n\n---\n\n**Key Takeaway:**\nIn patients with malignant brain lesions who develop worsening headache and vomiting from raised intracranial pressure, dexamethasone is the first-line intervention to rapidly reduce vasogenic oedema and improve neurologic symptoms while planning definitive oncologic treatments."
+},
+{
+  "id": "ON-021",
+  "text": "A 58-year-old woman with a history of breast cancer presents with dull, constant low back pain from known metastatic deposits in her fourth lumbar vertebra. She reports the pain is severe at night and disrupts her sleep. Her current analgesic regimen includes morphine sulphate, paracetamol, ibuprofen, and senna, yet she continues to experience moderate to severe discomfort. A recent CT scan confirms lytic lesions at L4. What is the SINGLE adjuvant treatment to be added to improve her pain control?",
+  "options": [
+    { "label": "A", "text": "Radiotherapy" },
+    { "label": "B", "text": "Bisphosphonates" },
+    { "label": "C", "text": "Dexamethasone" },
+    { "label": "D", "text": "Gabapentin" },
+    { "label": "E", "text": "Vertebroplasty" }
+  ],
+  "correct": "A",
+  "explanation": "**Correct Answer: A. Radiotherapy**\n\n**Why it’s correct:**  \nExternal beam radiotherapy directed at painful bone metastases provides rapid and durable relief by reducing tumour burden, decreasing periosteal stretching, and dampening local inflammatory cytokine release. In patients whose symptoms persist despite step 3 WHO analgesic ladder agents (strong opioids plus non‐opioids and adjuvants), single‐fraction or multi‐fraction radiotherapy is the next step to achieve meaningful pain reduction. Symptom relief typically begins within one to two weeks and can last for months.\n\n---\n\n**Why the other options are incorrect:**  \n- **B. Bisphosphonates** are useful adjuncts for preventing skeletal‐related events and can provide analgesia, but they require several months to exert an effect and are not the immediate next step when radiotherapy is available.  \n- **C. Dexamethasone** is indicated when there is evidence of spinal cord compression or nerve root impingement, not as a primary adjuvant for uncomplicated bone pain.  \n- **D. Gabapentin** is effective for neuropathic pain syndromes, but metastatic bone pain is nociceptive in origin, responding better to radiotherapy than to anti‐epileptic agents.  \n- **E. Vertebroplasty** may stabilise impending or actual pathological vertebral fractures, but it carries procedural risks and is reserved for mechanical instability rather than routine pain palliation when radiotherapy suffices.\n\n---\n\n**High‐Yield Points & Key Information:**  \n1. **WHO Analgesic Ladder:** After strong opioids and non‐opioids, add interventional or locoregional therapies such as radiotherapy for refractory bone pain.  \n2. **Radiotherapy Protocols:** Single‐fraction (8 Gy × 1) or multi‐fraction regimens (e.g., 20 Gy in 5 fractions) are equally effective for pain; choice depends on logistics and life expectancy.  \n3. **Bisphosphonates & Denosumab:** Reserved for long‐term prevention of skeletal complications; analgesic benefit is secondary and delayed.  \n4. **Vertebroplasty:** Consider only for patients with intractable mechanical pain due to vertebral collapse or fracture not amenable to radiotherapy alone.\n\n---\n\n**Pathophysiology, Diagnostics & Management:**  \n- **Pathophysiology:** Tumour cells in bone stimulate osteoclast‐mediated resorption, leading to microfractures, periosteal irritation, and release of pro‐inflammatory mediators that activate nociceptors.  \n- **Diagnostics:** Imaging (CT, MRI, bone scan) confirms location and extent of metastases; laboratory tests assess markers of bone turnover.  \n- **Management Steps:**  \n  1. **Pharmacologic:** Optimize opioids and NSAIDs; consider adjuvants based on pain characteristics.  \n  2. **Locoregional:** Radiotherapy is first‐line for focal bone pain unresponsive to drugs.  \n  3. **Bone‐modifying agents:** Bisphosphonates or denosumab reduce fracture risk and hypercalcaemia but are not rapid analgesics.  \n  4. **Interventional:** Vertebroplasty or kyphoplasty for structural vertebral collapse with mechanical pain.  \n  5. **Supportive:** Physical therapy, psychosocial support, and multidisciplinary palliative care engagement.\n\n---\n\n**Key Takeaway:**  \nIn metastatic bone pain refractory to optimized analgesia, targeted radiotherapy offers the most effective and timely relief, addressing the underlying tumour‐driven nociceptive mechanisms."  
+},
+{
+  "id": "ON-22",
+  "text": "A 77-year-old man with advanced prostate cancer, whose chemotherapy was stopped three weeks ago, presents with progressive constipation over several weeks. He feels depressed, lethargic, and reports poor appetite despite drinking five litres of water daily. On examination, his abdomen is mildly distended with hypoactive bowel sounds. What is the SINGLE most appropriate investigation?",
+  "options": [
+    { "label": "A", "text": "Serum potassium" },
+    { "label": "B", "text": "Serum calcium" },
+    { "label": "C", "text": "Urea" },
+    { "label": "D", "text": "CT scan of the head" },
+    { "label": "E", "text": "C-reactive protein (CRP)" }
+  ],
+  "correct": "B",
+  "explanation": "**Correct Answer: B. Serum calcium**\n\n**Why it’s correct:**  \nIn a patient with malignancy who develops depression, lethargy, anorexia, polyuria or polydipsia and constipation, hypercalcaemia must be suspected. Excessive calcium in the bloodstream disrupts neuronal and smooth muscle function, giving rise to the neuropsychiatric (lethargy, depression) and gastrointestinal (constipation, anorexia) symptoms seen here. Measuring serum calcium is the fastest way to confirm this metabolic complication of cancer.\n\nProstate cancer frequently metastasises to bone—especially the vertebrae and pelvis—where tumour cells can dysregulate normal bone turnover. Although prostate metastases are often sclerotic, local osteoblastic activity and occasional osteolysis can release calcium into the circulation. Early detection via serum calcium allows prompt management to prevent complications such as dehydration, nephrolithiasis, and cardiac arrhythmias.\n\n---\n\n**Why the other options are incorrect:**  \n- **A. Serum potassium** – Hypokalaemia can cause ileus, but this patient’s combination of depression, polyuria and fluid intake strongly points to hypercalcaemia rather than a primary potassium disturbance.  \n- **C. Urea** – Elevated urea may reflect dehydration or renal impairment but would not explain the constellation of psychiatric and gastrointestinal symptoms as directly as hypercalcaemia.  \n- **D. CT scan of the head** – Neuroimaging is not indicated without focal neurological deficits or altered sensorium; this patient’s symptoms are systemic rather than focal.  \n- **E. CRP** – An inflammatory marker is unlikely to change management here, as there is no evidence of infection or inflammatory flare; it would not detect a metabolic derangement.\n\n---\n\n**High-Yield Points:**  \n1. **Hypercalcaemia in malignancy** is often due to osteolytic metastases or tumour secretion of parathyroid hormone–related peptide (PTHrP).  \n2. **Classic symptoms**: “Bones, stones, groans, and psychiatric overtones”—bone pain, kidney stones, abdominal discomfort, constipation, polyuria/polydipsia, nausea, and mental status changes.  \n3. **Investigation**: Always check corrected serum calcium (adjusted for albumin) in cancer patients with nonspecific constitutional or neuropsychiatric symptoms.\n\n---\n\n**Pathophysiology, Diagnostics & Management:**  \n**Pathophysiology:**  \n- Tumour cells either produce PTHrP, which mimics parathyroid hormone to increase bone resorption and renal calcium reabsorption, or directly activate osteoclasts in bone metastases.  \n- Resulting hypercalcaemia impairs neuronal excitability (leading to lethargy, depression), reduces smooth muscle contractility (causing constipation), and impairs renal concentrating ability (polyuria and polydipsia).\n\n**Diagnostics:**  \n1. **Corrected serum calcium**: Calculate to account for hypo- or hyperalbuminaemia; if abnormal, confirm with ionised calcium measurement.  \n2. **PTH and PTHrP**: Differentiate primary hyperparathyroidism from malignancy-driven hypercalcaemia.  \n3. **25(OH)D and 1,25(OH)₂D**: Rule out vitamin D–mediated causes of hypercalcaemia.  \n4. **Renal function and ECG**: Assess for dehydration and cardiac effects (short QT, arrhythmias).\n\n**Management:**  \n1. **Initial**: Aggressive intravenous hydration with isotonic saline to enhance renal calcium excretion.  \n2. **Bisphosphonates** (e.g., zoledronic acid) or **denosumab**: Inhibit osteoclast-mediated bone resorption; onset in 48–72 hours.  \n3. **Calcitonin**: Provides rapid but short-lived reduction in calcium; useful in severe cases.  \n4. **Glucocorticoids**: Beneficial in vitamin D–mediated hypercalcaemia and certain malignancies.  \n5. **Dialysis**: Reserved for life-threatening hypercalcaemia with renal failure or heart failure unresponsive to medical therapy.\n\n**Key Takeaway:**  \nIn cancer patients presenting with nonspecific neuropsychiatric and gastrointestinal symptoms, always measure serum calcium promptly to diagnose and manage hypercalcaemia of malignancy, thereby preventing serious sequelae."
+},
+{
+  "id": "ON-023",
+  "text": "A 61-year-old man with bronchogenic carcinoma metastatic to his vertebrae is admitted with a two-week history of progressive facial and arm swelling, dyspnoea, and headaches. He is afebrile, on 5 L/min oxygen by mask, heart rate 70 bpm, respiratory rate 26/min, and oxygen saturation 91%. On examination, his neck and chest wall veins are distended. A contrast CT chest shows a 5 cm × 4.5 cm × 3.8 cm heterogeneously enhancing mass in the apical segment of the right upper lobe compressing the superior vena cava. What is the SINGLE most appropriate immediate management?",
+  "options": [
+    { "label": "A", "text": "Furosemide" },
+    { "label": "B", "text": "Diamorphine" },
+    { "label": "C", "text": "Metoprolol" },
+    { "label": "D", "text": "Apixaban" },
+    { "label": "E", "text": "Dexamethasone" }
+  ],
+  "correct": "E",
+  "explanation": "**Correct Answer: E. Dexamethasone**\n\n**Why it’s correct:**  \nCompression of the superior vena cava by a mediastinal tumour impedes venous drainage from the head, neck and upper limbs, causing facial and arm oedema, distended chest and neck veins, and raised intracranial pressure manifesting as headache. High-dose corticosteroids such as dexamethasone (8 mg twice daily, orally or intravenously) rapidly reduce peritumoural inflammation and capillary permeability, shrinking vasogenic oedema and restoring venous flow. Symptomatic improvement—in reduction of swelling and headache—often occurs within 24–48 hours, making steroids the preferred first-line intervention in SVC syndrome without airway compromise.\n\n---\n\n**Why the other options are incorrect:**  \n- **A. Furosemide** reduces intravascular volume but does not address the underlying peritumoural swelling and may exacerbate hypotension without relieving venous obstruction.  \n- **B. Diamorphine** provides analgesia but has no effect on oedema or venous congestion, and can worsen sedation in a patient with raised intracranial pressure.  \n- **C. Metoprolol** might slow heart rate but is irrelevant to venous drainage or oedema in SVC syndrome.  \n- **D. Apixaban** is an anticoagulant with no role in relieving tumour-induced vascular compression and carries bleeding risks without benefit.\n\n---\n\n**High-Yield Points & Key Information:**  \n1. **Presentation:** Facial plethora, arm swelling, distended neck/chest wall veins, headache—classic for SVC obstruction.  \n2. **Immediate management:** Start dexamethasone 8 mg BID to reduce oedema; elevate head of bed and provide oxygen as needed.  \n3. **Definitive therapy:** After stabilisation and tissue diagnosis, consider endovascular stenting for rapid decompression or targeted radiotherapy/chemotherapy based on tumour sensitivity.\n\n---\n\n**Pathophysiology, Diagnostics & Management:**  \n- **Pathophysiology:** A mediastinal mass compresses the thin-walled SVC, raising upstream hydrostatic pressure. Fluid extravasates into interstitial tissues (oedema), and collateral veins (azygos and chest wall plexus) enlarge over weeks but cannot acutely compensate. Increased cerebral venous pressure causes headache and can risk cerebral oedema.  \n- **Diagnostics:** Contrast CT chest confirms location, size and degree of SVC narrowing, identifies collateral flow, and excludes thrombus.  \n- **Management Steps:**  \n  1. **Immediate:** High-dose dexamethasone to reduce peritumoural oedema.  \n  2. **Supportive:** Head elevation, supplemental oxygen, cautious diuretics if volume overloaded.  \n  3. **Histology:** Biopsy to guide tumour-specific therapy; steroids may be paused if lymphoma is strongly suspected to preserve diagnostic yield.  \n  4. **Definitive:** Endovascular stent placement for immediate relief when anatomy permits; radiotherapy or chemotherapy for longer-term tumour reduction.\n\n---\n\n**Key Takeaway:**  \nIn superior vena cava syndrome without airway obstruction, prompt administration of dexamethasone is essential to relieve peritumoural oedema and venous hypertension, providing rapid symptomatic benefit while definitive interventions are planned."
+}
+
+
+
+    ];
+
+    // Sidebar numbers
+    const sidebarList = document.getElementById('sidebar-list');
+    questions.forEach((_, i) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#'; a.textContent = i + 1;
+      a.addEventListener('click', () => { current = i; renderQ(i); sidebar.classList.remove('open'); });
+      li.appendChild(a);
+      sidebarList.appendChild(li);
+    });
+
+    let startTime = Date.now(), current = 0, results = [];
+    const qText = document.getElementById('question-text');
+    const optsList = document.getElementById('options-list');
+    const explDiv = document.getElementById('explanation');
+    const sumDiv = document.getElementById('results-summary');
+    const counterDiv = document.getElementById('question-counter');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    const endBtn = document.getElementById('end-btn');
+
+    function renderQ(i) {
+      const q = questions[i];
+      counterDiv.textContent = `Question ${i+1} of ${questions.length}`;
+      qText.innerHTML = q.text.replace(/\n/g, '<br>');
+      optsList.innerHTML = '';
+      q.options.forEach(o => {
+        const lbl = document.createElement('label');
+        lbl.className = 'option-label';
+        lbl.innerHTML = `<input type="radio" name="answer" value="${o.label}"> ${o.label}. ${o.text}`;
+        optsList.appendChild(lbl);
+      });
+      explDiv.innerHTML = '';
+      sumDiv.style.display = 'none';
+      prevBtn.disabled = i === 0;
+      nextBtn.disabled = true;
+      submitBtn.disabled = false;
+    }
+
+    submitBtn.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="answer"]:checked');
+      if (!sel) return;
+      const val = sel.value;
+      const corr = questions[current].correct;
+      const ok = val === corr;
+      results[current] = ok;
+      document.querySelectorAll('.option-label').forEach(lbl => {
+        const inp = lbl.querySelector('input');
+        lbl.classList.remove('correct-answer','wrong-answer');
+        if (inp.value === corr) lbl.classList.add('correct-answer');
+        if (inp.checked && !ok) lbl.classList.add('wrong-answer');
+        inp.disabled = true;
+      });
+      const rawExplanation = questions[current].explanation;
+      const htmlified = convertMarkdownBold(rawExplanation).replace(/\n/g, '<br>');
+      explDiv.innerHTML = htmlified;
+      // Append image if present
+      if (questions[current].image) {
+        const img = document.createElement('img');
+        img.src = questions[current].image;
+        img.alt = '';
+        img.style.maxWidth = '100%';
+        img.style.marginTop = '1rem';
+        explDiv.appendChild(img);
+      }
+      submitBtn.disabled = true;
+      nextBtn.disabled = false;
+    });
+
+    prevBtn.addEventListener('click', () => { if (current > 0) { current--; renderQ(current); } });
+    nextBtn.addEventListener('click', () => { if (current < questions.length - 1) { current++; renderQ(current); } });
+    endBtn.addEventListener('click', () => {
+      const score = results.filter(r => r).length;
+      const total = questions.length;
+      const duration = Math.floor((Date.now() - startTime) / 1000);
+      sumDiv.style.display = 'block';
+      sumDiv.innerHTML = `<strong>Score: ${score}/${total} (${Math.round(score/total*100)}%)</strong><br>` +
+                         `Time: ${Math.floor(duration/60)}m ${duration%60}s<br>` +
+                         `<button onclick="location.href='index.html'">Back to Home</button>`;
+    });
+
+    // Modal functionality
+    const modal = document.getElementById('welcome-modal');
+    const startBtn = document.getElementById('start-btn');
+    const randomizeCheckbox = document.getElementById('randomize-checkbox');
+    function shuffle(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } }
+    startBtn.addEventListener('click', () => { if (randomizeCheckbox.checked) shuffle(questions); modal.style.display = 'none'; renderQ(0); });
+
+    // Initial render hidden until start
+  </script>
+</body>
+</html>

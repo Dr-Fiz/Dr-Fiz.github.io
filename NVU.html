@@ -1,92 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Plabable Topics</title>
-  <!-- Embedded CSS -->
+  <!-- Google Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Icons+Outlined" rel="stylesheet" />
   <style>
     :root {
-      --primary-color: #2a9d8f;
-      --primary-hover: #21867a;
-      --bg-color: #f4f4f4;
-      --card-bg: #ffffff;
-      --text-color: #333333;
+      --primary-color: #A178D3;
+      --primary-hover: #C796FF;
+      --bg-color: #0B0326;
+      --card-bg: #1A112E;
+      --text-color: #FFFFFF;
+      --shadow-color: rgba(0, 0, 0, 0.6);
+      --radius: 1rem;
+      --spacing: 1.5rem;
+      --transition: 0.3s;
     }
-    * { box-sizing: border-box; }
+    *, *::before, *::after { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Roboto', sans-serif;
-      background-color: var(--bg-color);
+      background: radial-gradient(circle at top left, #180840 0%, var(--bg-color) 80%);
       color: var(--text-color);
     }
+    /* Navbar */
     header {
-      text-align: center;
-      padding: 2rem 1rem;
-      background-color: var(--primary-color);
-      color: #ffffff;
+      position: sticky; top: 0; width: 100%; z-index: 10;
+      background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+      clip-path: ellipse(100% 60% at 50% 0%);
     }
-    header h1 { margin: 0; font-size: 2.5rem; }
-    header p { margin: 0.5rem 0 0; font-size: 1.1rem; }
+    .nav-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem;
+    }
+    .logo { height: 50px; }
+    nav ul {
+      list-style: none; margin: 0; padding: 0;
+      display: flex; gap: var(--spacing);
+    }
+    nav a {
+      position: relative;
+      color: var(--text-color);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.25rem 0;
+      transition: color var(--transition);
+    }
+    nav a::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: -3px;
+      width: 0; height: 2px;
+      background: var(--text-color);
+      transition: width var(--transition);
+    }
+    nav a:hover {
+      color: var(--primary-hover);
+    }
+    nav a:hover::after {
+      width: 100%;
+    }
+    /* Header content */
+    .header-content {
+      text-align: center;
+      padding: 0 1rem 2rem;
+    }
+    .header-content h1 {
+      margin: 1rem 0 0.5rem;
+      font-size: 2.75rem; font-weight: 700;
+    }
+    .header-content p {
+      margin: 0;
+      font-size: 1.125rem;
+      opacity: 0.9;
+    }
+    /* Main & Search */
+    main {
+      max-width: 1100px; margin: 0 auto; padding: 0 1rem 3rem;
+    }
+    .search-container {
+      text-align: center;
+      margin-bottom: var(--spacing);
+    }
+    .search-container input {
+      width: 100%; max-width: 400px;
+      padding: 0.75rem 1rem;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      box-shadow: 0 2px 8px var(--shadow-color);
+      background: var(--card-bg); color: var(--text-color);
+      transition: box-shadow var(--transition);
+    }
+    .search-container input:focus {
+      outline: none;
+      box-shadow: 0 4px 12px var(--shadow-color);
+    }
+    /* Grid & Cards */
     .options-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-      padding: 2rem;
-      max-width: 1000px;
-      margin: 0 auto;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: var(--spacing);
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
     .bank-option {
-      background-color: var(--card-bg);
-      padding: 1.5rem;
-      text-align: center;
-      border-radius: 1.5rem;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      --delay: calc(var(--i) * 0.1s);
+      position: relative;
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+      background: var(--card-bg); border-radius: var(--radius);
+      padding: 2rem 1.5rem; text-align: center;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 4px 12px var(--shadow-color);
+      transition: transform var(--transition), box-shadow var(--transition), background-color var(--transition);
+      opacity: 0; transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out var(--delay) forwards;
     }
     .bank-option:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 8px 12px rgba(0,0,0,0.1);
+      transform: translateY(-6px) scale(1.02);
+      box-shadow: 0 8px 20px var(--shadow-color);
+      background-color: rgba(199,150,255,0.15);
+    }
+    .bank-option:focus {
+      outline: 2px solid var(--primary-hover);
+    }
+    .option-icon {
+      font-family: 'Material Icons Outlined';
+      font-size: 2.25rem;
+      color: var(--primary-color);
+      transition: color var(--transition);
+    }
+    .bank-option:hover .option-icon {
+      color: var(--primary-hover);
     }
     .bank-option h2 {
       margin: 0;
-      font-size: 1.25rem;
+      font-size: 1.3rem;
+      font-weight: 500;
       color: var(--primary-color);
+      transition: color var(--transition);
+    }
+    .bank-option:hover h2 {
+      color: var(--text-color);
+    }
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 1.5rem 1rem;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 0.9rem;
+      background: rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
-
 <body>
   <header>
-    <h1>NVU Subjects</h1>
-    <p>Select a sub-topic to continue.</p>
+    <div class="nav-container">
+      <img src="Mediwise-.png" alt="Mediwise logo" class="logo" />
+      <nav>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="index.html#banks">Banks</a></li>
+          <li><a href="#subjects">Topics</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div class="header-content">
+      <h1 id="subjects">Plabable Topics</h1>
+      <p>Select a sub‐topic to continue.</p>
+    </div>
   </header>
 
   <main>
+    <div class="search-container">
+      <input id="filter-input" type="text" placeholder="🔍 Filter topics…" />
+    </div>
     <div class="options-grid">
-      <div class="bank-option" data-subtopic="Oncology"><h2>Oncology</h2></div>
-      <div class="bank-option" data-subtopic="Obstetrics & Gynecology"><h2>Obstetrics & Gynecology</h2></div>
-      <div class="bank-option" data-subtopic="Pediatrics"><h2>Pediatrics</h2></div>
-      <div class="bank-option" data-subtopic="Pedatric Midterm"><h2>Pedatric Midterm</h2></div>
-      <div class="bank-option" data-subtopic="Internal V Midterm"><h2>Internal V Midterm</h2></div>
+      <div class="bank-option" data-subtopic="Oncology" style="--i:1">
+        <span class="option-icon">science</span>
+        <h2>Oncology</h2>
+      </div>
+      <div class="bank-option" data-subtopic="Obstetrics & Gynecology" style="--i:2">
+        <span class="option-icon">pregnant_woman</span>
+        <h2>Obstetrics &amp; Gynecology</h2>
+      </div>
+      <div class="bank-option" data-subtopic="Pediatrics" style="--i:3">
+        <span class="option-icon">child_care</span>
+        <h2>Pediatrics</h2>
+      </div>
+      <div class="bank-option" data-subtopic="Pedatric Midterm" style="--i:4">
+        <span class="option-icon">playlist_add_check</span>
+        <h2>Pediatric Midterm</h2>
+      </div>
+      <div class="bank-option" data-subtopic="Internal V Midterm" style="--i:5">
+        <span class="option-icon">local_hospital</span>
+        <h2>Internal V Midterm</h2>
+      </div>
     </div>
   </main>
 
-  <!-- Updated Embedded JS -->
-  <script>
-    const pages = {
-      'Oncology': 'nvu-oncology.html',
-      'Obstetrics & Gynecology': 'nvu-obstetrics-gynecology.html',
-      'Pediatrics': 'nvu-pediatrics.html',
-      'Pedatric Midterm': 'Pedatric-Midterm.html',
-      'Internal V Midterm': 'Internal-V-Midterm.html'
-    };
+  <footer>
+    <p>&copy; 2025 Mediwise. All rights reserved.</p>
+  </footer>
 
-    document.querySelectorAll('.bank-option').forEach(option => {
-      option.addEventListener('click', () => {
-        const sub = option.dataset.subtopic;
+  <script>
+    // Navigation between pages
+    const pages = {
+      'Oncology':                   'nvu-oncology.html',
+      'Obstetrics & Gynecology':    'nvu-obstetrics-gynecology.html',
+      'Pediatrics':                 'nvu-pediatrics.html',
+      'Pedatric Midterm':           'Pedatric-Midterm.html',
+      'Internal V Midterm':         'Internal-V-Midterm.html'
+    };
+    document.querySelectorAll('.bank-option').forEach(card => {
+      card.addEventListener('click', () => {
+        const sub = card.dataset.subtopic;
         window.location.href = pages[sub] || 'index.html';
+      });
+    });
+
+    // Filter subtopics
+    document.getElementById('filter-input').addEventListener('input', e => {
+      const term = e.target.value.toLowerCase();
+      document.querySelectorAll('.bank-option').forEach(card => {
+        card.style.display = card.dataset.subtopic.toLowerCase().includes(term)
+          ? 'flex' : 'none';
       });
     });
   </script>
